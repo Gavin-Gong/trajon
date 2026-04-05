@@ -13,6 +13,7 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  --app-bg: #eef4fb;
   --app-surface: rgba(248, 251, 255, 0.9);
   --app-surface-strong: rgba(255, 255, 255, 0.96);
   --app-panel-muted: #eff5ff;
@@ -33,6 +34,7 @@
   --app-danger-soft: #fee2e2;
   --app-ring: rgba(37, 99, 235, 0.2);
   --app-shadow-soft: 0 18px 48px rgba(15, 23, 42, 0.08);
+  --app-shadow-strong: 0 24px 72px rgba(37, 99, 235, 0.14);
 }
 
 * {

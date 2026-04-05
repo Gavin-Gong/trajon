@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import defaultCapability from "../src-tauri/capabilities/default.json";
 
 import {
   buildPanelUrl,
@@ -99,5 +100,15 @@ describe("openPanelWindow", () => {
       resizable: true,
       focus: true,
     });
+  });
+
+  it("grants the trading panel window permission to toggle always-on-top", () => {
+    const capability = defaultCapability as {
+      windows?: string[];
+      permissions?: string[];
+    };
+
+    expect(capability.windows).toContain("trading-panel");
+    expect(capability.permissions).toContain("core:window:allow-set-always-on-top");
   });
 });
