@@ -106,7 +106,7 @@ export async function openPanelWindow(
     const popup = window.open(
       buildPanelUrl(),
       PANEL_WINDOW_LABEL,
-      "popup=yes,width=392,height=640,left=980,top=180",
+      "popup=yes,width=300,height=640,left=980,top=180",
     );
     popup?.focus();
     return;
@@ -129,7 +129,7 @@ export async function openPanelWindow(
   windowApi.createWindow(PANEL_WINDOW_LABEL, {
     title: "Trading Panel",
     url: buildPanelUrl(),
-    width: bounds?.width ?? 392,
+    width: bounds?.width ?? 300,
     height: bounds?.height ?? 640,
     x: bounds?.x,
     y: bounds?.y,
