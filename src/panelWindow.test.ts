@@ -31,9 +31,9 @@ describe("readStoredPanelBounds", () => {
   it("parses saved bounds for panel restoration", () => {
     expect(
       readStoredPanelBounds(
-        JSON.stringify({ x: 1200, y: 240, width: 392, height: 640 }),
+        JSON.stringify({ x: 1200, y: 240, width: 300, height: 640 }),
       ),
-    ).toEqual({ x: 1200, y: 240, width: 392, height: 640 });
+    ).toEqual({ x: 1200, y: 240, width: 300, height: 640 });
   });
 });
 
@@ -74,6 +74,28 @@ describe("openPanelWindow", () => {
       x: 1000,
       y: 180,
       center: false,
+      resizable: true,
+      focus: true,
+    });
+  });
+
+  it("uses a 300px default width when no saved bounds exist", async () => {
+    const getByLabel = vi.fn(async () => null);
+    const createWindow = vi.fn();
+
+    await openPanelWindow({
+      windowApi: { getByLabel, createWindow },
+      storageApi: { getItem: () => null },
+    });
+
+    expect(createWindow).toHaveBeenCalledWith("trading-panel", {
+      title: "Trading Panel",
+      url: "/?view=panel",
+      width: 300,
+      height: 640,
+      x: undefined,
+      y: undefined,
+      center: true,
       resizable: true,
       focus: true,
     });
