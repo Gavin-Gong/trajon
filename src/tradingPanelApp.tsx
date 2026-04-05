@@ -1,5 +1,39 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  CalendarOutlined,
+  DashboardOutlined,
+  PlusOutlined,
+  PushpinFilled,
+  PushpinOutlined,
+  SettingOutlined,
+} from "@ant-design/icons";
+import {
+  Badge as AntBadge,
+  Button,
+  Calendar,
+  Card,
+  Descriptions,
+  Divider,
+  Empty,
+  Flex,
+  FloatButton,
+  Form,
+  Input,
+  Layout,
+  Menu,
+  Modal,
+  Select,
+  Segmented,
+  Space,
+  Statistic,
+  Switch,
+  Tag,
+  Typography,
+} from "antd";
+import type { BadgeProps as AntBadgeProps, CalendarProps } from "antd";
+import dayjs, { type Dayjs } from "dayjs";
+import "dayjs/locale/zh-cn";
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   availableEventTypes,
@@ -9,13 +43,14 @@ import {
   groupJournalsByDay,
   isZero,
   netPosition,
-  visibleMonthDays,
   type TradeEvent,
   type TradeEventComposerError,
   type TradeEventDraft,
   type TradeEventType,
   type TradeJournal,
 } from "./tradingPanelDomain";
+
+dayjs.locale("zh-cn");
 import {
   openPanelWindow,
   PANEL_BOUNDS_STORAGE_KEY,
@@ -25,6 +60,33 @@ import { useTradingPanelState } from "./tradingPanelStore";
 
 type AppView = "main" | "panel";
 type AppSection = "analytics" | "calendar" | "settings";
+type AppTagVariant = "accent" | "danger" | "neutral" | "success" | "warning";
+
+const { Paragraph, Text, Title } = Typography;
+
+const shellCardStyle: CSSProperties = {
+  borderRadius: 28,
+  borderColor: "var(--app-border)",
+  background: "var(--app-surface-strong)",
+  boxShadow: "var(--app-shadow-soft)",
+};
+
+const mutedShellCardStyle: CSSProperties = {
+  ...shellCardStyle,
+  background: "var(--app-panel-muted)",
+  boxShadow: "none",
+};
+
+const dashedShellCardStyle: CSSProperties = {
+  ...mutedShellCardStyle,
+  background: "transparent",
+  borderStyle: "dashed",
+};
+
+const panelCardStyle: CSSProperties = {
+  ...shellCardStyle,
+  borderRadius: 24,
+};
 
 export function TradingPanelDesktop({ view }: { view: AppView }) {
   const store = useTradingPanelState();
@@ -38,70 +100,390 @@ export function TradingPanelDesktop({ view }: { view: AppView }) {
 
 function MainSurface({ store }: { store: ReturnType<typeof useTradingPanelState> }) {
   const [section, setSection] = useState<AppSection>("analytics");
+  const menuItems = [
+    {
+      key: "analytics",
+      icon: <DashboardOutlined />,
+      label: "分析",
+    },
+    {
+      key: "calendar",
+      icon: <CalendarOutlined />,
+      label: "日历",
+    },
+    {
+      key: "settings",
+      icon: <SettingOutlined />,
+      label: "设置",
+    },
+  ];
 
   return (
-    <main className="desktop-shell main-shell">
-      <aside className="sidebar">
-        <div className="sidebar-brand">
-          <p className="eyebrow">Trading Panel</p>
-          <h1>Trading Panel</h1>
-          <p className="supporting-copy">
-            Tauri migration of the Swift trading helper: panel capture, calendar
-            history, and settings in one desktop app.
-          </p>
-        </div>
+    <main>
+      <Layout hasSider style={{ minHeight: "100vh", background: "transparent" }}>
+        <Layout.Sider
+          width={280}
+          theme="light"
+          style={{
+            background: "transparent",
+            padding: 24,
+            borderInlineEnd: "1px solid var(--app-border)",
+          }}
+        >
+          <Card style={{ ...shellCardStyle, position: "sticky", top: 24 }}>
+            <Flex vertical gap={24}>
+              <Space orientation="vertical" size={12}>
+                <Tag color={tagColorForVariant("accent")} style={{ width: "fit-content", marginInlineEnd: 0 }}>
+                  Trading Flow
+                </Tag>
+                <Title level={1} style={{ margin: 0, color: "var(--app-text)", fontSize: "clamp(1.9rem,2vw,2.6rem)", letterSpacing: "-0.04em" }}>
+                  Trading Flow
+                </Title>
+              </Space>
 
-        <nav className="sidebar-nav" aria-label="Sections">
-          <SidebarButton
-            active={section === "analytics"}
-            label="分析"
-            icon="◌"
-            onClick={() => setSection("analytics")}
-          />
-          <SidebarButton
-            active={section === "calendar"}
-            label="日历"
-            icon="▦"
-            onClick={() => setSection("calendar")}
-          />
-          <SidebarButton
-            active={section === "settings"}
-            label="设置"
-            icon="⚙"
-            onClick={() => setSection("settings")}
-          />
-        </nav>
+              <Menu
+                mode="inline"
+                selectedKeys={[section]}
+                items={menuItems}
+                onClick={({ key }) => setSection(key as AppSection)}
+                style={{ borderInlineEnd: 0, background: "transparent" }}
+              />
+            </Flex>
+          </Card>
+        </Layout.Sider>
 
-        <div className="sidebar-footer">
-          <button
-            type="button"
-            className="primary-button"
-            onClick={() => {
-              void openPanelWindow();
-            }}
-          >
-            Open Panel
-          </button>
-          <p className="hint-text">Panel stays focused on active journal capture.</p>
-        </div>
-      </aside>
-
-      <section className="main-content">
-        {section === "analytics" ? <AnalyticsPlaceholder /> : null}
-        {section === "calendar" ? <CalendarHistorySection store={store} /> : null}
-        {section === "settings" ? <SettingsSection store={store} /> : null}
-      </section>
+        <Layout.Content style={{ minWidth: 0, padding: 24 }}>
+          {section === "analytics" ? <AnalyticsPanel store={store} /> : null}
+          {section === "calendar" ? <CalendarHistorySection store={store} /> : null}
+          {section === "settings" ? <SettingsSection store={store} /> : null}
+        </Layout.Content>
+      </Layout>
+      <FloatButton
+        type="primary"
+        icon={<PlusOutlined />}
+        tooltip={<span>打开浮动面板</span>}
+        onClick={() => void openPanelWindow()}
+      />
     </main>
+  );
+}
+
+function AnalyticsPanel({ store }: { store: ReturnType<typeof useTradingPanelState> }) {
+  void store;
+  return (
+    <Card style={shellCardStyle}>
+      <Empty
+        image={Empty.PRESENTED_IMAGE_SIMPLE}
+        description={
+          <Space orientation="vertical" size={4}>
+            <Text strong style={{ color: "var(--app-text)" }}>
+              分析页面暂时留空
+            </Text>
+            <Text style={{ color: "var(--app-muted)" }}>
+              后续会在这里逐步补回分析模块。
+            </Text>
+          </Space>
+        }
+      />
+    </Card>
+  );
+}
+
+function CalendarHistorySection({
+  store,
+}: {
+  store: ReturnType<typeof useTradingPanelState>;
+}) {
+  const journals = store.state.journals;
+  const [displayedMonth, setDisplayedMonth] = useState<Dayjs>(() => dayjs());
+  const [selectedJournalId, setSelectedJournalId] = useState<string | undefined>();
+  const grouped = useMemo(() => groupJournalsByDay(journals), [journals]);
+  const groupedMap = useMemo(
+    () => new Map(grouped.map((group) => [group.dayKey, group.journals])),
+    [grouped],
+  );
+  const monthJournals = useMemo(
+    () =>
+      journals
+        .filter((journal) => {
+          const created = dayjs(journal.createdAt);
+          return created.year() === displayedMonth.year() && created.month() === displayedMonth.month();
+        })
+        .sort(
+          (left, right) =>
+            new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime(),
+        ),
+    [displayedMonth, journals],
+  );
+
+  useEffect(() => {
+    const selection = defaultCalendarSelection(displayedMonth.toDate(), journals);
+
+    setSelectedJournalId((currentSelection) => {
+      if (!currentSelection) {
+        return selection?.id;
+      }
+
+      const stillVisible = monthJournals.some((journal) => journal.id === currentSelection);
+      return stillVisible ? currentSelection : selection?.id;
+    });
+  }, [displayedMonth, journals, monthJournals]);
+
+  const selectedJournal = journals.find((journal) => journal.id === selectedJournalId);
+
+  const journalBadgeStatus = (journal: TradeJournal): AntBadgeProps["status"] =>
+    journal.status === "open" ? "processing" : "success";
+
+  const dateCellRender = (current: Dayjs) => {
+    const dayKey = current.format("YYYY-MM-DD");
+    const dayJournals = groupedMap.get(dayKey) ?? [];
+
+    if (dayJournals.length === 0) {
+      return null;
+    }
+
+    return (
+      <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+        {dayJournals.map((journal) => (
+          <li key={journal.id} style={{ marginBottom: 4 }}>
+            <AntBadge
+              status={journalBadgeStatus(journal)}
+              text={
+                <Button
+                  type="link"
+                  size="small"
+                  style={{
+                    padding: 0,
+                    height: "auto",
+                    fontSize: 12,
+                    fontWeight: selectedJournalId === journal.id ? 700 : 500,
+                    color:
+                      selectedJournalId === journal.id
+                        ? "var(--app-accent)"
+                        : "var(--app-text-soft)",
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedJournalId(journal.id);
+                  }}
+                >
+                  {journal.symbol || "未命名"}
+                </Button>
+              }
+            />
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
+  const cellRender: CalendarProps<Dayjs>["cellRender"] = (current, info) => {
+    if (info.type === "date") {
+      return dateCellRender(current);
+    }
+    return info.originNode;
+  };
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gap: 24,
+        gridTemplateColumns: "minmax(0, 1fr) 380px",
+      }}
+    >
+      <Card style={shellCardStyle}>
+        <Flex justify="space-between" align="end" wrap="wrap" gap={16} style={{ marginBottom: 16 }}>
+          <Space orientation="vertical" size={4}>
+            <Title level={2} style={{ margin: 0, color: "var(--app-text)", letterSpacing: "-0.02em" }}>
+              日历回看
+            </Title>
+            <Paragraph style={{ margin: 0, color: "var(--app-muted)" }}>
+              按创建日期浏览历史 journal，点击查看细节链路。
+            </Paragraph>
+          </Space>
+          <Tag color={tagColorForVariant("neutral")}>{monthJournals.length} 条</Tag>
+        </Flex>
+        <Calendar
+          mode="month"
+          value={displayedMonth}
+          cellRender={cellRender}
+          onPanelChange={(date) => setDisplayedMonth(date)}
+          onSelect={(date) => setDisplayedMonth(date)}
+        />
+      </Card>
+
+      <JournalDetailPanel journal={selectedJournal} />
+    </div>
+  );
+}
+
+function JournalDetailPanel({ journal }: { journal: TradeJournal | undefined }) {
+  if (!journal) {
+    return (
+      <Card style={dashedShellCardStyle}>
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={
+            <Space orientation="vertical" size={4}>
+              <Text strong style={{ color: "var(--app-text)" }}>
+                Journal 详情
+              </Text>
+              <Text style={{ color: "var(--app-muted)" }}>
+                从左侧日历选择一条 journal，这里会展示时间线与总结。
+              </Text>
+            </Space>
+          }
+        />
+      </Card>
+    );
+  }
+
+  return (
+    <Card style={{ ...shellCardStyle, height: "fit-content" }}>
+      <Space orientation="vertical" size={20} style={{ width: "100%" }}>
+        <Flex justify="space-between" align="start" gap={12}>
+          <Space orientation="vertical" size={8}>
+            <Flex align="center" gap={8} wrap="wrap">
+              <Title level={3} style={{ margin: 0, color: "var(--app-text)" }}>
+                {journal.symbol || "未命名"}
+              </Title>
+              <Tag color={tagColorForVariant(journal.status === "open" ? "accent" : "neutral")}>
+                {journal.status === "open" ? "进行中" : "已完成"}
+              </Tag>
+            </Flex>
+            <Text style={{ color: "var(--app-muted)" }}>
+              {journal.market || "未标记市场"} · {formatJournalDate(journal.createdAt)}
+            </Text>
+          </Space>
+          <Tag color={tagColorForVariant("neutral")}>净仓 {formatNumber(netPosition(journal.events))}</Tag>
+        </Flex>
+
+        <Descriptions
+          size="small"
+          column={1}
+          items={[
+            { key: "events", label: "事件数量", children: `${journal.events.length} 条` },
+            { key: "status", label: "状态", children: journal.status === "open" ? "进行中" : "已完成" },
+          ]}
+        />
+
+        {journal.summary ? (
+          <Paragraph style={{ margin: 0, color: "var(--app-muted)", lineHeight: 1.8 }}>
+            {journal.summary}
+          </Paragraph>
+        ) : null}
+
+        <Divider style={{ margin: 0, borderColor: "var(--app-border)" }} />
+
+        <TimelineSection journal={journal} title="Journal 时间线" />
+      </Space>
+    </Card>
+  );
+}
+
+function SettingsSection({
+  store,
+}: {
+  store: ReturnType<typeof useTradingPanelState>;
+}) {
+  const { config } = store.state;
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gap: 24,
+        gridTemplateColumns: "minmax(0, 1fr) 320px",
+      }}
+    >
+      <Card style={shellCardStyle}>
+        <Space orientation="vertical" size={16} style={{ width: "100%" }}>
+          <div>
+            <Title level={3} style={{ margin: 0, color: "var(--app-text)", letterSpacing: "-0.02em" }}>
+              设置
+            </Title>
+            <Paragraph style={{ margin: "4px 0 0", color: "var(--app-muted)" }}>
+              提醒频率保存在本地，用来支持浮动面板的盘中记录节奏。
+            </Paragraph>
+          </div>
+
+          <Card style={mutedShellCardStyle}>
+            <Flex justify="space-between" align="center" gap={16}>
+              <Space orientation="vertical" size={4}>
+                <Text strong style={{ color: "var(--app-text)" }}>启用提醒</Text>
+                <Text style={{ color: "var(--app-muted)" }}>按固定频率提醒自己记录盘中观察。</Text>
+              </Space>
+              <Switch
+                checked={config.timerEnabled}
+                onChange={(checked) => {
+                  store.actions.updateConfig({ timerEnabled: checked });
+                }}
+              />
+            </Flex>
+          </Card>
+
+          <Card style={panelCardStyle}>
+            <Space orientation="vertical" size={12} style={{ width: "100%" }}>
+              <Text strong style={{ color: "var(--app-text)" }}>提醒间隔</Text>
+              <Paragraph style={{ margin: 0, color: "var(--app-muted)" }}>
+                建议与自己的盘中节奏保持一致，避免提醒过密造成打断。
+              </Paragraph>
+              <Select
+                value={config.timerInterval}
+                disabled={!config.timerEnabled}
+                options={REMINDER_INTERVALS.map((preset) => ({
+                  value: preset.value,
+                  label: preset.label,
+                }))}
+                onChange={(value) => {
+                  store.actions.updateConfig({ timerInterval: value });
+                }}
+              />
+            </Space>
+          </Card>
+        </Space>
+      </Card>
+
+      <Card style={{ ...shellCardStyle, height: "fit-content" }}>
+        <Space orientation="vertical" size={16} style={{ width: "100%" }}>
+          <div>
+            <Title level={3} style={{ margin: 0, color: "var(--app-text)", letterSpacing: "-0.02em" }}>
+              数据与导出
+            </Title>
+            <Paragraph style={{ margin: "4px 0 0", color: "var(--app-muted)" }}>
+              目前数据保存在本地。导出入口保留在这里，便于后续接入 CSV。
+            </Paragraph>
+          </div>
+
+          <Descriptions
+            size="small"
+            column={1}
+            items={[
+              { key: "storage", label: "数据位置", children: "本地存储" },
+              { key: "export", label: "导出状态", children: "即将支持" },
+            ]}
+          />
+
+          <Card style={dashedShellCardStyle}>
+            <Text style={{ color: "var(--app-muted)", lineHeight: 1.8 }}>
+              当前版本优先把记录链路和复盘体验打磨稳定，导出能力后续接入。
+            </Text>
+          </Card>
+
+          <Button block onClick={() => undefined}>
+            导出 CSV（即将支持）
+          </Button>
+        </Space>
+      </Card>
+    </div>
   );
 }
 
 function PanelSurface({ store }: { store: ReturnType<typeof useTradingPanelState> }) {
   const { state, actions } = store;
   const journal = selectCurrentJournal(state.journals);
-  const reminder = useReminderClock(
-    state.config.timerEnabled,
-    state.config.timerInterval,
-  );
+  const reminder = useReminderClock(state.config.timerEnabled, state.config.timerInterval);
   const [showStartJournal, setShowStartJournal] = useState(false);
   const [showFinishJournal, setShowFinishJournal] = useState(false);
   const [isPinned, setIsPinned] = useState(state.panelPinned);
@@ -122,105 +504,130 @@ function PanelSurface({ store }: { store: ReturnType<typeof useTradingPanelState
   usePersistPanelBounds();
 
   return (
-    <main className="desktop-shell panel-shell">
-      <section className="panel-frame">
-        <header className="panel-card compact-card top-bar">
-          <button
-            type="button"
-            className={`pin-button ${isPinned ? "is-pinned" : ""}`}
-            title={
-              isPinned
-                ? "Always on top. Click to allow overlap."
-                : "Can be covered by other windows. Click to keep on top."
-            }
-            onClick={() => {
-              const nextPinned = !isPinned;
-              setIsPinned(nextPinned);
-              actions.setPanelPinned(nextPinned);
-            }}
-          >
-            {isPinned ? "📌" : "⊙"}
-          </button>
+    <main style={{ minHeight: "100vh", padding: 12 }}>
+      <Flex vertical gap={16} style={{ margin: "0 auto", width: "100%", maxWidth: 430 }}>
+        <Card style={panelCardStyle}>
+          <Flex align="center" justify="space-between" gap={12}>
+            <Button
+              type={isPinned ? "primary" : "default"}
+              shape="circle"
+              icon={isPinned ? <PushpinFilled /> : <PushpinOutlined />}
+              title={isPinned ? "当前保持置顶" : "当前允许被覆盖"}
+              onClick={() => {
+                const nextPinned = !isPinned;
+                setIsPinned(nextPinned);
+                actions.setPanelPinned(nextPinned);
+              }}
+            />
 
-          <div className="top-bar-meta">
-            <p className="top-bar-title">TRADING PANEL</p>
-            <p className={`reminder-label ${state.config.timerEnabled ? "is-on" : ""}`}>
-              {formatReminderStatus(
-                state.config.timerEnabled,
-                state.config.timerInterval,
-              )}
-            </p>
-          </div>
+            <Space orientation="vertical" size={2} style={{ flex: 1, minWidth: 0 }}>
+              <Text strong style={{ fontSize: 11, letterSpacing: "0.18em", color: "var(--app-muted-strong)", textTransform: "uppercase" }}>
+                Quick Capture Panel
+              </Text>
+              <Text style={{ color: "var(--app-muted)" }}>
+                提醒 {formatReminderStatus(state.config.timerEnabled, state.config.timerInterval)}
+              </Text>
+            </Space>
 
-          <div className={`clock-badge ${reminder.isFlashing ? "is-flashing" : ""}`}>
-            {formatClock(reminder.now)}
-          </div>
-        </header>
+            <Card
+              size="small"
+              style={{
+                borderRadius: 16,
+                borderColor: reminder.isFlashing ? "var(--app-border-strong)" : "var(--app-border)",
+                background: reminder.isFlashing ? "var(--app-accent-soft)" : "white",
+                boxShadow: reminder.isFlashing ? "var(--app-shadow-soft)" : "none",
+              }}
+            >
+              <Statistic
+                value={formatClock(reminder.now)}
+                styles={{
+                  content: {
+                    color: reminder.isFlashing ? "var(--app-accent)" : "var(--app-text)",
+                    fontSize: 15,
+                    fontWeight: 700,
+                    letterSpacing: "0.08em",
+                    fontVariantNumeric: "tabular-nums",
+                  },
+                }}
+              />
+            </Card>
+          </Flex>
+        </Card>
 
-        <section className="panel-card compact-card journal-summary-card">
-          {journal ? (
-            <>
-              <div className="journal-summary-header">
-                <div>
-                  <div className="journal-summary-title-row">
-                    <h2>{journal.symbol || "No Symbol"}</h2>
-                    <span className={`status-pill ${journal.status}`}>
-                      {journal.status.toUpperCase()}
-                    </span>
-                  </div>
+        <Card style={panelCardStyle}>
+          <Space orientation="vertical" size={16} style={{ width: "100%" }}>
+            {journal ? (
+              <>
+                <Flex justify="space-between" align="start" gap={12}>
+                  <Space orientation="vertical" size={8}>
+                    <Flex align="center" gap={8} wrap="wrap">
+                      <Title level={3} style={{ margin: 0, color: "var(--app-text)" }}>
+                        {journal.symbol || "待填写标的"}
+                      </Title>
+                      <Tag color={tagColorForVariant(journal.status === "open" ? "accent" : "neutral")}>
+                        {journal.status === "open" ? "进行中" : "已完成"}
+                      </Tag>
+                    </Flex>
+                    <Text style={{ color: "var(--app-muted)" }}>
+                      {journal.market || "未标记市场"} · 净仓 {formatNumber(netPosition(journal.events))}
+                    </Text>
+                  </Space>
 
-                  <div className="summary-meta-row">
-                    {journal.market ? <span>{journal.market}</span> : null}
-                    <span>
-                      Pos {formatNumber(netPosition(journal.events))}
-                    </span>
-                  </div>
-                </div>
+                  {journal.status === "open" ? (
+                    <Button size="small" onClick={() => setShowFinishJournal(true)}>
+                      结束 Journal
+                    </Button>
+                  ) : null}
+                </Flex>
 
-                {journal.status === "open" ? (
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => setShowFinishJournal(true)}
-                  >
-                    End Journal
-                  </button>
-                ) : null}
-              </div>
-
-              {journal.summary ? <p className="summary-copy">{journal.summary}</p> : null}
-            </>
-          ) : (
-            <div className="empty-inline-state">
-              <div>
-                <h2>No active journal</h2>
-                <p>Create a journal to start recording trade events.</p>
-              </div>
-              <button
-                type="button"
-                className="primary-button"
-                onClick={() => setShowStartJournal(true)}
+                {journal.summary ? (
+                  <Card style={mutedShellCardStyle}>
+                    <Paragraph style={{ margin: 0, color: "var(--app-muted)", lineHeight: 1.8 }}>
+                      {journal.summary}
+                    </Paragraph>
+                  </Card>
+                ) : (
+                  <Card style={dashedShellCardStyle}>
+                    <Text style={{ color: "var(--app-muted)", lineHeight: 1.8 }}>
+                      这条 journal 还没有总结，建议在收盘后补上执行结论与改进点。
+                    </Text>
+                  </Card>
+                )}
+              </>
+            ) : (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={
+                    <Space orientation="vertical" size={4}>
+                    <Text strong style={{ color: "var(--app-text)" }}>
+                      没有活跃 Journal
+                    </Text>
+                    <Text style={{ color: "var(--app-muted)" }}>
+                      先创建今天的交易记录，再把每次观察、进出场与情绪变化逐条补进去。
+                    </Text>
+                  </Space>
+                }
               >
-                Start Journal
-              </button>
-            </div>
-          )}
-        </section>
+                <Button type="primary" onClick={() => setShowStartJournal(true)}>
+                  开始记录今天的交易
+                </Button>
+              </Empty>
+            )}
+          </Space>
+        </Card>
 
-        <TimelineSection
-          journal={journal}
-          title="Recent Notes"
-          className="panel-card panel-grow"
-        />
+        <TimelineSection journal={journal} title="最近记录" />
 
         <QuickCaptureCard
           journal={journal}
           onCreateJournal={() => setShowStartJournal(true)}
           onRecord={(draft) =>
-            journal ? store.actions.recordEvent(journal.id, draft) : { ok: false, error: "missingContent" }
+            journal
+              ? store.actions.recordEvent(journal.id, draft)
+              : { ok: false, error: "missingContent" }
           }
         />
-      </section>
+      </Flex>
 
       <StartJournalModal
         open={showStartJournal}
@@ -248,232 +655,12 @@ function PanelSurface({ store }: { store: ReturnType<typeof useTradingPanelState
   );
 }
 
-function AnalyticsPlaceholder() {
-  return (
-    <section className="content-panel placeholder-panel">
-      <p className="eyebrow">分析</p>
-      <h2>分析功能待实现</h2>
-      <p className="supporting-copy">Current Swift app keeps analytics as a placeholder, so the Tauri version does the same.</p>
-    </section>
-  );
-}
-
-function CalendarHistorySection({
-  store,
-}: {
-  store: ReturnType<typeof useTradingPanelState>;
-}) {
-  const journals = store.state.journals;
-  const [displayedMonth, setDisplayedMonth] = useState(() => startOfMonth(new Date()));
-  const [selectedJournalId, setSelectedJournalId] = useState<string | undefined>();
-  const monthDays = useMemo(() => visibleMonthDays(displayedMonth), [displayedMonth]);
-  const grouped = useMemo(() => groupJournalsByDay(journals), [journals]);
-  const groupedMap = useMemo(
-    () => new Map(grouped.map((group) => [group.dayKey, group.journals])),
-    [grouped],
-  );
-  const monthJournals = useMemo(
-    () =>
-      journals
-        .filter((journal) => isSameMonth(new Date(journal.createdAt), displayedMonth))
-        .sort((left, right) =>
-          new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime(),
-        ),
-    [displayedMonth, journals],
-  );
-
-  useEffect(() => {
-    const selection = defaultCalendarSelection(displayedMonth, journals);
-
-    setSelectedJournalId((currentSelection) => {
-      if (!currentSelection) {
-        return selection?.id;
-      }
-
-      const stillVisible = monthJournals.some((journal) => journal.id === currentSelection);
-      return stillVisible ? currentSelection : selection?.id;
-    });
-  }, [displayedMonth, journals, monthJournals]);
-
-  const selectedJournal = journals.find((journal) => journal.id === selectedJournalId);
-
-  return (
-    <div className="calendar-layout">
-      <section className="content-panel calendar-panel">
-        <div className="section-header-block">
-          <h2>Calendar History</h2>
-          <p>Browse archived trade journals by creation date and inspect a selected session on the right.</p>
-        </div>
-
-        <div className="month-toolbar">
-          <button
-            type="button"
-            className="icon-button"
-            onClick={() => setDisplayedMonth(addMonths(displayedMonth, -1))}
-          >
-            ‹
-          </button>
-
-          <div className="month-toolbar-copy">
-            <strong>{displayedMonth.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" })}</strong>
-            <span>
-              {monthJournals.length === 1
-                ? "1 journal in this month"
-                : `${monthJournals.length} journals in this month`}
-            </span>
-          </div>
-
-          <button
-            type="button"
-            className="icon-button"
-            onClick={() => setDisplayedMonth(addMonths(displayedMonth, 1))}
-          >
-            ›
-          </button>
-        </div>
-
-        {monthJournals.length === 0 ? (
-          <div className="soft-banner">No journals were created in this month.</div>
-        ) : null}
-
-        <div className="weekday-grid">
-          {WEEKDAY_SYMBOLS.map((symbol) => (
-            <span key={symbol}>{symbol}</span>
-          ))}
-        </div>
-
-        <div className="calendar-grid">
-          {monthDays.map((day) => {
-            const dayKey = formatDayKey(day.date);
-            const dayJournals = groupedMap.get(dayKey) ?? [];
-            const isToday = formatDayKey(day.date) === formatDayKey(new Date());
-
-            return (
-              <div
-                key={dayKey}
-                className={`day-cell ${day.isInDisplayedMonth ? "" : "is-outside"} ${isToday ? "is-today" : ""}`}
-              >
-                <span className="day-number">{day.date.getUTCDate()}</span>
-                <div className="day-chip-stack">
-                  {dayJournals.map((journal) => (
-                    <button
-                      type="button"
-                      key={journal.id}
-                      className={`day-chip ${selectedJournalId === journal.id ? "is-selected" : ""}`}
-                      onClick={() => setSelectedJournalId(journal.id)}
-                    >
-                      {journal.symbol || "No Symbol"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <JournalDetailCard journal={selectedJournal} />
-    </div>
-  );
-}
-
-function JournalDetailCard({ journal }: { journal: TradeJournal | undefined }) {
-  if (!journal) {
-    return (
-      <section className="content-panel detail-panel empty-detail-panel">
-        <h2>Trade Journal</h2>
-        <p>Select a journal from the calendar to inspect its timeline here.</p>
-      </section>
-    );
-  }
-
-  return (
-    <section className="detail-panel">
-      <div className="content-panel detail-header-panel">
-        <div className="journal-summary-title-row">
-          <h2>{journal.symbol || "No Symbol"}</h2>
-          <span className={`status-pill ${journal.status}`}>
-            {journal.status === "open" ? "Open" : "Done"}
-          </span>
-        </div>
-
-        <div className="summary-meta-row">
-          {journal.market ? <span>{journal.market}</span> : null}
-          <span>{formatJournalDate(journal.createdAt)}</span>
-        </div>
-
-        {journal.summary ? <p className="summary-copy">{journal.summary}</p> : null}
-      </div>
-
-      <TimelineSection journal={journal} title="Journal Timeline" className="content-panel detail-timeline-panel" />
-    </section>
-  );
-}
-
-function SettingsSection({
-  store,
-}: {
-  store: ReturnType<typeof useTradingPanelState>;
-}) {
-  const { config } = store.state;
-
-  return (
-    <section className="content-panel settings-panel">
-      <div className="section-header-block">
-        <h2>Settings</h2>
-        <p>Reminder settings persist locally and apply to the floating panel clock.</p>
-      </div>
-
-      <div className="settings-group">
-        <label className="toggle-row">
-          <span>Enable Reminder</span>
-          <input
-            type="checkbox"
-            checked={config.timerEnabled}
-            onChange={(event) => {
-              store.actions.updateConfig({ timerEnabled: event.currentTarget.checked });
-            }}
-          />
-        </label>
-
-        <label className="field-stack">
-          <span>Interval</span>
-          <select
-            value={config.timerInterval}
-            disabled={!config.timerEnabled}
-            onChange={(event) => {
-              store.actions.updateConfig({ timerInterval: Number(event.currentTarget.value) });
-            }}
-          >
-            {REMINDER_INTERVALS.map((preset) => (
-              <option key={preset.value} value={preset.value}>
-                {preset.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      <div className="settings-group">
-        <label className="field-stack">
-          <span>Data</span>
-          <button type="button" className="secondary-button" onClick={() => undefined}>
-            Export CSV
-          </button>
-        </label>
-      </div>
-    </section>
-  );
-}
-
 function TimelineSection({
   journal,
   title,
-  className,
 }: {
   journal: TradeJournal | undefined;
   title: string;
-  className: string;
 }) {
   const events = useMemo(
     () =>
@@ -488,52 +675,86 @@ function TimelineSection({
   const highlightedId = useHighlightedTopEvent(events);
 
   return (
-    <section className={`${className} timeline-panel`}>
-      <div className="timeline-header">
-        <h3>{title}</h3>
-        <span className="count-pill">{events.length}</span>
-      </div>
+    <Card style={panelCardStyle}>
+      <Flex justify="space-between" align="start" gap={12} style={{ marginBottom: 16 }}>
+        <Space orientation="vertical" size={4}>
+          <Title level={3} style={{ margin: 0, color: "var(--app-text)" }}>
+            {title}
+          </Title>
+          <Paragraph style={{ margin: 0, color: "var(--app-muted)" }}>
+            把同一笔交易拆成事件链，而不是只记结果。
+          </Paragraph>
+        </Space>
+        <Tag color={tagColorForVariant("neutral")}>{events.length}</Tag>
+      </Flex>
 
-      {events.length === 0 ? (
-        <div className="timeline-empty-state">
-          <span className="timeline-empty-icon">≈</span>
-          <strong>Ready for the next setup</strong>
-          <p>Your latest trade events will appear here as a clean session timeline.</p>
-        </div>
-      ) : (
-        <div className="timeline-list">
-          {events.map((event) => (
-            <article
+      <Space orientation="vertical" size={12} style={{ width: "100%" }}>
+        {events.length === 0 ? (
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={
+              <Space orientation="vertical" size={4}>
+                <Text strong style={{ color: "var(--app-text)" }}>
+                  准备记录下一条观察
+                </Text>
+                <Text style={{ color: "var(--app-muted)" }}>
+                  你的最新进场、加减仓和笔记会按时间顺序出现在这里。
+                </Text>
+              </Space>
+            }
+          />
+        ) : (
+          events.map((event) => (
+            <Card
               key={event.id}
-              className={`timeline-row ${highlightedId === event.id ? "is-highlighted" : ""}`}
+              style={{
+                ...panelCardStyle,
+                width: "100%",
+                borderColor:
+                  highlightedId === event.id ? "var(--app-border-strong)" : "var(--app-border)",
+                boxShadow: highlightedId === event.id ? "var(--app-shadow-soft)" : "none",
+              }}
             >
-              <span className={`accent-bar ${event.type}`} />
-              <div className="timeline-row-body">
-                <div className="timeline-row-topline">
-                  <span className={`event-pill ${event.type}`}>
-                    {EVENT_SYMBOLS[event.type]} {EVENT_LABELS[event.type]}
-                  </span>
-                  <strong>{journal?.symbol || "Unknown Instrument"}</strong>
-                </div>
-
-                <div className="timeline-row-meta">
-                  <span>{formatClock(new Date(event.timestamp))}</span>
-                  {journal?.market ? <span>{journal.market}</span> : null}
-                  {event.quantity !== undefined ? (
-                    <span className={`quantity-pill ${event.type}`}>
-                      {formatNumber(event.quantity)}
-                    </span>
-                  ) : null}
-                  {event.price !== undefined ? <span>@ {formatNumber(event.price)}</span> : null}
-                </div>
-
-                {event.content ? <p>{event.content}</p> : null}
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
-    </section>
+              <Space orientation="vertical" size={12} style={{ width: "100%" }}>
+                <Flex align="start" justify="space-between" gap={12}>
+                  <Space orientation="vertical" size={8}>
+                    <Flex align="center" gap={8} wrap="wrap">
+                      <Tag color={tagColorForVariant(eventVariant(event.type))}>
+                        {EVENT_SYMBOLS[event.type]} {EVENT_LABELS[event.type]}
+                      </Tag>
+                      <Text strong style={{ color: "var(--app-text)" }}>
+                        {journal?.symbol || "Unknown"}
+                      </Text>
+                    </Flex>
+                    <Flex wrap="wrap" gap={8}>
+                      <Text style={{ color: "var(--app-muted)", fontSize: 12 }}>
+                        {formatClock(new Date(event.timestamp))}
+                      </Text>
+                      {journal?.market ? (
+                        <Text style={{ color: "var(--app-muted)", fontSize: 12 }}>
+                          {journal.market}
+                        </Text>
+                      ) : null}
+                      {event.quantity !== undefined ? (
+                        <Tag color={tagColorForVariant("neutral")}>Qty {formatNumber(event.quantity)}</Tag>
+                      ) : null}
+                      {event.price !== undefined ? (
+                        <Tag color={tagColorForVariant("neutral")}>@ {formatNumber(event.price)}</Tag>
+                      ) : null}
+                    </Flex>
+                  </Space>
+                </Flex>
+                {event.content ? (
+                  <Paragraph style={{ margin: 0, color: "var(--app-muted)", lineHeight: 1.8 }}>
+                    {event.content}
+                  </Paragraph>
+                ) : null}
+              </Space>
+            </Card>
+          ))
+        )}
+      </Space>
+    </Card>
   );
 }
 
@@ -579,117 +800,141 @@ function QuickCaptureCard({
   const canSubmit = journal !== undefined && validation.ok;
 
   return (
-    <section className="panel-card compact-card composer-card">
-      <div className="composer-header">
-        <div>
-          <p className="eyebrow small">Quick Capture</p>
-          <p className="supporting-copy small">
-            {journal
-              ? journal.status === "done"
-                ? "This journal is done. Only logs can be added now."
-                : "Capture the next event before attention moves back to the chart."
-              : "Start a trade journal before capturing events."}
-          </p>
-        </div>
-        <span className="keyboard-hint">⌘↩ Submit</span>
-      </div>
+    <Card style={panelCardStyle}>
+      <Space orientation="vertical" size={16} style={{ width: "100%" }}>
+        <Flex justify="space-between" align="start" gap={12}>
+          <Space orientation="vertical" size={4}>
+            <Title level={3} style={{ margin: 0, color: "var(--app-text)", letterSpacing: "-0.02em" }}>
+              快速记录
+            </Title>
+            <Paragraph style={{ margin: 0, color: "var(--app-muted)", lineHeight: 1.6 }}>
+              {journal
+                ? journal.status === "done"
+                  ? "这条 journal 已完成，现在只允许补充笔记。"
+                  : "把关键事件先记下来，复杂分析留到主界面复盘。"
+                : "开始一条 journal 后，这里会切换成盘中快速记录模式。"}
+            </Paragraph>
+          </Space>
+          <Tag color={tagColorForVariant("neutral")}>⌘↩ 提交</Tag>
+        </Flex>
 
-      {journal ? (
-        <>
-          <div className="chip-row">
-            {types.map((type) => (
-              <button
-                type="button"
-                key={type}
-                className={`type-chip ${type === selectedType ? "is-selected" : ""}`}
-                onClick={() => setSelectedType(type)}
-              >
-                {EVENT_LABELS[type]}
-              </button>
-            ))}
-          </div>
-
-          {selectedType !== "log" ? (
-            <div className="field-grid two-up">
-              <label className="field-stack">
-                <span>Quantity</span>
-                {selectedType === "exit" ? (
-                  <div className="readonly-field">{formatNumber(-currentNetPosition)}</div>
-                ) : (
-                  <input
-                    value={quantityInput}
-                    placeholder="e.g. 1.25 or -1.25"
-                    onChange={(event) => setQuantityInput(event.currentTarget.value)}
-                  />
-                )}
-              </label>
-
-              <label className="field-stack">
-                <span>Price</span>
-                <input
-                  value={priceInput}
-                  placeholder="Optional"
-                  onChange={(event) => setPriceInput(event.currentTarget.value)}
-                />
-              </label>
-            </div>
-          ) : null}
-
-          {selectedType !== "log" ? (
-            <p className="hint-text compact">{quantityHint(selectedType, status, currentNetPosition)}</p>
-          ) : null}
-
-          <label className="field-stack">
-            <span>{selectedType === "log" ? "Log" : "Note"}</span>
-            <textarea
-              value={content}
-              placeholder={selectedType === "log" ? "What changed, what did you see, what is the risk?" : "Optional context"}
-              rows={3}
-              onChange={(event) => setContent(event.currentTarget.value)}
+        {journal ? (
+          <>
+            <Segmented
+              block
+              value={selectedType}
+              options={types.map((type) => ({
+                value: type,
+                label: EVENT_LABELS[type],
+              }))}
+              onChange={(value) => setSelectedType(value as TradeEventType)}
             />
-          </label>
 
-          <div className="composer-footer">
-            <p className={`feedback-text ${didSubmit ? "is-success" : ""}`}>
-              {didSubmit
-                ? "Recorded"
-                : feedbackMessage(selectedType, journal, validation, canSubmit)}
-            </p>
+            {selectedType !== "log" ? (
+              <div
+                style={{
+                  display: "grid",
+                  gap: 12,
+                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                }}
+              >
+                <Form layout="vertical">
+                  <Form.Item label="数量" style={{ marginBottom: 0 }}>
+                    {selectedType === "exit" ? (
+                      <Card size="small" style={mutedShellCardStyle}>
+                        <Text style={{ color: "var(--app-text)" }}>{formatNumber(-currentNetPosition)}</Text>
+                      </Card>
+                    ) : (
+                      <Input
+                        value={quantityInput}
+                        placeholder="例如 1.25 或 -1.25"
+                        onChange={(event) => setQuantityInput(event.currentTarget.value)}
+                      />
+                    )}
+                  </Form.Item>
+                </Form>
 
-            <button
-              type="button"
-              className="primary-button"
-              disabled={!canSubmit}
-              onClick={() => {
-                const result = onRecord(draft);
-                if (!result.ok) {
-                  return;
-                }
+                <Form layout="vertical">
+                  <Form.Item label="价格" style={{ marginBottom: 0 }}>
+                    <Input
+                      value={priceInput}
+                      placeholder="可选"
+                      onChange={(event) => setPriceInput(event.currentTarget.value)}
+                    />
+                  </Form.Item>
+                </Form>
+              </div>
+            ) : null}
 
-                setDidSubmit(true);
-                setSelectedType("log");
-                setQuantityInput("");
-                setPriceInput("");
-                setContent("");
+            {selectedType !== "log" ? (
+              <Text style={{ color: "var(--app-muted)" }}>
+                {quantityHint(selectedType, status, currentNetPosition)}
+              </Text>
+            ) : null}
 
-                window.setTimeout(() => {
-                  setDidSubmit(false);
-                }, 1200);
-              }}
-            >
-              {didSubmit ? "Recorded" : "Record Event"}
-            </button>
-          </div>
-        </>
-      ) : (
-        <div className="empty-composer-state">
-          <p>Create a journal before adding events.</p>
-          <button type="button" className="primary-button" onClick={onCreateJournal}>
-            Start Journal
-          </button>
-        </div>
-      )}
-    </section>
+            <Form layout="vertical">
+              <Form.Item
+                label={selectedType === "log" ? "观察记录" : "补充说明"}
+                style={{ marginBottom: 0 }}
+              >
+                <Input.TextArea
+                  rows={5}
+                  value={content}
+                  placeholder={
+                    selectedType === "log"
+                      ? "例如：回踩 VWAP 后承接变强，第二次确认才进场。"
+                      : "可选补充"
+                  }
+                  onChange={(event) => setContent(event.currentTarget.value)}
+                />
+              </Form.Item>
+            </Form>
+
+            <Flex align="center" justify="space-between" gap={12}>
+              <Text style={{ color: didSubmit ? "var(--app-success)" : "var(--app-muted)" }}>
+                {didSubmit
+                  ? "已记录"
+                  : feedbackMessage(selectedType, journal, validation, canSubmit)}
+              </Text>
+
+              <Button
+                type="primary"
+                disabled={!canSubmit}
+                onClick={() => {
+                  const result = onRecord(draft);
+                  if (!result.ok) {
+                    return;
+                  }
+
+                  setDidSubmit(true);
+                  setSelectedType("log");
+                  setQuantityInput("");
+                  setPriceInput("");
+                  setContent("");
+
+                  window.setTimeout(() => {
+                    setDidSubmit(false);
+                  }, 1200);
+                }}
+              >
+                {didSubmit ? "已记录" : "记录事件"}
+              </Button>
+            </Flex>
+          </>
+        ) : (
+          <Card style={dashedShellCardStyle}>
+            <Space orientation="vertical" size={16} style={{ width: "100%" }}>
+              <Text style={{ color: "var(--app-muted)", lineHeight: 1.8 }}>
+                先创建今天的 journal，快速记录区才会解锁。
+              </Text>
+              <Button block type="primary" onClick={onCreateJournal}>
+                开始 Journal
+              </Button>
+            </Space>
+          </Card>
+        )}
+      </Space>
+    </Card>
   );
 }
 
@@ -702,47 +947,41 @@ function StartJournalModal({
   onClose: () => void;
   onCreate: (symbol: string, market: string) => void;
 }) {
-  const [symbol, setSymbol] = useState("");
-  const [market, setMarket] = useState("");
+  const [form] = Form.useForm<{ symbol: string; market: string }>();
 
   useEffect(() => {
-    if (!open) {
-      setSymbol("");
-      setMarket("");
+    if (open) {
+      form.resetFields();
     }
-  }, [open]);
-
-  if (!open) {
-    return null;
-  }
+  }, [form, open]);
 
   return (
-    <div className="modal-backdrop" role="presentation">
-      <section className="modal-card" role="dialog" aria-modal="true" aria-label="Start Journal">
-        <h3>Start Journal</h3>
-        <label className="field-stack">
-          <span>Symbol</span>
-          <input value={symbol} onChange={(event) => setSymbol(event.currentTarget.value)} />
-        </label>
-        <label className="field-stack">
-          <span>Market</span>
-          <input value={market} onChange={(event) => setMarket(event.currentTarget.value)} />
-        </label>
-        <div className="modal-actions">
-          <button type="button" className="text-button" onClick={onClose}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="primary-button"
-            disabled={symbol.trim().length === 0}
-            onClick={() => onCreate(symbol, market)}
-          >
-            Create
-          </button>
-        </div>
-      </section>
-    </div>
+    <Modal
+      title="开始新的 Journal"
+      open={open}
+      destroyOnHidden
+      okText="创建"
+      cancelText="取消"
+      onCancel={onClose}
+      onOk={() =>
+        form.validateFields().then((values) => {
+          onCreate(values.symbol, values.market);
+        })
+      }
+    >
+      <Form form={form} layout="vertical">
+        <Form.Item
+          name="symbol"
+          label="标的"
+          rules={[{ required: true, message: "请先填写标的" }]}
+        >
+          <Input placeholder="例如 NQ / ES / BTCUSDT" />
+        </Form.Item>
+        <Form.Item name="market" label="市场">
+          <Input placeholder="例如 CME / Binance" />
+        </Form.Item>
+      </Form>
+    </Modal>
   );
 }
 
@@ -757,59 +996,64 @@ function FinishJournalModal({
   onClose: () => void;
   onConfirm: (summary: string) => void;
 }) {
-  const [summary, setSummary] = useState(initialSummary);
+  const [form] = Form.useForm<{ summary: string }>();
 
   useEffect(() => {
-    setSummary(initialSummary);
-  }, [initialSummary]);
-
-  if (!open) {
-    return null;
-  }
+    if (open) {
+      form.setFieldsValue({ summary: initialSummary });
+    }
+  }, [form, initialSummary, open]);
 
   return (
-    <div className="modal-backdrop" role="presentation">
-      <section className="modal-card" role="dialog" aria-modal="true" aria-label="Finish Journal">
-        <h3>Finish Journal</h3>
-        <label className="field-stack">
-          <span>Summary</span>
-          <textarea
-            rows={4}
-            value={summary}
-            placeholder="Optional summary"
-            onChange={(event) => setSummary(event.currentTarget.value)}
-          />
-        </label>
-        <div className="modal-actions">
-          <button type="button" className="text-button" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="button" className="primary-button" onClick={() => onConfirm(summary)}>
-            Confirm
-          </button>
-        </div>
-      </section>
-    </div>
+    <Modal
+      title="结束并写下总结"
+      open={open}
+      destroyOnHidden
+      okText="确认结束"
+      cancelText="取消"
+      onCancel={onClose}
+      onOk={() =>
+        form.validateFields().then((values) => {
+          onConfirm(values.summary ?? "");
+        })
+      }
+    >
+      <Form form={form} layout="vertical">
+        <Form.Item name="summary" label="复盘摘要">
+          <Input.TextArea rows={5} placeholder="可选：这笔交易哪里做得好，哪里需要改进？" />
+        </Form.Item>
+      </Form>
+    </Modal>
   );
 }
 
-function SidebarButton({
-  active,
-  icon,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  icon: string;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button type="button" className={`sidebar-button ${active ? "is-active" : ""}`} onClick={onClick}>
-      <span>{icon}</span>
-      <span>{label}</span>
-    </button>
-  );
+function tagColorForVariant(variant: AppTagVariant) {
+  switch (variant) {
+    case "accent":
+      return "blue";
+    case "success":
+      return "green";
+    case "warning":
+      return "orange";
+    case "danger":
+      return "red";
+    case "neutral":
+      return undefined;
+  }
+}
+
+function eventVariant(type: TradeEventType): AppTagVariant {
+  switch (type) {
+    case "entry":
+      return "success";
+    case "add":
+    case "reduce":
+      return "warning";
+    case "exit":
+      return "danger";
+    case "log":
+      return "accent";
+  }
 }
 
 function useHighlightedTopEvent(events: TradeEvent[]) {
@@ -941,51 +1185,42 @@ function feedbackMessage(
   canSubmit: boolean,
 ) {
   if (journal.status === "done") {
-    return "Done journals only accept logs.";
+    return "已完成的 journal 现在只接受补充笔记。";
   }
 
   if (!canSubmit) {
     return validation.ok
-      ? "Complete the required fields to record this event."
+      ? "补全必要字段后即可记录。"
       : validationMessage(selectedType, validation.error);
   }
 
   if (selectedType === "exit") {
-    return "Ready to record exit.";
+    return "可以记录平仓。";
   }
 
   if (selectedType === "log") {
-    return "Ready to record log.";
+    return "可以记录观察。";
   }
 
-  return "Ready to record event.";
+  return "可以记录事件。";
 }
 
-function validationMessage(
-  type: TradeEventType,
-  error: TradeEventComposerError,
-) {
+function validationMessage(type: TradeEventType, error: TradeEventComposerError) {
   switch (error) {
     case "missingContent":
-      return type === "log"
-        ? "Log requires text."
-        : "Complete the required fields to record this event.";
+      return type === "log" ? "观察记录需要填写文本。" : "请先补全必要字段。";
     case "missingQuantity":
-      return type === "entry"
-        ? "Enter a signed quantity to open the position."
-        : "Enter a quantity before recording this event.";
+      return type === "entry" ? "开仓需要填写带方向的数量。" : "请先填写数量。";
     case "invalidPrecision":
-      return "Use no more than two decimal places.";
+      return "数量和价格最多保留两位小数。";
     case "zeroQuantity":
-      return "Quantity cannot be zero.";
+      return "数量不能为 0。";
     case "wrongDirection":
-      return type === "add"
-        ? "Add must stay in the same direction as the current position."
-        : "Reduce must move back toward zero.";
+      return type === "add" ? "加仓方向必须与当前仓位一致。" : "减仓方向必须朝 0 回补。";
     case "exceedsPosition":
-      return "Reduce cannot exceed the remaining position.";
+      return "减仓数量不能超过剩余仓位。";
     case "doneOnlyLogs":
-      return "Done journals only accept logs.";
+      return "已完成的 journal 现在只允许补充笔记。";
   }
 }
 
@@ -995,22 +1230,22 @@ function quantityHint(
   currentNetPosition: number,
 ) {
   if (status === "done") {
-    return "Done journals only accept logs.";
+    return "已完成的 journal 现在只允许补充笔记。";
   }
 
   switch (type) {
     case "entry":
-      return "Positive = long, negative = short. Max two decimals.";
+      return "正数表示做多，负数表示做空；最多两位小数。";
     case "add":
       return currentNetPosition < 0
-        ? "Add must stay negative to extend the short."
-        : "Add must stay positive to extend the long.";
+        ? "当前是空头仓位，加仓数量也必须保持负数。"
+        : "当前是多头仓位，加仓数量也必须保持正数。";
     case "reduce":
       return currentNetPosition < 0
-        ? "Reduce must be positive to cover the short."
-        : "Reduce must be negative to trim the long.";
+        ? "空头减仓时，数量应填写正数。"
+        : "多头减仓时，数量应填写负数。";
     case "exit":
-      return "Exit uses the full remaining position automatically.";
+      return "平仓会自动使用全部剩余仓位。";
     case "log":
       return "";
   }
@@ -1026,7 +1261,7 @@ function formatClock(date: Date) {
 }
 
 function formatReminderStatus(enabled: boolean, interval: number) {
-  return enabled ? `On · ${formatReminderInterval(interval)}` : "Off";
+  return enabled ? `开启 · ${formatReminderInterval(interval)}` : "关闭";
 }
 
 function formatReminderInterval(interval: number) {
@@ -1035,7 +1270,7 @@ function formatReminderInterval(interval: number) {
 }
 
 function formatJournalDate(value: string) {
-  return new Date(value).toLocaleString("en-US", {
+  return new Date(value).toLocaleString("zh-CN", {
     month: "short",
     day: "numeric",
     hour: "numeric",
@@ -1048,28 +1283,6 @@ function formatNumber(value: number) {
     maximumFractionDigits: 2,
     minimumFractionDigits: isZero(value % 1) ? 0 : 0,
   });
-}
-
-function addMonths(date: Date, delta: number) {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + delta, 1));
-}
-
-function startOfMonth(date: Date) {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
-}
-
-function isSameMonth(left: Date, right: Date) {
-  return (
-    left.getUTCFullYear() === right.getUTCFullYear() &&
-    left.getUTCMonth() === right.getUTCMonth()
-  );
-}
-
-function formatDayKey(date: Date) {
-  const year = date.getUTCFullYear();
-  const month = `${date.getUTCMonth() + 1}`.padStart(2, "0");
-  const day = `${date.getUTCDate()}`.padStart(2, "0");
-  return `${year}-${month}-${day}`;
 }
 
 function isTauriRuntime(): boolean {
@@ -1085,11 +1298,11 @@ const REMINDER_INTERVALS = [
 ];
 
 const EVENT_LABELS: Record<TradeEventType, string> = {
-  entry: "Entry",
-  add: "Add",
-  reduce: "Reduce",
-  exit: "Exit",
-  log: "Log",
+  entry: "开仓",
+  add: "加仓",
+  reduce: "减仓",
+  exit: "平仓",
+  log: "笔记",
 };
 
 const EVENT_SYMBOLS: Record<TradeEventType, string> = {
@@ -1099,5 +1312,3 @@ const EVENT_SYMBOLS: Record<TradeEventType, string> = {
   exit: "×",
   log: "☰",
 };
-
-const WEEKDAY_SYMBOLS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
