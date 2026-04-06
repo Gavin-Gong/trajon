@@ -49,6 +49,11 @@ import {
   type TradeEventType,
   type TradeJournal,
 } from "./tradingPanelDomain";
+import {
+  TIMEFRAME_PRESET_VALUES,
+  type TimeframePreset,
+  type TradingPairPreset,
+} from "./model/tradingPairPreset";
 
 dayjs.locale("zh-cn");
 import {
@@ -388,6 +393,8 @@ function SettingsSection({
   store: ReturnType<typeof useTradingPanelState>;
 }) {
   const { config } = store.state;
+  const [presetSymbol, setPresetSymbol] = useState("");
+  const [presetTimeframe, setPresetTimeframe] = useState<TimeframePreset>("5m");
 
   return (
     <div
@@ -442,6 +449,79 @@ function SettingsSection({
               />
             </Space>
           </Card>
+
+          <Card style={panelCardStyle}>
+            <Space orientation="vertical" size={12} style={{ width: "100%" }}>
+              <Text strong style={{ color: "var(--app-text)" }}>交易对预设</Text>
+              <Paragraph style={{ margin: 0, color: "var(--app-muted)" }}>
+                为常用标的设置默认周期，并选择一个默认预设用于新建时自动带出。
+              </Paragraph>
+
+              <Input
+                placeholder="例如 BTCUSDT"
+                value={presetSymbol}
+                onChange={(event) => setPresetSymbol(event.target.value)}
+              />
+
+              <Select
+                value={presetTimeframe}
+                options={TIMEFRAME_PRESET_VALUES.map((value) => ({ value, label: value }))}
+                onChange={(value) => setPresetTimeframe(value)}
+              />
+
+              <Button
+                type="primary"
+                onClick={() => {
+                  store.actions.upsertPairPreset(presetSymbol, presetTimeframe);
+                  setPresetSymbol("");
+                  setPresetTimeframe("5m");
+                }}
+              >
+                保存预设
+              </Button>
+
+              <Space orientation="vertical" size={8} style={{ width: "100%" }}>
+                <Text strong style={{ color: "var(--app-text)" }}>默认预设</Text>
+                {store.state.pairPresets.length === 0 ? (
+                  <Text style={{ color: "var(--app-muted)" }}>还没有保存任何交易对预设。</Text>
+                ) : (
+                  store.state.pairPresets.map((preset) => {
+                    const isDefault = store.state.defaultPresetSymbol === preset.symbol;
+
+                    return (
+                      <Flex key={preset.symbol} justify="space-between" align="center" gap={12}>
+                        <Space align="center" size={8}>
+                          <Text strong style={{ color: "var(--app-text)" }}>{preset.symbol}</Text>
+                          <Tag color={tagColorForVariant("neutral")}>{preset.timeframe}</Tag>
+                          {isDefault ? <Tag color={tagColorForVariant("accent")}>默认预设</Tag> : null}
+                        </Space>
+
+                        <Space size={8}>
+                          <Button
+                            size="small"
+                            onClick={() => {
+                              store.actions.setDefaultPresetSymbol(preset.symbol);
+                            }}
+                          >
+                            设为默认
+                          </Button>
+                          <Button
+                            size="small"
+                            danger
+                            onClick={() => {
+                              store.actions.removePairPreset(preset.symbol);
+                            }}
+                          >
+                            删除
+                          </Button>
+                        </Space>
+                      </Flex>
+                    );
+                  })
+                )}
+              </Space>
+            </Space>
+          </Card>
         </Space>
       </Card>
 
@@ -484,6 +564,9 @@ function PanelSurface({ store }: { store: ReturnType<typeof useTradingPanelState
   const { state, actions } = store;
   const journal = selectCurrentJournal(state.journals);
   const reminder = useReminderClock(state.config.timerEnabled, state.config.timerInterval);
+  const defaultPreset = state.defaultPresetSymbol
+    ? state.pairPresets.find((preset) => preset.symbol === state.defaultPresetSymbol)
+    : undefined;
   const [showStartJournal, setShowStartJournal] = useState(false);
   const [showFinishJournal, setShowFinishJournal] = useState(false);
   const [isPinned, setIsPinned] = useState(state.panelPinned);
@@ -631,6 +714,7 @@ function PanelSurface({ store }: { store: ReturnType<typeof useTradingPanelState
 
       <StartJournalModal
         open={showStartJournal}
+        defaultPreset={defaultPreset}
         onClose={() => setShowStartJournal(false)}
         onCreate={(symbol, market) => {
           actions.createJournal(symbol, market);
@@ -940,10 +1024,12 @@ function QuickCaptureCard({
 
 function StartJournalModal({
   open,
+  defaultPreset,
   onClose,
   onCreate,
 }: {
   open: boolean;
+  defaultPreset?: TradingPairPreset;
   onClose: () => void;
   onCreate: (symbol: string, market: string) => void;
 }) {
@@ -952,8 +1038,12 @@ function StartJournalModal({
   useEffect(() => {
     if (open) {
       form.resetFields();
+      form.setFieldsValue({
+        symbol: defaultPreset?.symbol ?? "",
+        market: "",
+      });
     }
-  }, [form, open]);
+  }, [defaultPreset, form, open]);
 
   return (
     <Modal
@@ -970,6 +1060,11 @@ function StartJournalModal({
       }
     >
       <Form form={form} layout="vertical">
+        {defaultPreset ? (
+          <Paragraph style={{ marginBottom: 16, color: "var(--app-muted)" }}>
+            默认周期 {defaultPreset.timeframe}
+          </Paragraph>
+        ) : null}
         <Form.Item
           name="symbol"
           label="标的"
