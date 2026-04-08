@@ -1,5 +1,7 @@
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
+import { PANEL_BOUNDS_STORAGE_KEY, type PanelBounds } from "./model/storage";
+
 type ExistingWindow = {
   show: () => Promise<void>;
   setFocus: () => Promise<void>;
@@ -9,6 +11,7 @@ type CreateWindowOptions = {
   title: string;
   url: string;
   width: number;
+  maxWidth?: number;
   height: number;
   x?: number;
   y?: number;
@@ -28,15 +31,9 @@ type StorageApi = {
 
 type AppView = { view: "main" } | { view: "panel" };
 
-export type PanelBounds = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
-
 export const PANEL_WINDOW_LABEL = "trading-panel";
-export const PANEL_BOUNDS_STORAGE_KEY = "trading-panel-bounds";
+export { PANEL_BOUNDS_STORAGE_KEY, type PanelBounds } from "./model/storage";
+const PANEL_MAX_WIDTH = 400;
 
 const defaultWindowApi: WindowApi = {
   getByLabel: (label) => WebviewWindow.getByLabel(label),
@@ -129,7 +126,8 @@ export async function openPanelWindow(
   windowApi.createWindow(PANEL_WINDOW_LABEL, {
     title: "Trading Panel",
     url: buildPanelUrl(),
-    width: bounds?.width ?? 300,
+    width: Math.min(bounds?.width ?? 300, PANEL_MAX_WIDTH),
+    maxWidth: PANEL_MAX_WIDTH,
     height: bounds?.height ?? 640,
     x: bounds?.x,
     y: bounds?.y,

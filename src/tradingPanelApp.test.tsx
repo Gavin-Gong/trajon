@@ -1,9 +1,11 @@
 import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { MainSurface } from "./components/tradingPanel/TradingPanelMain";
+import { TRADING_PANEL_STORAGE_KEY, type TradingPanelState } from "./model/storage";
+import { PanelSurface } from "./components/tradingPanel/TradingPanelPanel";
 import { composeTradeEvent, createJournal } from "./tradingPanelDomain";
 import { TradingPanelDesktop } from "./tradingPanelApp";
-import { TRADING_PANEL_STORAGE_KEY, type TradingPanelState } from "./tradingPanelStore";
 
 function buildState(): TradingPanelState {
   const openJournal = createJournal({
@@ -75,6 +77,64 @@ describe("TradingPanelDesktop", () => {
     window.localStorage.clear();
   });
 
+  it("keeps the main and panel surfaces in dedicated component modules", () => {
+    expect(MainSurface).toBeTypeOf("function");
+    expect(PanelSurface).toBeTypeOf("function");
+  });
+
+  it("avoids handwritten padding and border radius styles in rendered surfaces", () => {
+    seedState(buildState());
+    const { rerender } = render(<TradingPanelDesktop view="main" />);
+
+    const mainRoot = screen.getAllByRole("main")[0];
+    expect(mainRoot.getAttribute("style") ?? "").not.toContain("padding:");
+
+    const sider = document.querySelector(".ant-layout-sider");
+    expect(sider).not.toBeNull();
+    expect(sider?.getAttribute("style") ?? "").not.toContain("padding:");
+
+    const content = document.querySelector(".ant-layout-content");
+    expect(content).not.toBeNull();
+    expect(content?.getAttribute("style") ?? "").not.toContain("padding:");
+
+    rerender(<TradingPanelDesktop view="panel" />);
+
+    const panelRoot = screen.getAllByRole("main")[0];
+    expect(panelRoot.getAttribute("style") ?? "").not.toContain("padding:");
+
+    const handwrittenStyledCards = Array.from(document.querySelectorAll(".ant-card[style]"));
+    expect(handwrittenStyledCards.length).toBeGreaterThan(0);
+    for (const card of handwrittenStyledCards) {
+      const style = card.getAttribute("style") ?? "";
+      expect(style).not.toContain("border-radius:");
+    }
+  });
+
+  it("avoids handwritten dark border styles in trading panel surfaces", () => {
+    seedState(buildState());
+    const { rerender } = render(<TradingPanelDesktop view="main" />);
+
+    const sider = document.querySelector(".ant-layout-sider");
+    expect(sider).not.toBeNull();
+    expect(sider?.getAttribute("style") ?? "").not.toContain("border-inline-end:");
+
+    const divider = document.querySelector(".ant-divider");
+    if (divider) {
+      expect(divider.getAttribute("style") ?? "").not.toContain("border-color:");
+    }
+
+    rerender(<TradingPanelDesktop view="panel" />);
+
+    const styledCards = Array.from(document.querySelectorAll(".ant-card[style]"));
+    expect(styledCards.length).toBeGreaterThan(0);
+    for (const card of styledCards) {
+      const style = card.getAttribute("style") ?? "";
+      expect(style).not.toContain("var(--app-border)");
+      expect(style).not.toContain("var(--app-border-strong)");
+      expect(style).not.toContain("border-style: dashed");
+    }
+  });
+
   describe("main view – desktop shell structure", () => {
     it("renders an empty analysis placeholder while keeping the desktop shell", () => {
       seedState(buildState());
@@ -106,6 +166,20 @@ describe("TradingPanelDesktop", () => {
       expect(document.querySelectorAll(".ant-layout-sider").length).toBeGreaterThanOrEqual(1);
       expect(document.querySelectorAll(".ant-layout-content").length).toBeGreaterThanOrEqual(1);
       expect(document.querySelectorAll(".ant-card").length).toBeGreaterThanOrEqual(1);
+    });
+
+    it("avoids custom card radius and shadow overrides in the desktop shell", () => {
+      seedState(buildState());
+      render(<TradingPanelDesktop view="main" />);
+
+      const cards = Array.from(document.querySelectorAll(".ant-card"));
+      expect(cards.length).toBeGreaterThanOrEqual(1);
+      for (const card of cards) {
+        const style = card.getAttribute("style") ?? "";
+        expect(style).not.toContain("border-radius: 28px");
+        expect(style).not.toContain("box-shadow: var(--app-shadow-soft)");
+        expect(style).not.toContain("background: var(--app-surface-strong)");
+      }
     });
 
     it("renders the float button for opening the panel window", () => {
@@ -175,6 +249,19 @@ describe("TradingPanelDesktop", () => {
       expect(document.querySelectorAll(".ant-card").length).toBeGreaterThanOrEqual(3);
       expect(document.querySelectorAll(".ant-segmented").length).toBeGreaterThanOrEqual(1);
       expect(document.querySelectorAll(".ant-empty").length).toBeGreaterThanOrEqual(0);
+    });
+
+    it("avoids custom card radius overrides in panel view", () => {
+      seedState(buildState());
+      render(<TradingPanelDesktop view="panel" />);
+
+      const cards = Array.from(document.querySelectorAll(".ant-card"));
+      expect(cards.length).toBeGreaterThanOrEqual(1);
+      for (const card of cards) {
+        const style = card.getAttribute("style") ?? "";
+        expect(style).not.toContain("border-radius: 24px");
+        expect(style).not.toContain("border-radius: 28px");
+      }
     });
 
     it("shows the timeline section with event count", () => {

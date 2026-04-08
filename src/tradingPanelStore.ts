@@ -7,19 +7,17 @@ import {
   type TradeEventDraft,
   type TradeJournal,
 } from "./tradingPanelDomain";
+import {
+  TRADING_PANEL_STORAGE_KEY,
+  type GlobalConfig,
+  type TradingPanelState,
+} from "./model/storage";
 
-export type GlobalConfig = {
-  timerEnabled: boolean;
-  timerInterval: number;
-};
-
-export type TradingPanelState = {
-  journals: TradeJournal[];
-  config: GlobalConfig;
-  panelPinned: boolean;
-};
-
-export const TRADING_PANEL_STORAGE_KEY = "trading-flow:trading-panel-state";
+export {
+  TRADING_PANEL_STORAGE_KEY,
+  type GlobalConfig,
+  type TradingPanelState,
+} from "./model/storage";
 
 const defaultState: TradingPanelState = {
   journals: [],

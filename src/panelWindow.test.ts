@@ -70,7 +70,8 @@ describe("openPanelWindow", () => {
     expect(createWindow).toHaveBeenCalledWith("trading-panel", {
       title: "Trading Panel",
       url: "/?view=panel",
-      width: 420,
+      width: 400,
+      maxWidth: 400,
       height: 700,
       x: 1000,
       y: 180,
@@ -93,6 +94,7 @@ describe("openPanelWindow", () => {
       title: "Trading Panel",
       url: "/?view=panel",
       width: 300,
+      maxWidth: 400,
       height: 640,
       x: undefined,
       y: undefined,

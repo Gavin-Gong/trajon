@@ -44,7 +44,6 @@ describe("main entry", () => {
       theme: {
         token: {
           colorPrimary: string;
-          borderRadius: number;
           fontFamily: string;
         };
       };
@@ -53,9 +52,9 @@ describe("main entry", () => {
     expect(providerElement.props.theme).toMatchObject({
       token: {
         colorPrimary: "#2563eb",
-        borderRadius: 16,
         fontFamily: '"SF Pro Text", "SF Pro Display", "Helvetica Neue", "Segoe UI", sans-serif',
       },
     });
+    expect(providerElement.props.theme.token).not.toHaveProperty("borderRadius");
   });
 });
