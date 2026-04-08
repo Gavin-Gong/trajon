@@ -12,7 +12,11 @@ import {
   type TimeframePreset,
   type TradingPairPreset,
 } from "./model/tradingPairPreset";
-import { TRADING_PANEL_STORAGE_KEY, type TradingPanelState } from "./model/storage";
+import {
+  TRADING_PANEL_STORAGE_KEY,
+  type ChartViewState,
+  type TradingPanelState,
+} from "./model/storage";
 
 export type GlobalConfig = {
   timerEnabled: boolean;
@@ -29,10 +33,21 @@ const defaultState: TradingPanelState = {
   },
   pairPresets: [],
   defaultPresetSymbol: undefined,
+  chart: {
+    symbol: "BINANCE:BTCUSDT",
+    interval: "60",
+  },
   panelPinned: true,
 };
 
 const TIMEFRAME_PRESETS = new Set<string>(TIMEFRAME_PRESET_VALUES);
+const CHART_SYMBOLS = new Set<string>([
+  "BINANCE:BTCUSDT",
+  "BINANCE:ETHUSDT",
+  "CME_MINI:NQ1!",
+  "CME_MINI:ES1!",
+]);
+const CHART_INTERVALS = new Set<string>(["1", "5", "15", "30", "60", "240", "1D"]);
 
 export function readTradingPanelState(): TradingPanelState {
   if (typeof window === "undefined") {
@@ -219,6 +234,16 @@ export function useTradingPanelState() {
     }));
   }, []);
 
+  const updateChartView = useCallback((nextChartView: Partial<ChartViewState>) => {
+    setState((currentState) => ({
+      ...currentState,
+      chart: normalizeChartView({
+        ...currentState.chart,
+        ...nextChartView,
+      }),
+    }));
+  }, []);
+
   const setPanelPinned = useCallback((panelPinned: boolean) => {
     setState((currentState) => ({
       ...currentState,
@@ -237,6 +262,7 @@ export function useTradingPanelState() {
         setDefaultPresetSymbol,
         setPanelPinned,
         upsertPairPreset,
+        updateChartView,
         updateConfig,
       },
     }),
@@ -248,6 +274,7 @@ export function useTradingPanelState() {
       setDefaultPresetSymbol,
       setPanelPinned,
       state,
+      updateChartView,
       updateConfig,
       upsertPairPreset,
     ],
@@ -277,10 +304,28 @@ function normalizeState(value: unknown): TradingPanelState {
       : defaultState.config,
     pairPresets: normalizePairPresets(value.pairPresets),
     defaultPresetSymbol: normalizeDefaultPresetSymbol(value.defaultPresetSymbol, value.pairPresets),
+    chart: normalizeChartView(value.chart),
     panelPinned:
       typeof value.panelPinned === "boolean"
         ? value.panelPinned
         : defaultState.panelPinned,
+  };
+}
+
+function normalizeChartView(value: unknown): ChartViewState {
+  if (!isRecord(value)) {
+    return defaultState.chart;
+  }
+
+  return {
+    symbol:
+      typeof value.symbol === "string" && CHART_SYMBOLS.has(value.symbol)
+        ? value.symbol
+        : defaultState.chart.symbol,
+    interval:
+      typeof value.interval === "string" && CHART_INTERVALS.has(value.interval)
+        ? value.interval
+        : defaultState.chart.interval,
   };
 }
 

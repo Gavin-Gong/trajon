@@ -1,6 +1,7 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   CalendarOutlined,
+  LineChartOutlined,
   DashboardOutlined,
   PlusOutlined,
   PushpinFilled,
@@ -64,8 +65,17 @@ import {
 import { useTradingPanelState } from "./tradingPanelStore";
 
 type AppView = "main" | "panel";
-type AppSection = "analytics" | "calendar" | "settings";
+type AppSection = "analytics" | "chart" | "calendar" | "settings";
 type AppTagVariant = "accent" | "danger" | "neutral" | "success" | "warning";
+
+const CHART_SYMBOL_OPTIONS = [
+  { label: "BTCUSDT", value: "BINANCE:BTCUSDT" },
+  { label: "ETHUSDT", value: "BINANCE:ETHUSDT" },
+  { label: "NQ", value: "CME_MINI:NQ1!" },
+  { label: "ES", value: "CME_MINI:ES1!" },
+] as const;
+
+const CHART_INTERVAL_OPTIONS = ["1", "5", "15", "30", "60", "240", "1D"] as const;
 
 const { Paragraph, Text, Title } = Typography;
 
@@ -110,6 +120,11 @@ function MainSurface({ store }: { store: ReturnType<typeof useTradingPanelState>
       key: "analytics",
       icon: <DashboardOutlined />,
       label: "分析",
+    },
+    {
+      key: "chart",
+      icon: <LineChartOutlined />,
+      label: "Chart",
     },
     {
       key: "calendar",
@@ -159,6 +174,7 @@ function MainSurface({ store }: { store: ReturnType<typeof useTradingPanelState>
 
         <Layout.Content style={{ minWidth: 0, padding: 24 }}>
           {section === "analytics" ? <AnalyticsPanel store={store} /> : null}
+          {section === "chart" ? <ChartSection store={store} /> : null}
           {section === "calendar" ? <CalendarHistorySection store={store} /> : null}
           {section === "settings" ? <SettingsSection store={store} /> : null}
         </Layout.Content>
@@ -190,6 +206,141 @@ function AnalyticsPanel({ store }: { store: ReturnType<typeof useTradingPanelSta
           </Space>
         }
       />
+    </Card>
+  );
+}
+
+function ChartSection({ store }: { store: ReturnType<typeof useTradingPanelState> }) {
+  const { symbol, interval } = store.state.chart;
+
+  return (
+    <Space orientation="vertical" size={24} style={{ width: "100%" }}>
+      <Card style={shellCardStyle}>
+        <Space orientation="vertical" size={8} style={{ width: "100%" }}>
+          <Title level={2} style={{ margin: 0, color: "var(--app-text)", letterSpacing: "-0.02em" }}>
+            图表工作台
+          </Title>
+          <Paragraph style={{ margin: 0, color: "var(--app-muted)" }}>
+            这里将集成 TradingView widget，并提供标的与时间周期切换。
+          </Paragraph>
+        </Space>
+      </Card>
+
+      <Card style={shellCardStyle}>
+        <Flex gap={16} wrap="wrap" align="end">
+          <Space orientation="vertical" size={8} style={{ minWidth: 240 }}>
+            <Text strong style={{ color: "var(--app-text)" }}>选择标的</Text>
+            <select
+              data-testid="chart-symbol-select"
+              value={symbol}
+              onChange={(event) =>
+                store.actions.updateChartView({ symbol: event.target.value })
+              }
+              style={{
+                minHeight: 36,
+                borderRadius: 8,
+                border: "1px solid var(--app-border)",
+                padding: "0 12px",
+                background: "white",
+                color: "var(--app-text)",
+              }}
+            >
+              {CHART_SYMBOL_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.value}
+                </option>
+              ))}
+            </select>
+          </Space>
+
+          <Space orientation="vertical" size={8} style={{ minWidth: 180 }}>
+            <Text strong style={{ color: "var(--app-text)" }}>时间周期</Text>
+            <select
+              data-testid="chart-interval-select"
+              value={interval}
+              onChange={(event) =>
+                store.actions.updateChartView({ interval: event.target.value })
+              }
+              style={{
+                minHeight: 36,
+                borderRadius: 8,
+                border: "1px solid var(--app-border)",
+                padding: "0 12px",
+                background: "white",
+                color: "var(--app-text)",
+              }}
+            >
+              {CHART_INTERVAL_OPTIONS.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+          </Space>
+        </Flex>
+      </Card>
+
+      <TradingViewWidgetChart symbol={symbol} interval={interval} />
+    </Space>
+  );
+}
+
+function TradingViewWidgetChart({
+  symbol,
+  interval,
+}: {
+  symbol: string;
+  interval: string;
+}) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) {
+      return;
+    }
+
+    containerRef.current.dataset.symbol = symbol;
+    containerRef.current.dataset.interval = interval;
+    containerRef.current.replaceChildren();
+
+    const script = document.createElement("script");
+    script.type = "text/javascript";
+    script.async = true;
+    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
+    script.text = JSON.stringify({
+      autosize: true,
+      symbol,
+      interval,
+      timezone: "Asia/Shanghai",
+      theme: "light",
+      style: "1",
+      locale: "zh_CN",
+      allow_symbol_change: false,
+      hide_top_toolbar: false,
+      hide_legend: false,
+      support_host: "https://www.tradingview.com",
+    });
+
+    containerRef.current.appendChild(script);
+  }, [interval, symbol]);
+
+  return (
+    <Card style={shellCardStyle}>
+      <Space orientation="vertical" size={12} style={{ width: "100%" }}>
+        <Text style={{ color: "var(--app-muted)" }}>
+          TradingView 图表将在这里加载，指标和划线功能将在图表内部提供。
+        </Text>
+        <Text data-testid="tradingview-widget-status" style={{ color: "var(--app-text)" }}>
+          当前图表: {symbol} / {interval}
+        </Text>
+        <div data-testid="tradingview-widget-shell" style={{ width: "100%" }}>
+          <div
+            ref={containerRef}
+            data-testid="tradingview-widget-container"
+            style={{ minHeight: 520, width: "100%", borderRadius: 20, background: "#0f172a" }}
+          />
+        </div>
+      </Space>
     </Card>
   );
 }

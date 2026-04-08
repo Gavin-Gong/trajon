@@ -59,6 +59,10 @@ function buildState(): TradingPanelState {
     },
     pairPresets: [],
     defaultPresetSymbol: undefined,
+    chart: {
+      symbol: "BINANCE:BTCUSDT",
+      interval: "60",
+    },
     panelPinned: true,
   };
 }
@@ -94,10 +98,90 @@ describe("TradingPanelDesktop", () => {
 
       const menus = screen.getAllByRole("menu");
       expect(menus.length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByRole("menuitem").length).toBeGreaterThanOrEqual(3);
+      expect(screen.getAllByRole("menuitem").length).toBeGreaterThanOrEqual(4);
       expectTextPresent("分析");
+      expectTextPresent("Chart");
       expectTextPresent("日历");
       expectTextPresent("设置");
+    });
+
+    it("switches to the chart section when the chart menu item is clicked", () => {
+      seedState(buildState());
+      render(<TradingPanelDesktop view="main" />);
+
+      fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
+
+      expect(screen.getByText("图表工作台")).toBeInTheDocument();
+      expect(screen.queryByText("分析页面暂时留空")).not.toBeInTheDocument();
+    });
+
+    it("renders symbol and interval controls in the chart section", () => {
+      seedState(buildState());
+      render(<TradingPanelDesktop view="main" />);
+
+      fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
+
+      expect(screen.getByText("选择标的")).toBeInTheDocument();
+      expect(screen.getByText("时间周期")).toBeInTheDocument();
+      expect(screen.getByText("BINANCE:BTCUSDT")).toBeInTheDocument();
+      expect(screen.getAllByText("60").length).toBeGreaterThanOrEqual(1);
+    });
+
+    it("renders a stable TradingView widget container", () => {
+      seedState(buildState());
+      render(<TradingPanelDesktop view="main" />);
+
+      fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
+
+      expect(screen.getByTestId("tradingview-widget-shell")).toBeInTheDocument();
+      expect(screen.getByTestId("tradingview-widget-container")).toBeInTheDocument();
+    });
+
+    it("updates the chart widget configuration when symbol changes", () => {
+      seedState(buildState());
+      render(<TradingPanelDesktop view="main" />);
+
+      fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
+      fireEvent.change(screen.getByTestId("chart-symbol-select"), {
+        target: { value: "BINANCE:ETHUSDT" },
+      });
+
+      expect(screen.getByTestId("chart-symbol-select")).toHaveValue("BINANCE:ETHUSDT");
+      expect(screen.getByTestId("tradingview-widget-status")).toHaveTextContent(
+        "当前图表: BINANCE:ETHUSDT / 60",
+      );
+    });
+
+    it("injects the TradingView advanced chart embed script", () => {
+      seedState(buildState());
+      render(<TradingPanelDesktop view="main" />);
+
+      fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
+
+      const widgetScript = screen
+        .getByTestId("tradingview-widget-container")
+        .querySelector('script[src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js"]');
+
+      expect(widgetScript).not.toBeNull();
+    });
+
+    it("restores persisted chart symbol and interval when opening the chart page", () => {
+      seedState({
+        ...buildState(),
+        chart: {
+          symbol: "BINANCE:ETHUSDT",
+          interval: "240",
+        },
+      });
+
+      render(<TradingPanelDesktop view="main" />);
+      fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
+
+      expect(screen.getByTestId("chart-symbol-select")).toHaveValue("BINANCE:ETHUSDT");
+      expect(screen.getByTestId("chart-interval-select")).toHaveValue("240");
+      expect(screen.getByTestId("tradingview-widget-status")).toHaveTextContent(
+        "当前图表: BINANCE:ETHUSDT / 240",
+      );
     });
 
     it("uses Ant Design layout and card composition for the desktop workspace", () => {
@@ -127,6 +211,10 @@ describe("TradingPanelDesktop", () => {
         config: { timerEnabled: false, timerInterval: 300 },
         pairPresets: [],
         defaultPresetSymbol: undefined,
+        chart: {
+          symbol: "BINANCE:BTCUSDT",
+          interval: "60",
+        },
         panelPinned: false,
       });
       render(<TradingPanelDesktop view="main" />);
@@ -203,6 +291,10 @@ describe("TradingPanelDesktop", () => {
         config: { timerEnabled: false, timerInterval: 300 },
         pairPresets: [],
         defaultPresetSymbol: undefined,
+        chart: {
+          symbol: "BINANCE:BTCUSDT",
+          interval: "60",
+        },
         panelPinned: false,
       });
       render(<TradingPanelDesktop view="panel" />);
@@ -222,6 +314,10 @@ describe("TradingPanelDesktop", () => {
         config: { timerEnabled: false, timerInterval: 300 },
         pairPresets: [],
         defaultPresetSymbol: undefined,
+        chart: {
+          symbol: "BINANCE:BTCUSDT",
+          interval: "60",
+        },
         panelPinned: false,
       });
       render(<TradingPanelDesktop view="panel" />);
@@ -238,6 +334,10 @@ describe("TradingPanelDesktop", () => {
         config: { timerEnabled: false, timerInterval: 300 },
         pairPresets: [{ symbol: "BTCUSDT", timeframe: "5m" }],
         defaultPresetSymbol: "BTCUSDT",
+        chart: {
+          symbol: "BINANCE:BTCUSDT",
+          interval: "60",
+        },
         panelPinned: true,
       });
 
@@ -256,6 +356,10 @@ describe("TradingPanelDesktop", () => {
         config: { timerEnabled: false, timerInterval: 300 },
         pairPresets: [{ symbol: "BTCUSDT", timeframe: "5m" }],
         defaultPresetSymbol: "BTCUSDT",
+        chart: {
+          symbol: "BINANCE:BTCUSDT",
+          interval: "60",
+        },
         panelPinned: false,
       });
 

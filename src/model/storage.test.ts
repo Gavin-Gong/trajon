@@ -24,10 +24,30 @@ describe("storage model exports", () => {
       config: { timerEnabled: false, timerInterval: 300 },
       pairPresets: [preset],
       defaultPresetSymbol: "BTCUSDT",
+      chart: {
+        symbol: "BINANCE:BTCUSDT",
+        interval: "60",
+      },
       panelPinned: true,
     };
 
     expect(state.pairPresets[0]).toEqual({ symbol: "BTCUSDT", timeframe: "5m" });
     expect(state.defaultPresetSymbol).toBe("BTCUSDT");
+  });
+
+  it("includes chart view state in persisted storage models", () => {
+    const state: TradingPanelState = {
+      journals: [],
+      config: { timerEnabled: false, timerInterval: 300 },
+      pairPresets: [],
+      defaultPresetSymbol: undefined,
+      chart: {
+        symbol: "BINANCE:BTCUSDT",
+        interval: "60",
+      },
+      panelPinned: true,
+    };
+
+    expect(state.chart).toEqual({ symbol: "BINANCE:BTCUSDT", interval: "60" });
   });
 });

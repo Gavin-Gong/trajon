@@ -62,4 +62,24 @@ describe("useTradingPanelState preset actions", () => {
 
     expect(result.current.state.defaultPresetSymbol).toBe("BTCUSDT");
   });
+
+  it("updates and persists chart view state", async () => {
+    const { result } = renderHook(() => useTradingPanelState());
+
+    act(() => {
+      result.current.actions.updateChartView({
+        symbol: "BINANCE:ETHUSDT",
+        interval: "240",
+      });
+    });
+
+    expect(result.current.state.chart).toEqual({
+      symbol: "BINANCE:ETHUSDT",
+      interval: "240",
+    });
+
+    await waitFor(() => {
+      expect(window.localStorage.getItem(TRADING_PANEL_STORAGE_KEY)).toContain("BINANCE:ETHUSDT");
+    });
+  });
 });
