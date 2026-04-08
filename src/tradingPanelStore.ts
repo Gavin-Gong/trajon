@@ -8,10 +8,16 @@ import {
   type TradeJournal,
 } from "./tradingPanelDomain";
 import {
+  TIMEFRAME_PRESET_VALUES,
+  type TimeframePreset,
+  type TradingPairPreset,
+} from "./model/tradingPairPreset";
+import {
   TRADING_PANEL_STORAGE_KEY,
-  type GlobalConfig,
+  type ChartViewState,
   type TradingPanelState,
 } from "./model/storage";
+import type { GlobalConfig } from "./model/globalConfig";
 
 export {
   TRADING_PANEL_STORAGE_KEY,
@@ -25,8 +31,23 @@ const defaultState: TradingPanelState = {
     timerEnabled: false,
     timerInterval: 300,
   },
+  pairPresets: [],
+  defaultPresetSymbol: undefined,
+  chart: {
+    symbol: "BINANCE:BTCUSDT",
+    interval: "60",
+  },
   panelPinned: true,
 };
+
+const TIMEFRAME_PRESETS = new Set<string>(TIMEFRAME_PRESET_VALUES);
+const CHART_SYMBOLS = new Set<string>([
+  "BINANCE:BTCUSDT",
+  "BINANCE:ETHUSDT",
+  "CME_MINI:NQ1!",
+  "CME_MINI:ES1!",
+]);
+const CHART_INTERVALS = new Set<string>(["1", "5", "15", "30", "60", "240", "1D"]);
 
 export function readTradingPanelState(): TradingPanelState {
   if (typeof window === "undefined") {
@@ -156,6 +177,73 @@ export function useTradingPanelState() {
     }));
   }, []);
 
+  const upsertPairPreset = useCallback((symbol: string, timeframe: TimeframePreset) => {
+    const normalizedSymbol = normalizeSymbol(symbol);
+    if (!normalizedSymbol) {
+      return;
+    }
+
+    setState((currentState) => {
+      const nextPreset: TradingPairPreset = {
+        symbol: normalizedSymbol,
+        timeframe,
+      };
+      const hasExisting = currentState.pairPresets.some(
+        (preset) => preset.symbol === normalizedSymbol,
+      );
+
+      return {
+        ...currentState,
+        pairPresets: hasExisting
+          ? currentState.pairPresets.map((preset) =>
+              preset.symbol === normalizedSymbol ? nextPreset : preset,
+            )
+          : [...currentState.pairPresets, nextPreset],
+      };
+    });
+  }, []);
+
+  const removePairPreset = useCallback((symbol: string) => {
+    const normalizedSymbol = normalizeSymbol(symbol);
+    if (!normalizedSymbol) {
+      return;
+    }
+
+    setState((currentState) => ({
+      ...currentState,
+      pairPresets: currentState.pairPresets.filter(
+        (preset) => preset.symbol !== normalizedSymbol,
+      ),
+      defaultPresetSymbol:
+        currentState.defaultPresetSymbol === normalizedSymbol
+          ? undefined
+          : currentState.defaultPresetSymbol,
+    }));
+  }, []);
+
+  const setDefaultPresetSymbol = useCallback((symbol?: string) => {
+    const normalizedSymbol = typeof symbol === "string" ? normalizeSymbol(symbol) : undefined;
+
+    setState((currentState) => ({
+      ...currentState,
+      defaultPresetSymbol:
+        normalizedSymbol &&
+        currentState.pairPresets.some((preset) => preset.symbol === normalizedSymbol)
+          ? normalizedSymbol
+          : undefined,
+    }));
+  }, []);
+
+  const updateChartView = useCallback((nextChartView: Partial<ChartViewState>) => {
+    setState((currentState) => ({
+      ...currentState,
+      chart: normalizeChartView({
+        ...currentState.chart,
+        ...nextChartView,
+      }),
+    }));
+  }, []);
+
   const setPanelPinned = useCallback((panelPinned: boolean) => {
     setState((currentState) => ({
       ...currentState,
@@ -170,11 +258,26 @@ export function useTradingPanelState() {
         createJournal,
         finishJournal,
         recordEvent,
+        removePairPreset,
+        setDefaultPresetSymbol,
         setPanelPinned,
+        upsertPairPreset,
+        updateChartView,
         updateConfig,
       },
     }),
-    [createJournal, finishJournal, recordEvent, setPanelPinned, state, updateConfig],
+    [
+      createJournal,
+      finishJournal,
+      recordEvent,
+      removePairPreset,
+      setDefaultPresetSymbol,
+      setPanelPinned,
+      state,
+      updateChartView,
+      updateConfig,
+      upsertPairPreset,
+    ],
   );
 }
 
@@ -199,11 +302,81 @@ function normalizeState(value: unknown): TradingPanelState {
               : defaultState.config.timerInterval,
         }
       : defaultState.config,
+    pairPresets: normalizePairPresets(value.pairPresets),
+    defaultPresetSymbol: normalizeDefaultPresetSymbol(value.defaultPresetSymbol, value.pairPresets),
+    chart: normalizeChartView(value.chart),
     panelPinned:
       typeof value.panelPinned === "boolean"
         ? value.panelPinned
         : defaultState.panelPinned,
   };
+}
+
+function normalizeChartView(value: unknown): ChartViewState {
+  if (!isRecord(value)) {
+    return defaultState.chart;
+  }
+
+  return {
+    symbol:
+      typeof value.symbol === "string" && CHART_SYMBOLS.has(value.symbol)
+        ? value.symbol
+        : defaultState.chart.symbol,
+    interval:
+      typeof value.interval === "string" && CHART_INTERVALS.has(value.interval)
+        ? value.interval
+        : defaultState.chart.interval,
+  };
+}
+
+function normalizePairPresets(value: unknown): TradingPairPreset[] {
+  if (!Array.isArray(value)) {
+    return defaultState.pairPresets;
+  }
+
+  return value.flatMap((item) => {
+    const preset = normalizePairPreset(item);
+    return preset ? [preset] : [];
+  });
+}
+
+function normalizePairPreset(value: unknown): TradingPairPreset | undefined {
+  if (!isRecord(value) || typeof value.symbol !== "string") {
+    return undefined;
+  }
+
+  const symbol = normalizeSymbol(value.symbol);
+  if (!symbol || typeof value.timeframe !== "string" || !TIMEFRAME_PRESETS.has(value.timeframe)) {
+    return undefined;
+  }
+
+  return {
+    symbol,
+    timeframe: value.timeframe as TimeframePreset,
+  };
+}
+
+function normalizeDefaultPresetSymbol(
+  defaultPresetSymbol: unknown,
+  pairPresetsValue: unknown,
+): string | undefined {
+  if (typeof defaultPresetSymbol !== "string") {
+    return undefined;
+  }
+
+  const normalizedSymbol = normalizeSymbol(defaultPresetSymbol);
+  if (!normalizedSymbol) {
+    return undefined;
+  }
+
+  const pairPresets = normalizePairPresets(pairPresetsValue);
+  return pairPresets.some((preset) => preset.symbol === normalizedSymbol)
+    ? normalizedSymbol
+    : undefined;
+}
+
+function normalizeSymbol(value: string): string {
+  return value.trim().toUpperCase();
 }
 
 function isTradeJournal(value: unknown): value is TradeJournal {

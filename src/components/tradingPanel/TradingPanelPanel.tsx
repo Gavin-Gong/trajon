@@ -48,6 +48,9 @@ export function PanelSurface({ store }: { store: TradingPanelStore }) {
   const { state, actions } = store;
   const journal = selectCurrentJournal(state.journals);
   const reminder = useReminderClock(state.config.timerEnabled, state.config.timerInterval);
+  const defaultPreset = state.defaultPresetSymbol
+    ? state.pairPresets.find((preset) => preset.symbol === state.defaultPresetSymbol)
+    : undefined;
   const [showStartJournal, setShowStartJournal] = useState(false);
   const [showFinishJournal, setShowFinishJournal] = useState(false);
   const [isPinned, setIsPinned] = useState(state.panelPinned);
@@ -199,6 +202,7 @@ export function PanelSurface({ store }: { store: TradingPanelStore }) {
 
       <StartJournalModal
         open={showStartJournal}
+        defaultPreset={defaultPreset}
         onClose={() => setShowStartJournal(false)}
         onCreate={(symbol, market) => {
           actions.createJournal(symbol, market);
@@ -403,10 +407,12 @@ function QuickCaptureCard({
 
 function StartJournalModal({
   open,
+  defaultPreset,
   onClose,
   onCreate,
 }: {
   open: boolean;
+  defaultPreset?: { symbol: string; timeframe: string };
   onClose: () => void;
   onCreate: (symbol: string, market: string) => void;
 }) {
@@ -415,8 +421,12 @@ function StartJournalModal({
   useEffect(() => {
     if (open) {
       form.resetFields();
+      form.setFieldsValue({
+        symbol: defaultPreset?.symbol ?? "",
+        market: "",
+      });
     }
-  }, [form, open]);
+  }, [defaultPreset, form, open]);
 
   return (
     <Modal
@@ -433,6 +443,11 @@ function StartJournalModal({
       }
     >
       <Form form={form} layout="vertical">
+        {defaultPreset ? (
+          <Paragraph style={{ marginBottom: 16, color: "var(--app-muted)" }}>
+            默认周期 {defaultPreset.timeframe}
+          </Paragraph>
+        ) : null}
         <Form.Item
           name="symbol"
           label="标的"
