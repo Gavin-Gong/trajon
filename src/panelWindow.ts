@@ -29,7 +29,7 @@ type StorageApi = {
   getItem: (key: string) => string | null;
 };
 
-type AppView = { view: "main" } | { view: "panel" };
+type AppView = { view: "main" } | { view: "panel"; presetSymbol?: string };
 
 export const PANEL_WINDOW_LABEL = "trading-panel";
 export { PANEL_BOUNDS_STORAGE_KEY, type PanelBounds } from "./model/storage";
@@ -54,11 +54,19 @@ const defaultStorageApi: StorageApi = {
 
 export function parseAppView(search: string): AppView {
   const params = new URLSearchParams(search);
-  return params.get("view") === "panel" ? { view: "panel" } : { view: "main" };
+  return params.get("view") === "panel"
+    ? { view: "panel", presetSymbol: params.get("presetSymbol") ?? undefined }
+    : { view: "main" };
 }
 
-export function buildPanelUrl(): string {
-  return "/?view=panel";
+export function buildPanelUrl(options: { presetSymbol?: string } = {}): string {
+  const params = new URLSearchParams({ view: "panel" });
+
+  if (options.presetSymbol) {
+    params.set("presetSymbol", options.presetSymbol);
+  }
+
+  return `/?${params.toString()}`;
 }
 
 export function readStoredPanelBounds(rawValue: string | null): PanelBounds | undefined {
@@ -95,13 +103,14 @@ export function serializePanelBounds(bounds: PanelBounds): string {
 
 export async function openPanelWindow(
   options: {
+    presetSymbol?: string;
     windowApi?: WindowApi;
     storageApi?: StorageApi;
   } = {},
 ): Promise<void> {
   if (!options.windowApi && !isTauriRuntime()) {
     const popup = window.open(
-      buildPanelUrl(),
+      buildPanelUrl({ presetSymbol: options.presetSymbol }),
       PANEL_WINDOW_LABEL,
       "popup=yes,width=300,height=640,left=980,top=180",
     );
@@ -125,7 +134,7 @@ export async function openPanelWindow(
 
   windowApi.createWindow(PANEL_WINDOW_LABEL, {
     title: "Trading Panel",
-    url: buildPanelUrl(),
+    url: buildPanelUrl({ presetSymbol: options.presetSymbol }),
     width: Math.min(bounds?.width ?? 300, PANEL_MAX_WIDTH),
     maxWidth: PANEL_MAX_WIDTH,
     height: bounds?.height ?? 640,

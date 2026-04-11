@@ -6,8 +6,8 @@ import { useTradingPanelState } from "./tradingPanelStore";
 export function TradingPanelDesktop({ view }: { view: AppView }) {
   const store = useTradingPanelState();
 
-  if (view === "panel") {
-    return <PanelSurface store={store} />;
+  if (view.view === "panel") {
+    return <PanelSurface store={store} presetSymbol={view.presetSymbol} />;
   }
 
   return <MainSurface store={store} />;

@@ -37,6 +37,13 @@ describe("currentJournal", () => {
 
     expect(currentJournal([beta, alphaLater, alpha])?.id).toBe("a");
   });
+
+  it("returns undefined when all journals are already done", () => {
+    const doneAlpha = createJournal({ id: "a", symbol: "BTC", status: "done" });
+    const doneBeta = createJournal({ id: "b", symbol: "ETH", status: "done" });
+
+    expect(currentJournal([doneBeta, doneAlpha])).toBeUndefined();
+  });
 });
 
 describe("availableEventTypes", () => {

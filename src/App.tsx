@@ -3,7 +3,7 @@ import { TradingPanelDesktop } from "./tradingPanelApp";
 import "./App.css";
 
 function App() {
-  const view = parseAppView(window.location.search).view;
+  const view = parseAppView(window.location.search);
   return <TradingPanelDesktop view={view} />;
 }
 

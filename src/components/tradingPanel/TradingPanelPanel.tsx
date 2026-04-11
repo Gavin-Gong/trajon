@@ -3,7 +3,6 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   Button,
   Card,
-  Empty,
   Flex,
   Form,
   Input,
@@ -16,6 +15,7 @@ import {
 } from "antd";
 import { useEffect, useMemo, useState } from "react";
 
+import { closePanelWindow } from "../../panelLifecycle";
 import {
   availableEventTypes,
   composeTradeEvent,
@@ -44,16 +44,33 @@ import {
 
 const { Paragraph, Text, Title } = Typography;
 
-export function PanelSurface({ store }: { store: TradingPanelStore }) {
+export function PanelSurface({
+  store,
+  presetSymbol,
+}: {
+  store: TradingPanelStore;
+  presetSymbol?: string;
+}) {
   const { state, actions } = store;
   const journal = selectCurrentJournal(state.journals);
   const reminder = useReminderClock(state.config.timerEnabled, state.config.timerInterval);
-  const defaultPreset = state.defaultPresetSymbol
-    ? state.pairPresets.find((preset) => preset.symbol === state.defaultPresetSymbol)
+  const incomingPreset = presetSymbol
+    ? state.pairPresets.find((preset) => preset.symbol === presetSymbol)
     : undefined;
-  const [showStartJournal, setShowStartJournal] = useState(false);
+  const defaultPreset = incomingPreset ??
+    (state.defaultPresetSymbol
+      ? state.pairPresets.find((preset) => preset.symbol === state.defaultPresetSymbol)
+      : undefined);
   const [showFinishJournal, setShowFinishJournal] = useState(false);
   const [isPinned, setIsPinned] = useState(state.panelPinned);
+
+  useEffect(() => {
+    if (journal || !defaultPreset?.symbol) {
+      return;
+    }
+
+    actions.createJournal(defaultPreset.symbol, "");
+  }, [actions, defaultPreset?.symbol, journal]);
 
   useEffect(() => {
     setIsPinned(state.panelPinned);
@@ -167,25 +184,7 @@ export function PanelSurface({ store }: { store: TradingPanelStore }) {
                   </Card>
                 )}
               </>
-            ) : (
-              <Empty
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description={
-                  <Space orientation="vertical" size={4}>
-                    <Text strong style={{ color: "var(--app-text)" }}>
-                      没有活跃 Journal
-                    </Text>
-                    <Text style={{ color: "var(--app-muted)" }}>
-                      先创建今天的交易记录，再把每次观察、进出场与情绪变化逐条补进去。
-                    </Text>
-                  </Space>
-                }
-              >
-                <Button type="primary" onClick={() => setShowStartJournal(true)}>
-                  开始记录今天的交易
-                </Button>
-              </Empty>
-            )}
+            ) : null}
           </Space>
         </Card>
 
@@ -193,22 +192,11 @@ export function PanelSurface({ store }: { store: TradingPanelStore }) {
 
         <QuickCaptureCard
           journal={journal}
-          onCreateJournal={() => setShowStartJournal(true)}
           onRecord={(draft) =>
             journal ? store.actions.recordEvent(journal.id, draft) : { ok: false, error: "missingContent" }
           }
         />
       </Flex>
-
-      <StartJournalModal
-        open={showStartJournal}
-        defaultPreset={defaultPreset}
-        onClose={() => setShowStartJournal(false)}
-        onCreate={(symbol, market) => {
-          actions.createJournal(symbol, market);
-          setShowStartJournal(false);
-        }}
-      />
 
       <FinishJournalModal
         open={showFinishJournal && journal !== undefined}
@@ -221,6 +209,7 @@ export function PanelSurface({ store }: { store: TradingPanelStore }) {
 
           actions.finishJournal(journal.id, summary);
           setShowFinishJournal(false);
+          void closePanelWindow();
         }}
       />
     </main>
@@ -229,11 +218,9 @@ export function PanelSurface({ store }: { store: TradingPanelStore }) {
 
 function QuickCaptureCard({
   journal,
-  onCreateJournal,
   onRecord,
 }: {
   journal: TradeJournal | undefined;
-  onCreateJournal: () => void;
   onRecord: (draft: TradeEventDraft) => ReturnType<typeof composeTradeEvent>;
 }) {
   const currentNetPosition = journal ? netPosition(journal.events) : 0;
@@ -390,76 +377,13 @@ function QuickCaptureCard({
           </>
         ) : (
           <Card style={dashedShellCardStyle}>
-            <Space orientation="vertical" size={16} style={{ width: "100%" }}>
-              <Text style={{ color: "var(--app-muted)", lineHeight: 1.8 }}>
-                先创建今天的 journal，快速记录区才会解锁。
-              </Text>
-              <Button block type="primary" onClick={onCreateJournal}>
-                开始 Journal
-              </Button>
-            </Space>
+            <Text style={{ color: "var(--app-muted)", lineHeight: 1.8 }}>
+              正在准备新的 journal...
+            </Text>
           </Card>
         )}
       </Space>
     </Card>
-  );
-}
-
-function StartJournalModal({
-  open,
-  defaultPreset,
-  onClose,
-  onCreate,
-}: {
-  open: boolean;
-  defaultPreset?: { symbol: string; timeframe: string };
-  onClose: () => void;
-  onCreate: (symbol: string, market: string) => void;
-}) {
-  const [form] = Form.useForm<{ symbol: string; market: string }>();
-
-  useEffect(() => {
-    if (open) {
-      form.resetFields();
-      form.setFieldsValue({
-        symbol: defaultPreset?.symbol ?? "",
-        market: "",
-      });
-    }
-  }, [defaultPreset, form, open]);
-
-  return (
-    <Modal
-      title="开始新的 Journal"
-      open={open}
-      destroyOnHidden
-      okText="创建"
-      cancelText="取消"
-      onCancel={onClose}
-      onOk={() =>
-        form.validateFields().then((values) => {
-          onCreate(values.symbol, values.market);
-        })
-      }
-    >
-      <Form form={form} layout="vertical">
-        {defaultPreset ? (
-          <Paragraph style={{ marginBottom: 16, color: "var(--app-muted)" }}>
-            默认周期 {defaultPreset.timeframe}
-          </Paragraph>
-        ) : null}
-        <Form.Item
-          name="symbol"
-          label="标的"
-          rules={[{ required: true, message: "请先填写标的" }]}
-        >
-          <Input placeholder="例如 NQ / ES / BTCUSDT" />
-        </Form.Item>
-        <Form.Item name="market" label="市场">
-          <Input placeholder="例如 CME / Binance" />
-        </Form.Item>
-      </Form>
-    </Modal>
   );
 }
 

@@ -44,6 +44,8 @@ const TIMEFRAME_PRESETS = new Set<string>(TIMEFRAME_PRESET_VALUES);
 const CHART_SYMBOLS = new Set<string>([
   "BINANCE:BTCUSDT",
   "BINANCE:ETHUSDT",
+  "NASDAQ:AAPL",
+  "SSE:600519",
   "CME_MINI:NQ1!",
   "CME_MINI:ES1!",
 ]);

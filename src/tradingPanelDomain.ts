@@ -92,7 +92,9 @@ export function availableEventTypes(
 export function currentJournal(
   journals: TradeJournal[],
 ): TradeJournal | undefined {
-  return [...journals].sort(compareJournalForPanel)[0];
+  return [...journals]
+    .filter((journal) => journal.status === "open")
+    .sort(compareJournalForPanel)[0];
 }
 
 export function composeTradeEvent(

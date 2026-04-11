@@ -6,6 +6,7 @@ import {
   SettingOutlined,
 } from "@ant-design/icons";
 import {
+  AutoComplete,
   Badge as AntBadge,
   Button,
   Calendar,
@@ -34,6 +35,7 @@ import {
   netPosition,
   type TradeJournal,
 } from "../../tradingPanelDomain";
+import { TIMEFRAME_PRESET_VALUES, type TimeframePreset } from "../../model/tradingPairPreset";
 import { openPanelWindow } from "../../panelWindow";
 import {
   formatJournalDate,
@@ -56,6 +58,8 @@ const { Paragraph, Text, Title } = Typography;
 const CHART_SYMBOL_OPTIONS = [
   { label: "BTCUSDT", value: "BINANCE:BTCUSDT" },
   { label: "ETHUSDT", value: "BINANCE:ETHUSDT" },
+  { label: "AAPL", value: "NASDAQ:AAPL" },
+  { label: "茅台", value: "SSE:600519" },
   { label: "NQ", value: "CME_MINI:NQ1!" },
   { label: "ES", value: "CME_MINI:ES1!" },
 ] as const;
@@ -144,18 +148,65 @@ export function MainSurface({ store }: { store: TradingPanelStore }) {
 }
 
 function AnalyticsPanel({ store }: { store: TradingPanelStore }) {
-  void store;
+  const defaultPreset = store.state.defaultPresetSymbol
+    ? store.state.pairPresets.find((preset) => preset.symbol === store.state.defaultPresetSymbol)
+    : undefined;
+  const [selectedPresetSymbol, setSelectedPresetSymbol] = useState<string | undefined>(
+    defaultPreset?.symbol,
+  );
+
+  useEffect(() => {
+    setSelectedPresetSymbol(defaultPreset?.symbol);
+  }, [defaultPreset?.symbol]);
+
   return (
     <Card style={shellCardStyle}>
-      <Empty
-        image={Empty.PRESENTED_IMAGE_SIMPLE}
-        description={
-          <Space orientation="vertical" size={4}>
-            <Text strong style={{ color: "var(--app-text)" }}>分析页面暂时留空</Text>
-            <Text style={{ color: "var(--app-muted)" }}>后续会在这里逐步补回分析模块。</Text>
+      <Space orientation="vertical" size={20} style={{ width: "100%" }}>
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={
+            <Space orientation="vertical" size={4}>
+              <Text strong style={{ color: "var(--app-text)" }}>分析页面暂时留空</Text>
+              <Text style={{ color: "var(--app-muted)" }}>后续会在这里逐步补回分析模块。</Text>
+            </Space>
+          }
+        />
+
+        <Card style={panelCardStyle}>
+          <Space orientation="vertical" size={12} style={{ width: "100%" }}>
+            <Text strong style={{ color: "var(--app-text)" }}>打开 Panel 前选择预设</Text>
+            <Paragraph style={{ margin: 0, color: "var(--app-muted)" }}>
+              先选一个交易对预设，再打开盘中记录 Panel。
+            </Paragraph>
+
+            <Flex gap={12} wrap="wrap" align="end">
+              <div data-testid="analytics-panel-preset-select" style={{ minWidth: 260, flex: 1 }}>
+                <Select
+                  value={selectedPresetSymbol}
+                  virtual={false}
+                  placeholder="选择预设"
+                  options={store.state.pairPresets.map((preset) => ({
+                    value: preset.symbol,
+                    label: `${preset.symbol} · ${preset.timeframe}`,
+                  }))}
+                  onChange={(value) => setSelectedPresetSymbol(value)}
+                  style={{ width: "100%" }}
+                />
+              </div>
+
+              <Button
+                type="primary"
+                disabled={!selectedPresetSymbol}
+                onClick={() => {
+                  void openPanelWindow({ presetSymbol: selectedPresetSymbol });
+                }}
+              >
+                使用所选预设打开 Panel
+              </Button>
+            </Flex>
           </Space>
-        }
-      />
+        </Card>
+      </Space>
     </Card>
   );
 }
@@ -180,52 +231,39 @@ function ChartSection({ store }: { store: TradingPanelStore }) {
         <Flex gap={16} wrap="wrap" align="end">
           <Space orientation="vertical" size={8} style={{ minWidth: 240 }}>
             <Text strong style={{ color: "var(--app-text)" }}>选择标的</Text>
-            <select
-              data-testid="chart-symbol-select"
-              value={symbol}
-              onChange={(event) =>
-                store.actions.updateChartView({ symbol: event.target.value })
-              }
-              style={{
-                minHeight: 36,
-                borderRadius: 8,
-                border: "1px solid var(--app-border)",
-                padding: "0 12px",
-                background: "white",
-                color: "var(--app-text)",
-              }}
-            >
-              {CHART_SYMBOL_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.value}
-                </option>
-              ))}
-            </select>
+            <div data-testid="chart-symbol-select">
+              <Select
+                value={symbol}
+                virtual={false}
+                options={CHART_SYMBOL_OPTIONS.map((option) => ({
+                  value: option.value,
+                  label: option.value,
+                }))}
+                onChange={(value) => {
+                  store.actions.updateChartView({ symbol: value });
+                }}
+                style={{
+                  minWidth: 240,
+                }}
+              />
+            </div>
           </Space>
 
           <Space orientation="vertical" size={8} style={{ minWidth: 180 }}>
             <Text strong style={{ color: "var(--app-text)" }}>时间周期</Text>
-            <select
-              data-testid="chart-interval-select"
-              value={interval}
-              onChange={(event) =>
-                store.actions.updateChartView({ interval: event.target.value })
-              }
-              style={{
-                minHeight: 36,
-                borderRadius: 8,
-                border: "1px solid var(--app-border)",
-                padding: "0 12px",
-                background: "white",
-                color: "var(--app-text)",
-              }}
-            >
-              {CHART_INTERVAL_OPTIONS.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
+            <div data-testid="chart-interval-select">
+              <Select
+                value={interval}
+                virtual={false}
+                options={CHART_INTERVAL_OPTIONS.map((value) => ({ value, label: value }))}
+                onChange={(value) => {
+                  store.actions.updateChartView({ interval: value });
+                }}
+                style={{
+                  minWidth: 180,
+                }}
+              />
+            </div>
           </Space>
         </Flex>
       </Card>
@@ -277,9 +315,6 @@ function TradingViewWidgetChart({
   return (
     <Card style={shellCardStyle}>
       <Space orientation="vertical" size={12} style={{ width: "100%" }}>
-        <Text style={{ color: "var(--app-muted)" }}>
-          TradingView 图表将在这里加载，指标和划线功能将在图表内部提供。
-        </Text>
         <Text data-testid="tradingview-widget-status" style={{ color: "var(--app-text)" }}>
           当前图表: {symbol} / {interval}
         </Text>
@@ -287,7 +322,7 @@ function TradingViewWidgetChart({
           <div
             ref={containerRef}
             data-testid="tradingview-widget-container"
-            style={{ minHeight: 520, width: "100%", borderRadius: 20, background: "#0f172a" }}
+            style={{ height: 520, width: "100%", borderRadius: 20, overflow: "hidden" }}
           />
         </div>
       </Space>
@@ -489,6 +524,15 @@ function JournalDetailPanel({ journal }: { journal: TradeJournal | undefined }) 
 
 function SettingsSection({ store }: { store: TradingPanelStore }) {
   const { config } = store.state;
+  const [presetSymbolInput, setPresetSymbolInput] = useState("");
+  const [presetTimeframe, setPresetTimeframe] = useState<TimeframePreset>("5m");
+
+  const presetOptions = store.state.pairPresets.map((preset) => ({
+    value: preset.symbol,
+    label: preset.symbol,
+  }));
+
+  const canSavePreset = presetSymbolInput.trim().length > 0;
 
   return (
     <div
@@ -551,6 +595,57 @@ function SettingsSection({ store }: { store: TradingPanelStore }) {
                 为常用标的设置默认周期，并选择一个默认预设用于新建时自动带出。
               </Paragraph>
 
+              <Flex gap={12} wrap="wrap" align="end">
+                <Space orientation="vertical" size={8} style={{ minWidth: 220, flex: 1 }}>
+                  <Text strong style={{ color: "var(--app-text)" }}>Symbol</Text>
+                  <div data-testid="pair-preset-symbol-input">
+                    <AutoComplete
+                      value={presetSymbolInput}
+                      virtual={false}
+                      options={presetSymbolInput.trim().length === 0 ? [] : presetOptions}
+                      placeholder="输入或选择交易对，例如 BTCUSDT"
+                      filterOption={(inputValue: string, option?: { value?: string }) =>
+                        (option?.value ?? "").toLowerCase().includes(inputValue.toLowerCase())
+                      }
+                      onChange={(value: string) => setPresetSymbolInput(value)}
+                      style={{
+                        width: "100%",
+                      }}
+                    />
+                  </div>
+                </Space>
+
+                <Space orientation="vertical" size={8} style={{ minWidth: 140 }}>
+                  <Text strong style={{ color: "var(--app-text)" }}>Timeframe</Text>
+                  <div data-testid="pair-preset-timeframe-select">
+                    <Select
+                      value={presetTimeframe}
+                      virtual={false}
+                      options={TIMEFRAME_PRESET_VALUES.map((value) => ({ value, label: value }))}
+                      onChange={(value) => setPresetTimeframe(value as TimeframePreset)}
+                      style={{
+                        minWidth: 140,
+                      }}
+                    />
+                  </div>
+                </Space>
+
+                <Button
+                  type="primary"
+                  disabled={!canSavePreset}
+                  onClick={() => {
+                    if (!canSavePreset) {
+                      return;
+                    }
+
+                    store.actions.upsertPairPreset(presetSymbolInput, presetTimeframe);
+                    setPresetSymbolInput("");
+                  }}
+                >
+                  保存为预设
+                </Button>
+              </Flex>
+
               <Button
                 type="default"
                 onClick={() => {
@@ -562,24 +657,35 @@ function SettingsSection({ store }: { store: TradingPanelStore }) {
                 测试入口
               </Button>
 
-              <Space orientation="vertical" size={8} style={{ width: "100%" }}>
+              <Space data-testid="pair-preset-list" orientation="vertical" size={8} style={{ width: "100%" }}>
                 <Text strong style={{ color: "var(--app-text)" }}>默认预设</Text>
                 {store.state.pairPresets.length === 0 ? (
                   <Text style={{ color: "var(--app-muted)" }}>还没有保存任何交易对预设。</Text>
                 ) : (
                   store.state.pairPresets.map((preset) => {
-                    const isDefault = store.state.defaultPresetSymbol === preset.symbol;
-                    return (
-                      <Flex key={preset.symbol} justify="space-between" align="center" gap={12}>
-                        <Space align="center" size={8}>
-                          <Text strong style={{ color: "var(--app-text)" }}>{preset.symbol}</Text>
-                          <Tag color={tagColorForVariant("neutral")}>{preset.timeframe}</Tag>
-                          {isDefault ? <Tag color={tagColorForVariant("accent")}>默认预设</Tag> : null}
-                        </Space>
-                      </Flex>
-                    );
-                  })
-                )}
+                     const isDefault = store.state.defaultPresetSymbol === preset.symbol;
+                     return (
+                       <Flex key={preset.symbol} justify="space-between" align="center" gap={12}>
+                         <Space align="center" size={8}>
+                           <Text strong style={{ color: "var(--app-text)" }}>{preset.symbol}</Text>
+                           <Tag color={tagColorForVariant("neutral")}>{preset.timeframe}</Tag>
+                           {isDefault ? <Tag color={tagColorForVariant("accent")}>默认预设</Tag> : null}
+                         </Space>
+                         {isDefault ? null : (
+                           <Button
+                             size="small"
+                             onClick={() => {
+                               store.actions.setDefaultPresetSymbol(preset.symbol);
+                             }}
+                             aria-label={`设为默认-${preset.symbol}`}
+                           >
+                             设为默认
+                           </Button>
+                         )}
+                       </Flex>
+                     );
+                   })
+                 )}
               </Space>
             </Space>
           </Card>
