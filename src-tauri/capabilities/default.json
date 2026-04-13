@@ -9,6 +9,16 @@
     "core:window:allow-set-always-on-top",
     "core:window:allow-set-focus",
     "core:window:allow-show",
+    "fs:read-all",
+    "fs:write-all",
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        { "path": "$HOME/.trading-flow" },
+        { "path": "$HOME/.trading-flow/**" }
+      ]
+    },
+    "sql:default",
     "opener:default"
   ]
 }

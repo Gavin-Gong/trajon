@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MainSurface } from "./components/tradingPanel/TradingPanelMain";
+import { GLOBAL_CONFIG_FALLBACK_STORAGE_KEY } from "./globalConfigStorage";
 import { TRADING_PANEL_STORAGE_KEY, type TradingPanelState } from "./model/storage";
 import { PanelSurface } from "./components/tradingPanel/TradingPanelPanel";
 import * as PanelLifecycleModule from "./panelLifecycle";
@@ -81,7 +82,22 @@ function buildState(): TradingPanelState {
 }
 
 function seedState(state: TradingPanelState) {
-  window.localStorage.setItem(TRADING_PANEL_STORAGE_KEY, JSON.stringify(state));
+  window.localStorage.setItem(
+    TRADING_PANEL_STORAGE_KEY,
+    JSON.stringify({
+      journals: state.journals,
+      chart: state.chart,
+      panelPinned: state.panelPinned,
+    }),
+  );
+  window.localStorage.setItem(
+    GLOBAL_CONFIG_FALLBACK_STORAGE_KEY,
+    JSON.stringify({
+      config: state.config,
+      pairPresets: state.pairPresets,
+      defaultPresetSymbol: state.defaultPresetSymbol,
+    }),
+  );
 }
 
 function expectTextPresent(text: string | RegExp) {
@@ -349,7 +365,7 @@ describe("TradingPanelDesktop", () => {
     });
   });
 
-  describe("main view – analysis placeholder", () => {
+  describe("main view – analysis page", () => {
     it("shows the same empty placeholder regardless of journal state", () => {
       seedState({
         journals: [],
@@ -395,6 +411,15 @@ describe("TradingPanelDesktop", () => {
       expect(openPanelWindow).toHaveBeenCalledWith({
         presetSymbol: "ETHUSDT",
       });
+    });
+
+    it("does not render the temporary fs demo card on the analysis page", () => {
+      seedState(buildState());
+      render(<TradingPanelDesktop view={{ view: "main" }} />);
+
+      expect(screen.queryByText("Tauri FS Demo")).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "写入示例" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "读取示例" })).not.toBeInTheDocument();
     });
   });
 
@@ -674,7 +699,7 @@ describe("TradingPanelDesktop", () => {
       expect(screen.queryByRole("button", { name: "开始记录今天的交易" })).not.toBeInTheDocument();
     });
 
-    it("lets the user set a saved preset as default from settings", () => {
+    it("lets the user set a saved preset as default from settings", async () => {
       seedState({
         journals: [],
         config: { timerEnabled: false, timerInterval: 300 },
@@ -695,11 +720,14 @@ describe("TradingPanelDesktop", () => {
       fireEvent.click(screen.getByRole("button", { name: "设为默认-ETHUSDT" }));
 
       expect(within(screen.getByTestId("pair-preset-list")).getAllByText(/默认预设/).length).toBeGreaterThanOrEqual(1);
+      await waitFor(() => {
+        expect(window.localStorage.getItem(GLOBAL_CONFIG_FALLBACK_STORAGE_KEY)).toContain("ETHUSDT");
+      });
 
       unmount();
       render(<TradingPanelDesktop view={{ view: "panel" }} />);
 
-      expect(screen.getByText("ETHUSDT")).toBeInTheDocument();
+      await expect(screen.findByText("ETHUSDT")).resolves.toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "开始记录今天的交易" })).not.toBeInTheDocument();
     });
   });

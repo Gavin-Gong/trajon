@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   composeTradeEvent,
@@ -18,6 +18,12 @@ import {
   type TradingPanelState,
 } from "./model/storage";
 import type { GlobalConfig } from "./model/globalConfig";
+import {
+  readGlobalConfigFallback,
+  readGlobalConfig,
+  type StoredGlobalConfig,
+  writeGlobalConfig,
+} from "./globalConfigStorage";
 
 export {
   TRADING_PANEL_STORAGE_KEY,
@@ -51,37 +57,108 @@ const CHART_SYMBOLS = new Set<string>([
 ]);
 const CHART_INTERVALS = new Set<string>(["1", "5", "15", "30", "60", "240", "1D"]);
 
+type TradingPanelSessionState = Pick<TradingPanelState, "journals" | "chart" | "panelPinned">;
+type ConfigHydrationStatus = "pending" | "ready" | "failed";
+
 export function readTradingPanelState(): TradingPanelState {
   if (typeof window === "undefined") {
     return defaultState;
   }
 
   const raw = window.localStorage.getItem(TRADING_PANEL_STORAGE_KEY);
-  if (!raw) {
-    return defaultState;
-  }
+  const sessionState = raw
+    ? (() => {
+        try {
+          return normalizeState(JSON.parse(raw));
+        } catch {
+          return defaultState;
+        }
+      })()
+    : defaultState;
 
-  try {
-    return normalizeState(JSON.parse(raw));
-  } catch {
-    return defaultState;
-  }
+  const fallbackConfig = readGlobalConfigFallback();
+  return fallbackConfig ? normalizeState({ ...sessionState, ...fallbackConfig }) : sessionState;
 }
 
-function writeTradingPanelState(state: TradingPanelState) {
+function writeTradingPanelSessionState(state: TradingPanelState) {
   if (typeof window === "undefined") {
     return;
   }
 
-  window.localStorage.setItem(TRADING_PANEL_STORAGE_KEY, JSON.stringify(state));
+  window.localStorage.setItem(TRADING_PANEL_STORAGE_KEY, JSON.stringify(pickSessionState(state)));
 }
 
 export function useTradingPanelState() {
   const [state, setState] = useState<TradingPanelState>(() => readTradingPanelState());
+  const [configHydrationStatus, setConfigHydrationStatus] = useState<ConfigHydrationStatus>("pending");
+  const [configDirty, setConfigDirty] = useState(false);
+  const configHydrationStatusRef = useRef<ConfigHydrationStatus>("pending");
 
   useEffect(() => {
-    writeTradingPanelState(state);
-  }, [state]);
+    configHydrationStatusRef.current = configHydrationStatus;
+  }, [configHydrationStatus]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void readGlobalConfig()
+      .then((storedConfig) => {
+        if (cancelled) {
+          return;
+        }
+
+        if (storedConfig) {
+          setState((currentState) => {
+            if (configDirty) {
+              return currentState;
+            }
+
+            return normalizeState({ ...currentState, ...storedConfig });
+          });
+        }
+
+        setConfigHydrationStatus("ready");
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setConfigHydrationStatus("failed");
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [configDirty]);
+
+  useEffect(() => {
+    writeTradingPanelSessionState(state);
+  }, [state.journals, state.chart, state.panelPinned]);
+
+  useEffect(() => {
+    if (configHydrationStatus !== "ready" || !configDirty) {
+      return;
+    }
+
+    setConfigDirty(false);
+    void writeGlobalConfig(pickStoredGlobalConfig(state));
+  }, [configDirty, configHydrationStatus, state.config, state.defaultPresetSymbol, state.pairPresets]);
+
+  const updateStoredConfig = useCallback(
+    (updater: (currentState: TradingPanelState) => TradingPanelState) => {
+      setState((currentState) => {
+        const nextState = updater(currentState);
+
+        if (configHydrationStatusRef.current === "ready") {
+          void writeGlobalConfig(pickStoredGlobalConfig(nextState));
+        } else {
+          setConfigDirty(true);
+        }
+
+        return nextState;
+      });
+    },
+    [],
+  );
 
   useEffect(() => {
     function handleStorage(event: StorageEvent) {
@@ -89,10 +166,18 @@ export function useTradingPanelState() {
         return;
       }
 
+      const nextValue = event.newValue;
+
       try {
-        setState(normalizeState(JSON.parse(event.newValue)));
+        setState((currentState) => ({
+          ...currentState,
+          ...normalizeSessionState(JSON.parse(nextValue)),
+        }));
       } catch {
-        setState(defaultState);
+        setState((currentState) => ({
+          ...currentState,
+          ...pickSessionState(defaultState),
+        }));
       }
     }
 
@@ -170,14 +255,14 @@ export function useTradingPanelState() {
   );
 
   const updateConfig = useCallback((nextConfig: Partial<GlobalConfig>) => {
-    setState((currentState) => ({
+    updateStoredConfig((currentState) => ({
       ...currentState,
       config: {
         ...currentState.config,
         ...nextConfig,
       },
     }));
-  }, []);
+  }, [updateStoredConfig]);
 
   const upsertPairPreset = useCallback((symbol: string, timeframe: TimeframePreset) => {
     const normalizedSymbol = normalizeSymbol(symbol);
@@ -185,7 +270,7 @@ export function useTradingPanelState() {
       return;
     }
 
-    setState((currentState) => {
+    updateStoredConfig((currentState) => {
       const nextPreset: TradingPairPreset = {
         symbol: normalizedSymbol,
         timeframe,
@@ -203,7 +288,7 @@ export function useTradingPanelState() {
           : [...currentState.pairPresets, nextPreset],
       };
     });
-  }, []);
+  }, [updateStoredConfig]);
 
   const removePairPreset = useCallback((symbol: string) => {
     const normalizedSymbol = normalizeSymbol(symbol);
@@ -211,7 +296,7 @@ export function useTradingPanelState() {
       return;
     }
 
-    setState((currentState) => ({
+    updateStoredConfig((currentState) => ({
       ...currentState,
       pairPresets: currentState.pairPresets.filter(
         (preset) => preset.symbol !== normalizedSymbol,
@@ -221,12 +306,12 @@ export function useTradingPanelState() {
           ? undefined
           : currentState.defaultPresetSymbol,
     }));
-  }, []);
+  }, [updateStoredConfig]);
 
   const setDefaultPresetSymbol = useCallback((symbol?: string) => {
     const normalizedSymbol = typeof symbol === "string" ? normalizeSymbol(symbol) : undefined;
 
-    setState((currentState) => ({
+    updateStoredConfig((currentState) => ({
       ...currentState,
       defaultPresetSymbol:
         normalizedSymbol &&
@@ -234,7 +319,7 @@ export function useTradingPanelState() {
           ? normalizedSymbol
           : undefined,
     }));
-  }, []);
+  }, [updateStoredConfig]);
 
   const updateChartView = useCallback((nextChartView: Partial<ChartViewState>) => {
     setState((currentState) => ({
@@ -278,9 +363,30 @@ export function useTradingPanelState() {
       state,
       updateChartView,
       updateConfig,
+      updateStoredConfig,
       upsertPairPreset,
     ],
   );
+}
+
+function pickSessionState(state: TradingPanelState): TradingPanelSessionState {
+  return {
+    journals: state.journals,
+    chart: state.chart,
+    panelPinned: state.panelPinned,
+  };
+}
+
+function normalizeSessionState(value: unknown): TradingPanelSessionState {
+  return pickSessionState(normalizeState(value));
+}
+
+function pickStoredGlobalConfig(state: TradingPanelState): StoredGlobalConfig {
+  return {
+    config: state.config,
+    pairPresets: state.pairPresets,
+    defaultPresetSymbol: state.defaultPresetSymbol,
+  };
 }
 
 function normalizeState(value: unknown): TradingPanelState {
