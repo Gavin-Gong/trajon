@@ -7,7 +7,7 @@ export function TradingJournalDesktop({ view }: { view: AppView }) {
   const store = useTradingJournalState();
 
   if (view.view === "panel") {
-    return <TradingJournalPanel store={store} presetSymbol={view.presetSymbol} />;
+    return <TradingJournalPanel store={store} presetSymbol={view.presetSymbol} journalId={view.journalId} />;
   }
 
   return <TradingJournalMain store={store} />;

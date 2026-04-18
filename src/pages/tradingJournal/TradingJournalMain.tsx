@@ -243,7 +243,7 @@ export function TradingJournalMain({ store }: { store: TradingJournalStore }) {
               padding: `${HEADER_HEIGHT + 16}px 20px 20px`,
             }}
           >
-            {section === "dashboard" ? <DashboardPanel /> : null}
+            {section === "dashboard" ? <DashboardPanel store={store} /> : null}
             {section === "calendar" ? <CalendarHistorySection store={store} /> : null}
             {section === "settings" ? <SettingsSection store={store} /> : null}
           </div>
@@ -292,18 +292,64 @@ function TrajonBrandMark() {
   );
 }
 
-function DashboardPanel() {
+function DashboardPanel({ store }: { store: TradingJournalStore }) {
+  const recentJournals = [...store.state.journals]
+    .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())
+    .slice(0, 3);
+
   return (
     <Space orientation="vertical" size={20} style={{ width: "100%" }}>
-      <Empty
-        image={Empty.PRESENTED_IMAGE_SIMPLE}
-        description={
-          <Space orientation="vertical" size={4}>
-            <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>Dashboard 暂时留空</Text>
-            <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>后续会在这里逐步补回 dashboard 模块。</Text>
+      <Card style={shellCardStyle}>
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={
+            <Space orientation="vertical" size={4}>
+              <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>Dashboard 暂时留空</Text>
+              <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>后续会在这里逐步补回 dashboard 模块。</Text>
+            </Space>
+          }
+        />
+      </Card>
+
+      {recentJournals.length > 0 ? (
+        <Card style={shellCardStyle}>
+          <Space orientation="vertical" size={16} style={{ width: "100%" }}>
+            <Flex justify="space-between" align="center" gap={12}>
+              <Space orientation="vertical" size={4}>
+                <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>最近 Journals</Text>
+                <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>继续补记观察，或直接回到上一条交易会话。</Text>
+              </Space>
+              <Tag color={tagColorForVariant("neutral")}>{recentJournals.length} 条</Tag>
+            </Flex>
+
+            {recentJournals.map((journal) => (
+              <Flex key={journal.id} justify="space-between" align="center" gap={12}>
+                <Space orientation="vertical" size={2} style={{ minWidth: 0 }}>
+                  <Flex align="center" gap={8} wrap="wrap">
+                    <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>{journal.symbol || "未命名"}</Text>
+                    <Tag color={tagColorForVariant(journal.status === "open" ? "accent" : "neutral")}>
+                      {journal.status === "open" ? "进行中" : "已完成"}
+                    </Tag>
+                  </Flex>
+                  <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>
+                    {journal.market || "未标记市场"} · 净仓 {formatNumber(netPosition(journal.events))}
+                  </Text>
+                </Space>
+
+                <Button
+                  size="small"
+                  aria-label={`继续编辑-${journal.id}`}
+                  onClick={() => {
+                    void openPanelWindow({ journalId: journal.id });
+                  }}
+                >
+                  继续编辑
+                </Button>
+              </Flex>
+            ))}
           </Space>
-        }
-      />
+        </Card>
+      ) : null}
     </Space>
   );
 }
@@ -483,6 +529,15 @@ function JournalDetailPanel({ journal }: { journal: TradeJournal | undefined }) 
             {journal.summary}
           </Paragraph>
         ) : null}
+
+        <Button
+          type="default"
+          onClick={() => {
+            void openPanelWindow({ journalId: journal.id });
+          }}
+        >
+          继续编辑这条 Journal
+        </Button>
 
         <Divider style={{ margin: 0 }} />
 

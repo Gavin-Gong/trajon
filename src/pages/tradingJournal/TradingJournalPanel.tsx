@@ -16,6 +16,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 
 import { closePanelWindow } from "../../platform/panelLifecycle";
+import { PANEL_NAVIGATE_EVENT } from "../../platform/panelWindow";
 import {
   availableEventTypes,
   composeTradeEvent,
@@ -66,15 +67,24 @@ const infoIconStyle = {
 export function TradingJournalPanel({
   store,
   presetSymbol,
+  journalId,
 }: {
   store: TradingJournalStore;
   presetSymbol?: string;
+  journalId?: string;
 }) {
   const { state, actions } = store;
-  const journal = selectCurrentJournal(state.journals);
+  const [target, setTarget] = useState({ presetSymbol, journalId });
+  const journal = useMemo(
+    () =>
+      (target.journalId
+        ? state.journals.find((item) => item.id === target.journalId)
+        : undefined) ?? selectCurrentJournal(state.journals),
+    [state.journals, target.journalId],
+  );
   const reminder = useReminderClock(state.config.timerEnabled, state.config.timerInterval);
-  const incomingPreset = presetSymbol
-    ? state.pairPresets.find((preset) => preset.symbol === presetSymbol)
+  const incomingPreset = target.presetSymbol
+    ? state.pairPresets.find((preset) => preset.symbol === target.presetSymbol)
     : undefined;
   const defaultPreset = incomingPreset ??
     (state.defaultPresetSymbol
@@ -82,6 +92,10 @@ export function TradingJournalPanel({
       : undefined);
   const [showFinishJournal, setShowFinishJournal] = useState(false);
   const [isPinned, setIsPinned] = useState(state.panelPinned);
+
+  useEffect(() => {
+    setTarget({ presetSymbol, journalId });
+  }, [journalId, presetSymbol]);
 
   useEffect(() => {
     if (journal || !defaultPreset?.symbol) {
@@ -94,6 +108,38 @@ export function TradingJournalPanel({
   useEffect(() => {
     setIsPinned(state.panelPinned);
   }, [state.panelPinned]);
+
+  useEffect(() => {
+    if (!(typeof window !== "undefined" && "__TAURI_INTERNALS__" in window)) {
+      return;
+    }
+
+    const currentWindow = getCurrentWindow();
+    let cancelled = false;
+    let unlisten: (() => void) | undefined;
+
+    void currentWindow
+      .listen<{ presetSymbol?: string; journalId?: string }>(PANEL_NAVIGATE_EVENT, ({ payload }) => {
+        if (!payload || cancelled) {
+          return;
+        }
+
+        setTarget({
+          presetSymbol: payload.presetSymbol,
+          journalId: payload.journalId,
+        });
+        void actions.refreshState();
+      })
+      .then((dispose) => {
+        unlisten = dispose;
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, [actions]);
 
   useEffect(() => {
     if (!(typeof window !== "undefined" && "__TAURI_INTERNALS__" in window)) {

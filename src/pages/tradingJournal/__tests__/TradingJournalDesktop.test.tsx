@@ -390,6 +390,15 @@ describe("TradingJournalDesktop", () => {
       expect(openPanelWindow).toHaveBeenCalledWith({ presetSymbol: "XAUUSD" });
     });
 
+    it("opens the panel with journalId from dashboard continue action", () => {
+      seedState(buildState());
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
+
+      fireEvent.click(screen.getByRole("button", { name: "继续编辑-done-journal" }));
+
+      expect(openPanelWindow).toHaveBeenCalledWith({ journalId: "done-journal" });
+    });
+
     it("hides the brand mark when the sider is collapsed", () => {
       seedState(buildState());
       render(<TradingJournalDesktop view={{ view: "main" }} />);
@@ -450,6 +459,44 @@ describe("TradingJournalDesktop", () => {
       expect(within(panelMain).getAllByText("进行中").length).toBeGreaterThanOrEqual(1);
 
       expect(screen.getAllByRole("button", { name: "结束 Journal" }).length).toBeGreaterThanOrEqual(1);
+    });
+
+    it("renders the requested journal when panel view receives journalId", () => {
+      seedState(buildState());
+      render(<TradingJournalDesktop view={{ view: "panel", journalId: "done-journal" }} />);
+
+      const panelMain = screen.getAllByRole("main")[0];
+      expect(within(panelMain).getAllByText("ES").length).toBeGreaterThanOrEqual(1);
+      expect(within(panelMain).getByText("纪律不错，但出场可以更果断。")).toBeInTheDocument();
+      expect(within(panelMain).getAllByText("已完成").length).toBeGreaterThanOrEqual(1);
+      expect(screen.queryByRole("button", { name: "结束 Journal" })).not.toBeInTheDocument();
+    });
+
+    it("prefers journalId over presetSymbol when both are provided", () => {
+      seedState({
+        ...buildState(),
+        pairPresets: [{ symbol: "BTCUSDT", timeframe: "5m" }],
+        defaultPresetSymbol: "BTCUSDT",
+      });
+
+      render(
+        <TradingJournalDesktop
+          view={{ view: "panel", journalId: "done-journal", presetSymbol: "BTCUSDT" }}
+        />,
+      );
+
+      const panelMain = screen.getAllByRole("main")[0];
+      expect(within(panelMain).getAllByText("ES").length).toBeGreaterThanOrEqual(1);
+      expect(screen.queryByText("BTCUSDT")).not.toBeInTheDocument();
+    });
+
+    it("falls back to the current open journal when journalId is missing", () => {
+      seedState(buildState());
+      render(<TradingJournalDesktop view={{ view: "panel", journalId: "missing-journal" }} />);
+
+      const panelMain = screen.getAllByRole("main")[0];
+      expect(within(panelMain).getAllByText("NQ").length).toBeGreaterThanOrEqual(1);
+      expect(screen.queryByText("纪律不错，但出场可以更果断。")).not.toBeInTheDocument();
     });
 
     it("renders the quick capture section with event type chips", () => {

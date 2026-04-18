@@ -3,6 +3,7 @@ import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { PANEL_BOUNDS_STORAGE_KEY, type PanelBounds } from "../model/storage";
 
 type ExistingWindow = {
+  emit?: <T>(event: string, payload?: T) => Promise<void>;
   show: () => Promise<void>;
   setFocus: () => Promise<void>;
 };
@@ -29,9 +30,14 @@ type StorageApi = {
   getItem: (key: string) => string | null;
 };
 
-type AppView = { view: "main" } | { view: "panel"; presetSymbol?: string };
+type AppView = { view: "main" } | { view: "panel"; presetSymbol?: string; journalId?: string };
+type PanelNavigationPayload = {
+  presetSymbol?: string;
+  journalId?: string;
+};
 
 export const PANEL_WINDOW_LABEL = "trading-panel";
+export const PANEL_NAVIGATE_EVENT = "trading-panel:navigate";
 export { PANEL_BOUNDS_STORAGE_KEY, type PanelBounds } from "../model/storage";
 const PANEL_MAX_WIDTH = 400;
 
@@ -55,15 +61,23 @@ const defaultStorageApi: StorageApi = {
 export function parseAppView(search: string): AppView {
   const params = new URLSearchParams(search);
   return params.get("view") === "panel"
-    ? { view: "panel", presetSymbol: params.get("presetSymbol") ?? undefined }
+    ? {
+        view: "panel",
+        presetSymbol: params.get("presetSymbol") ?? undefined,
+        journalId: params.get("journalId") ?? undefined,
+      }
     : { view: "main" };
 }
 
-export function buildPanelUrl(options: { presetSymbol?: string } = {}): string {
+export function buildPanelUrl(options: PanelNavigationPayload = {}): string {
   const params = new URLSearchParams({ view: "panel" });
 
   if (options.presetSymbol) {
     params.set("presetSymbol", options.presetSymbol);
+  }
+
+  if (options.journalId) {
+    params.set("journalId", options.journalId);
   }
 
   return `/?${params.toString()}`;
@@ -104,13 +118,14 @@ export function serializePanelBounds(bounds: PanelBounds): string {
 export async function openPanelWindow(
   options: {
     presetSymbol?: string;
+    journalId?: string;
     windowApi?: WindowApi;
     storageApi?: StorageApi;
   } = {},
 ): Promise<void> {
   if (!options.windowApi && !isTauriRuntime()) {
     const popup = window.open(
-      buildPanelUrl({ presetSymbol: options.presetSymbol }),
+      buildPanelUrl({ presetSymbol: options.presetSymbol, journalId: options.journalId }),
       PANEL_WINDOW_LABEL,
       "popup=yes,width=300,height=640,left=980,top=180",
     );
@@ -123,6 +138,12 @@ export async function openPanelWindow(
   const existingWindow = await windowApi.getByLabel(PANEL_WINDOW_LABEL);
 
   if (existingWindow) {
+    if (existingWindow.emit && (options.presetSymbol || options.journalId)) {
+      await existingWindow.emit<PanelNavigationPayload>(PANEL_NAVIGATE_EVENT, {
+        presetSymbol: options.presetSymbol,
+        journalId: options.journalId,
+      });
+    }
     await existingWindow.show();
     await existingWindow.setFocus();
     return;
@@ -134,7 +155,7 @@ export async function openPanelWindow(
 
   windowApi.createWindow(PANEL_WINDOW_LABEL, {
     title: "Trajon",
-    url: buildPanelUrl({ presetSymbol: options.presetSymbol }),
+    url: buildPanelUrl({ presetSymbol: options.presetSymbol, journalId: options.journalId }),
     width: Math.min(bounds?.width ?? 300, PANEL_MAX_WIDTH),
     maxWidth: PANEL_MAX_WIDTH,
     height: bounds?.height ?? 640,

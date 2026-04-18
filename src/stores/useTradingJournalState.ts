@@ -33,11 +33,14 @@ export function useTradingJournalState(
   useEffect(() => {
     let cancelled = false;
 
-    void serviceRef.current.loadTradingPanelState().then((nextState) => {
+    const refresh = async () => {
+      const nextState = await serviceRef.current.loadTradingPanelState();
       if (!cancelled) {
         setState(nextState);
       }
-    });
+    };
+
+    void refresh();
 
     return () => {
       cancelled = true;
@@ -160,6 +163,11 @@ export function useTradingJournalState(
         panelPinned,
       }));
     },
+
+    async refreshState() {
+      const nextState = await serviceRef.current.loadTradingPanelState();
+      setState(nextState);
+    },
   }), []);
 
   return {
@@ -173,6 +181,7 @@ export function useTradingJournalState(
       removePairPreset: (symbol: string) => Promise<void>;
       setDefaultPresetSymbol: (symbol?: string) => Promise<void>;
       setPanelPinned: (panelPinned: boolean) => Promise<void>;
+      refreshState: () => Promise<void>;
     },
   };
 }
