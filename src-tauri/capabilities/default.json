@@ -15,7 +15,9 @@
       "identifier": "fs:scope",
       "allow": [
         { "path": "$HOME/.trading-flow" },
-        { "path": "$HOME/.trading-flow/**" }
+        { "path": "$HOME/.trading-flow/**" },
+        { "path": "$APPDATA/databases" },
+        { "path": "$APPDATA/databases/**" }
       ]
     },
     "sql:default",
