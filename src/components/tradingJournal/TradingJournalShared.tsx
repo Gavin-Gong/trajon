@@ -62,11 +62,9 @@ export type TradingJournalStore = ReturnType<typeof useTradingJournalState>;
 export function TimelineSection({
   journal,
   title,
-  surface = "card",
 }: {
   journal: TradeJournal | undefined;
   title: string;
-  surface?: "card" | "plain";
 }) {
   const events = useMemo(
     () =>
@@ -87,9 +85,6 @@ export function TimelineSection({
           <Title level={5} style={{ margin: 0, color: "rgba(0, 0, 0, 0.88)" }}>
             {title}
           </Title>
-          <Paragraph style={{ margin: 0, color: "rgba(0, 0, 0, 0.45)" }}>
-            把同一笔交易拆成事件链，而不是只记结果。
-          </Paragraph>
         </Space>
         <Tag color={tagColorForVariant("neutral")}>{events.length}</Tag>
       </Flex>
@@ -114,13 +109,9 @@ export function TimelineSection({
             <div
               key={event.id}
               style={{
-                ...(surface === "plain" ? plainTimelineEventStyle : panelCardStyle),
+                ...plainTimelineEventStyle,
                 width: "100%",
-                ...(highlightedId === event.id
-                  ? surface === "plain"
-                    ? plainTimelineHighlightStyle
-                    : { boxShadow: "0 12px 24px rgba(37, 99, 235, 0.16)" }
-                  : undefined),
+                ...plainTimelineHighlightStyle
               }}
             >
               <Space orientation="vertical" size={12} style={{ width: "100%" }}>
@@ -165,11 +156,7 @@ export function TimelineSection({
     </>
   );
 
-  if (surface === "plain") {
-    return <div style={plainPanelSectionStyle}>{content}</div>;
-  }
-
-  return <Card style={panelCardStyle}>{content}</Card>;
+  return <div style={plainPanelSectionStyle}>{content}</div>;
 }
 
 function useHighlightedTopEvent(events: TradeEvent[]) {

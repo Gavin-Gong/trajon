@@ -1,11 +1,14 @@
 import {
+  BarChartOutlined,
   CalendarOutlined,
   DashboardOutlined,
   EllipsisOutlined,
+  EditOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   SettingOutlined,
 } from "@ant-design/icons";
+import { Column, Line } from "@ant-design/plots";
 import {
   AutoComplete,
   Badge as AntBadge,
@@ -34,6 +37,7 @@ import {
   defaultCalendarSelection,
   groupJournalsByDay,
   netPosition,
+  realizedPnlAnalytics,
   type TradeJournal,
 } from "../../domain/tradingJournalDomain";
 import { useWindowFullscreenOnResize } from "../../hooks/useWindowFullscreenOnResize";
@@ -65,6 +69,10 @@ const SECTION_META: Record<AppSection, { title: string; description: string }> =
     title: "Dashboard",
     description: "总览当前记录入口与常用操作。",
   },
+  analysis: {
+    title: "分析",
+    description: "查看累计已实现盈亏与每日盈亏分布。",
+  },
   calendar: {
     title: "日历回看",
     description: "按日期查看 journal 记录与时间线。",
@@ -84,6 +92,11 @@ export function TradingJournalMain({ store }: { store: TradingJournalStore }) {
       key: "dashboard",
       icon: <DashboardOutlined />,
       label: "Dashboard",
+    },
+    {
+      key: "analysis",
+      icon: <BarChartOutlined />,
+      label: "分析",
     },
     {
       key: "calendar",
@@ -244,6 +257,7 @@ export function TradingJournalMain({ store }: { store: TradingJournalStore }) {
             }}
           >
             {section === "dashboard" ? <DashboardPanel store={store} /> : null}
+            {section === "analysis" ? <AnalysisSection store={store} /> : null}
             {section === "calendar" ? <CalendarHistorySection store={store} /> : null}
             {section === "settings" ? <SettingsSection store={store} /> : null}
           </div>
@@ -298,59 +312,62 @@ function DashboardPanel({ store }: { store: TradingJournalStore }) {
     .slice(0, 3);
 
   return (
-    <Space orientation="vertical" size={20} style={{ width: "100%" }}>
-      <Card style={shellCardStyle}>
-        <Empty
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description={
-            <Space orientation="vertical" size={4}>
-              <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>Dashboard 暂时留空</Text>
-              <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>后续会在这里逐步补回 dashboard 模块。</Text>
-            </Space>
-          }
-        />
-      </Card>
+    <div
+      data-testid="dashboard-panel-layout"
+      style={{
+        display: "grid",
+        gap: 20,
+        gridTemplateColumns: "minmax(0, 1fr) 280px",
+        alignItems: "start",
+      }}
+    >
+      <Space orientation="vertical" size={20} style={{ width: "100%" }}>
+        <Card data-testid="dashboard-placeholder-card-1" style={shellCardStyle}>
+          <div style={{ minHeight: 180 }} />
+        </Card>
 
-      {recentJournals.length > 0 ? (
-        <Card style={shellCardStyle}>
-          <Space orientation="vertical" size={16} style={{ width: "100%" }}>
-            <Flex justify="space-between" align="center" gap={12}>
-              <Space orientation="vertical" size={4}>
-                <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>最近 Journals</Text>
-                <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>继续补记观察，或直接回到上一条交易会话。</Text>
-              </Space>
-              <Tag color={tagColorForVariant("neutral")}>{recentJournals.length} 条</Tag>
-            </Flex>
+        <Card data-testid="dashboard-placeholder-card-2" style={shellCardStyle}>
+          <div style={{ minHeight: 220 }} />
+        </Card>
+      </Space>
 
-            {recentJournals.map((journal) => (
-              <Flex key={journal.id} justify="space-between" align="center" gap={12}>
-                <Space orientation="vertical" size={2} style={{ minWidth: 0 }}>
+      <Card data-testid="dashboard-journal-list-card" style={shellCardStyle}>
+        <Space orientation="vertical" size={16} style={{ width: "100%" }}>
+          {recentJournals.map((journal, index) => (
+            <div
+              key={journal.id}
+              style={{
+                paddingBottom: index === recentJournals.length - 1 ? 0 : 12,
+                borderBottom:
+                  index === recentJournals.length - 1 ? "none" : "1px solid rgba(15, 23, 42, 0.08)",
+              }}
+            >
+              <Flex justify="space-between" align="start" gap={12}>
+                <Space orientation="vertical" size={6} style={{ minWidth: 0 }}>
                   <Flex align="center" gap={8} wrap="wrap">
                     <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>{journal.symbol || "未命名"}</Text>
                     <Tag color={tagColorForVariant(journal.status === "open" ? "accent" : "neutral")}>
                       {journal.status === "open" ? "进行中" : "已完成"}
                     </Tag>
                   </Flex>
-                  <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>
-                    {journal.market || "未标记市场"} · 净仓 {formatNumber(netPosition(journal.events))}
-                  </Text>
+                  <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>更新于 {formatJournalDate(journal.updatedAt)}</Text>
                 </Space>
 
                 <Button
+                  type="text"
                   size="small"
-                  aria-label={`继续编辑-${journal.id}`}
+                  icon={<EditOutlined />}
+                  aria-label={`编辑-journal-${journal.id}`}
                   onClick={() => {
                     void openPanelWindow({ journalId: journal.id });
                   }}
-                >
-                  继续编辑
-                </Button>
+                />
               </Flex>
-            ))}
-          </Space>
-        </Card>
-      ) : null}
-    </Space>
+            </div>
+          ))}
+        </Space>
+      </Card>
+    </div>
   );
 }
 
@@ -469,6 +486,154 @@ function CalendarHistorySection({ store }: { store: TradingJournalStore }) {
 
       <JournalDetailPanel journal={selectedJournal} />
     </div>
+  );
+}
+
+function AnalysisSection({ store }: { store: TradingJournalStore }) {
+  const analytics = useMemo(() => realizedPnlAnalytics(store.state.journals), [store.state.journals]);
+
+  if (analytics.equityCurve.length === 0) {
+    return (
+      <Card style={dashedShellCardStyle}>
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={
+            <Space orientation="vertical" size={4}>
+              <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>还没有可分析的已实现盈亏</Text>
+              <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>
+                先完成至少一笔 journal，分析页会显示累计盈利曲线和每日盈亏柱状图。
+              </Text>
+            </Space>
+          }
+        />
+      </Card>
+    );
+  }
+
+  const lineConfig = {
+    data: analytics.equityCurve.map((item) => ({
+      timestamp: item.timestamp,
+      value: item.value,
+    })),
+    autoFit: true,
+    height: 280,
+    xField: (datum: { timestamp: string; value: number }) => new Date(datum.timestamp),
+    yField: "value",
+    axis: {
+      x: { title: false },
+      y: { title: false },
+    },
+    tooltip: {
+      title: (datum: { timestamp: string }) => formatChartDateLabel(datum.timestamp),
+      items: [{ channel: "y", name: "累计已实现盈亏", valueFormatter: formatSignedNumber }],
+    },
+    style: {
+      lineWidth: 2,
+      stroke: "#2563eb",
+    },
+    point: {
+      size: 3,
+      style: {
+        fill: "#2563eb",
+      },
+    },
+  };
+
+  const columnConfig = {
+    data: analytics.dailyPnl.map((item) => ({ dayKey: item.dayKey, value: item.value })),
+    autoFit: true,
+    height: 280,
+    xField: "dayKey",
+    yField: "value",
+    colorField: (datum: { dayKey: string; value: number }) => (datum.value >= 0 ? "盈利" : "亏损"),
+    scale: {
+      color: {
+        type: "ordinal",
+        domain: ["盈利", "亏损"],
+        range: ["#16a34a", "#dc2626"],
+      },
+    },
+    axis: {
+      x: { title: false },
+      y: { title: false },
+    },
+    tooltip: {
+      title: (datum: { dayKey: string }) => datum.dayKey,
+      items: [{ channel: "y", name: "当日已实现盈亏", valueFormatter: formatSignedNumber }],
+    },
+    style: {
+      radiusTopLeft: 4,
+      radiusTopRight: 4,
+    },
+  };
+
+  return (
+    <Space orientation="vertical" size={20} style={{ width: "100%" }}>
+      <div
+        style={{
+          display: "grid",
+          gap: 16,
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+        }}
+      >
+        <Card style={shellCardStyle}>
+          <Space orientation="vertical" size={4}>
+            <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>累计已实现盈亏</Text>
+            <Title
+              level={3}
+              style={{
+                margin: 0,
+                color: analytics.realizedTotal >= 0 ? "#15803d" : "#b91c1c",
+              }}
+            >
+              {formatSignedNumber(analytics.realizedTotal)}
+            </Title>
+          </Space>
+        </Card>
+
+        <Card style={shellCardStyle}>
+          <Space orientation="vertical" size={4}>
+            <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>盈利 / 亏损天数</Text>
+            <Title level={3} style={{ margin: 0, color: "rgba(0, 0, 0, 0.88)" }}>
+              {analytics.profitDays} / {analytics.lossDays}
+            </Title>
+          </Space>
+        </Card>
+
+        <Card style={shellCardStyle}>
+          <Space orientation="vertical" size={4}>
+            <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>已统计 Journal</Text>
+            <Title level={3} style={{ margin: 0, color: "rgba(0, 0, 0, 0.88)" }}>
+              {analytics.journalCount}
+            </Title>
+          </Space>
+        </Card>
+      </div>
+
+      <Card style={shellCardStyle}>
+        <Space orientation="vertical" size={12} style={{ width: "100%" }}>
+          <div>
+            <Title level={5} style={{ margin: 0, color: "rgba(0, 0, 0, 0.88)" }}>
+              累计已实现盈亏
+            </Title>
+            <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>按平仓事件累计，不包含未平仓浮盈浮亏。</Text>
+          </div>
+          <Line {...lineConfig} />
+        </Space>
+      </Card>
+
+      <Card style={shellCardStyle}>
+        <Space orientation="vertical" size={12} style={{ width: "100%" }}>
+          <div>
+            <Title level={5} style={{ margin: 0, color: "rgba(0, 0, 0, 0.88)" }}>
+              每日已实现盈亏
+            </Title>
+            <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>按 UTC 日期聚合，盈利为绿色，亏损为红色。</Text>
+          </div>
+          <Column {...columnConfig} />
+        </Space>
+      </Card>
+    </Space>
   );
 }
 
@@ -741,4 +906,27 @@ function SettingsSection({ store }: { store: TradingJournalStore }) {
       </Card>
     </div>
   );
+}
+
+function formatSignedNumber(value: number) {
+  const formatted = formatNumber(Math.abs(value));
+  if (value > 0) {
+    return `+${formatted}`;
+  }
+
+  if (value < 0) {
+    return `-${formatted}`;
+  }
+
+  return formatted;
+}
+
+function formatChartDateLabel(value: string) {
+  return new Date(value).toLocaleString("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 }

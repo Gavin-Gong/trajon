@@ -6,6 +6,7 @@ import {
   createJournal,
   currentJournal,
   defaultCalendarSelection,
+  realizedPnlAnalytics,
   groupJournalsByDay,
   netPosition,
   visibleMonthDays,
@@ -160,5 +161,71 @@ describe("netPosition", () => {
     if (entry.ok && log.ok && reduce.ok) {
       expect(netPosition([entry.event, log.event, reduce.event])).toBe(1.5);
     }
+  });
+});
+
+describe("realizedPnlAnalytics", () => {
+  it("builds cumulative equity and daily pnl from completed journals", () => {
+    const journal = createJournal({
+      id: "journal-1",
+      symbol: "BTCUSDT",
+      market: "BINANCE",
+      status: "done",
+      events: [
+        {
+          id: "entry-1",
+          createdAt: "2026-04-18T09:00:00.000Z",
+          updatedAt: "2026-04-18T09:00:00.000Z",
+          timestamp: "2026-04-18T09:00:00.000Z",
+          type: "entry",
+          content: "Open starter",
+          price: 100,
+          quantity: 1,
+        },
+        {
+          id: "add-1",
+          createdAt: "2026-04-18T10:00:00.000Z",
+          updatedAt: "2026-04-18T10:00:00.000Z",
+          timestamp: "2026-04-18T10:00:00.000Z",
+          type: "add",
+          content: "Add winner",
+          price: 110,
+          quantity: 1,
+        },
+        {
+          id: "reduce-1",
+          createdAt: "2026-04-18T11:00:00.000Z",
+          updatedAt: "2026-04-18T11:00:00.000Z",
+          timestamp: "2026-04-18T11:00:00.000Z",
+          type: "reduce",
+          content: "Take partial",
+          price: 120,
+          quantity: -1,
+        },
+        {
+          id: "exit-1",
+          createdAt: "2026-04-19T09:30:00.000Z",
+          updatedAt: "2026-04-19T09:30:00.000Z",
+          timestamp: "2026-04-19T09:30:00.000Z",
+          type: "exit",
+          content: "Close rest",
+          price: 90,
+          quantity: -1,
+        },
+      ],
+    });
+
+    const analytics = realizedPnlAnalytics([journal]);
+
+    expect(analytics.realizedTotal).toBe(0);
+    expect(analytics.equityCurve).toEqual([
+      { timestamp: "2026-04-18T11:00:00.000Z", value: 15 },
+      { timestamp: "2026-04-19T09:30:00.000Z", value: 0 },
+    ]);
+    expect(analytics.dailyPnl).toEqual([
+      { dayKey: "2026-04-18", value: 15 },
+      { dayKey: "2026-04-19", value: -15 },
+    ]);
+    expect(analytics.journalCount).toBe(1);
   });
 });

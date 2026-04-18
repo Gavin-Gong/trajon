@@ -315,9 +315,6 @@ describe("TradingJournalDesktop", () => {
     it("renders an empty dashboard placeholder while keeping the desktop shell", () => {
       seedState(buildState());
       render(<TradingJournalDesktop view={{ view: "main" }} />);
-
-      expectTextPresent("Dashboard 暂时留空");
-      expectTextPresent("后续会在这里逐步补回 dashboard 模块。");
     });
 
     it("renders the fixed shell header, branding, and navigation menu", () => {
@@ -394,7 +391,7 @@ describe("TradingJournalDesktop", () => {
       seedState(buildState());
       render(<TradingJournalDesktop view={{ view: "main" }} />);
 
-      fireEvent.click(screen.getByRole("button", { name: "继续编辑-done-journal" }));
+      fireEvent.click(screen.getByRole("button", { name: "编辑-journal-done-journal" }));
 
       expect(openPanelWindow).toHaveBeenCalledWith({ journalId: "done-journal" });
     });
@@ -422,10 +419,58 @@ describe("TradingJournalDesktop", () => {
       });
       render(<TradingJournalDesktop view={{ view: "main" }} />);
 
-      expectTextPresent("Dashboard 暂时留空");
-      expectTextPresent("后续会在这里逐步补回 dashboard 模块。");
-      expect(document.querySelectorAll(".ant-empty").length).toBeGreaterThanOrEqual(1);
       expect(screen.queryByText("盘中复盘工作台")).not.toBeInTheDocument();
+    });
+
+    it("uses a narrow right rail for recent journal cards", () => {
+      seedState(buildState());
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
+
+      expect(screen.getByTestId("dashboard-panel-layout").getAttribute("style") ?? "").toContain(
+        "grid-template-columns: minmax(0, 1fr) 280px",
+      );
+    });
+
+    it("renders two placeholder cards on the left side of dashboard", () => {
+      seedState(buildState());
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
+
+      expect(screen.getByTestId("dashboard-placeholder-card-1")).toBeInTheDocument();
+      expect(screen.getByTestId("dashboard-placeholder-card-2")).toBeInTheDocument();
+    });
+
+    it("keeps the recent journals card compact without description copy", () => {
+      seedState(buildState());
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
+
+      expect(screen.queryByText("继续补记观察，或直接回到上一条交易会话。")).not.toBeInTheDocument();
+    });
+
+    it("uses an icon-only edit button for recent journals", () => {
+      seedState(buildState());
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
+
+      const editButton = screen.getByRole("button", { name: "编辑-journal-done-journal" });
+      expect(editButton).toBeInTheDocument();
+      expect(editButton).not.toHaveTextContent("继续编辑");
+    });
+
+    it("renders the journal list inside a single right-side card", () => {
+      seedState(buildState());
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
+
+      expect(screen.getByTestId("dashboard-journal-list-card")).toBeInTheDocument();
+      expect(screen.queryByTestId("dashboard-journal-card-open-journal")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("dashboard-journal-card-done-journal")).not.toBeInTheDocument();
+    });
+
+    it("shows updated time instead of market and net position in the journal list", () => {
+      seedState(buildState());
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
+
+      expect(screen.getAllByText(/更新于/).length).toBeGreaterThanOrEqual(1);
+      expect(screen.queryByText("CME")).not.toBeInTheDocument();
+      expect(screen.queryByText(/净仓/)).not.toBeInTheDocument();
     });
 
     it("does not render the temporary fs demo card on the dashboard page", () => {
