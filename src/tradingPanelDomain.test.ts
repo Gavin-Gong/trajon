@@ -64,6 +64,8 @@ describe("composeTradeEvent", () => {
     if (result.ok) {
       expect(result.event.type).toBe("log");
       expect(result.event.content).toBe("Observed absorption at VWAP");
+      expect(result.event.createdAt).toBe(result.event.timestamp);
+      expect(result.event.updatedAt).toBe(result.event.timestamp);
     }
   });
 
@@ -136,6 +138,15 @@ describe("calendar helpers", () => {
 
     expect(days.length).toBeGreaterThanOrEqual(35);
     expect(days.some((day) => day.isInDisplayedMonth)).toBe(true);
+  });
+});
+
+describe("createJournal", () => {
+  it("defaults createdAt and updatedAt together", () => {
+    const journal = createJournal({ symbol: "BTCUSDT" });
+
+    expect(journal.createdAt).toBeTruthy();
+    expect(journal.updatedAt).toBe(journal.createdAt);
   });
 });
 

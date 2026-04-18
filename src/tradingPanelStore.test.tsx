@@ -181,6 +181,50 @@ describe("useTradingPanelState preset actions", () => {
     expect(writeGlobalConfigMock).not.toHaveBeenCalled();
   });
 
+  it("refreshes journal updatedAt when finishing or recording events", async () => {
+    const { result } = renderHook(() => useTradingPanelState());
+
+    await waitFor(() => {
+      expect(readGlobalConfigMock).toHaveBeenCalledTimes(1);
+    });
+
+    act(() => {
+      result.current.actions.createJournal("ETHUSDT", "BINANCE");
+    });
+
+    const createdJournal = result.current.state.journals[0];
+    expect(createdJournal).toBeDefined();
+
+    await new Promise((resolve) => window.setTimeout(resolve, 5));
+
+    act(() => {
+      result.current.actions.recordEvent(createdJournal.id, {
+        type: "log",
+        content: "Noted reaction",
+        priceInput: "",
+        quantityInput: "",
+      });
+    });
+
+    const journalAfterEvent = result.current.state.journals[0];
+    expect(Date.parse(journalAfterEvent?.updatedAt ?? "")).toBeGreaterThanOrEqual(
+      Date.parse(createdJournal.updatedAt),
+    );
+    expect(journalAfterEvent?.events[0]?.updatedAt).toBe(journalAfterEvent?.events[0]?.timestamp);
+
+    await new Promise((resolve) => window.setTimeout(resolve, 5));
+
+    act(() => {
+      result.current.actions.finishJournal(createdJournal.id, "Wrapped up");
+    });
+
+    const finishedJournal = result.current.state.journals[0];
+    expect(finishedJournal?.status).toBe("done");
+    expect(Date.parse(finishedJournal?.updatedAt ?? "")).toBeGreaterThanOrEqual(
+      Date.parse(journalAfterEvent?.updatedAt ?? ""),
+    );
+  });
+
   it("uses legacy localStorage config when file config is absent", async () => {
     window.localStorage.setItem(
       TRADING_PANEL_STORAGE_KEY,

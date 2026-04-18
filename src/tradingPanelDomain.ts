@@ -1,25 +1,16 @@
-export type TradeJournalStatus = "open" | "done";
+import type {
+  TradeEvent,
+  TradeEventType,
+  TradeJournal,
+  TradeJournalStatus,
+} from "./model/model";
 
-export type TradeEventType = "entry" | "add" | "reduce" | "exit" | "log";
-
-export type TradeEvent = {
-  id: string;
-  timestamp: string;
-  type: TradeEventType;
-  content: string;
-  price?: number;
-  quantity?: number;
-};
-
-export type TradeJournal = {
-  id: string;
-  createdAt: string;
-  symbol: string;
-  market: string;
-  summary: string;
-  status: TradeJournalStatus;
-  events: TradeEvent[];
-};
+export type {
+  TradeEvent,
+  TradeEventType,
+  TradeJournal,
+  TradeJournalStatus,
+} from "./model/model";
 
 export type TradeEventDraft = {
   type: TradeEventType;
@@ -61,9 +52,12 @@ const DECIMAL_PRECISION_LIMIT = 2;
 export function createJournal(
   overrides: Partial<TradeJournal> = {},
 ): TradeJournal {
+  const createdAt = overrides.createdAt ?? new Date().toISOString();
+
   return {
     id: overrides.id ?? createId(),
-    createdAt: overrides.createdAt ?? new Date().toISOString(),
+    createdAt,
+    updatedAt: overrides.updatedAt ?? createdAt,
     symbol: overrides.symbol ?? "",
     market: overrides.market ?? "",
     summary: overrides.summary ?? "",
@@ -235,9 +229,13 @@ function buildEvent(
     quantity?: number;
   },
 ): TradeEvent {
+  const timestamp = new Date().toISOString();
+
   return {
     id: createId(),
-    timestamp: new Date().toISOString(),
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    timestamp,
     type: input.type,
     content: input.content,
     price: input.price,

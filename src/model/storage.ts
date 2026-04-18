@@ -1,4 +1,4 @@
-import type { TradeJournal } from "../tradingPanelDomain";
+import type { TradeJournal } from "./model";
 import type { GlobalConfig } from "./globalConfig";
 import type { TradingPairPreset } from "./tradingPairPreset";
 

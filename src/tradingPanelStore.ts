@@ -210,6 +210,7 @@ export function useTradingPanelState() {
               ...journal,
               summary: summary.trim(),
               status: "done",
+              updatedAt: new Date().toISOString(),
             }
           : journal,
       ),
@@ -237,14 +238,19 @@ export function useTradingPanelState() {
         ...currentState,
         journals: currentState.journals.map((item) =>
           item.id === journalId
-            ? {
-                ...item,
-                events: [result.event, ...item.events].sort(
-                  (left, right) =>
-                    new Date(right.timestamp).getTime() -
-                    new Date(left.timestamp).getTime(),
-                ),
-              }
+            ? (() => {
+                const updatedAt = new Date().toISOString();
+
+                return {
+                  ...item,
+                  updatedAt,
+                  events: [result.event, ...item.events].sort(
+                    (left, right) =>
+                      new Date(right.timestamp).getTime() -
+                      new Date(left.timestamp).getTime(),
+                  ),
+                };
+              })()
             : item,
         ),
       }));
