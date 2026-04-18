@@ -419,29 +419,6 @@ describe("TradingJournalDesktop", () => {
       expect(screen.queryByText("盘中复盘工作台")).not.toBeInTheDocument();
     });
 
-    it("lets the user choose a preset in dashboard before opening panel", () => {
-      seedState({
-        journals: [],
-        config: { timerEnabled: false, timerInterval: 300 },
-        pairPresets: [
-          { symbol: "BTCUSDT", timeframe: "5m" },
-          { symbol: "ETHUSDT", timeframe: "15m" },
-        ],
-        defaultPresetSymbol: "BTCUSDT",
-        panelPinned: false,
-      });
-
-      render(<TradingJournalDesktop view={{ view: "main" }} />);
-
-      openAntdSelect("dashboard-panel-preset-select");
-      chooseAntdOption("ETHUSDT · 15m");
-      fireEvent.click(screen.getByRole("button", { name: "使用所选预设打开 Panel" }));
-
-      expect(openPanelWindow).toHaveBeenCalledWith({
-        presetSymbol: "ETHUSDT",
-      });
-    });
-
     it("does not render the temporary fs demo card on the dashboard page", () => {
       seedState(buildState());
       render(<TradingJournalDesktop view={{ view: "main" }} />);

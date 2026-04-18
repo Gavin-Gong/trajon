@@ -36,6 +36,7 @@ import {
   netPosition,
   type TradeJournal,
 } from "../../domain/tradingJournalDomain";
+import { useWindowFullscreenOnResize } from "../../hooks/useWindowFullscreenOnResize";
 import { TIMEFRAME_PRESET_VALUES, type TimeframePreset } from "../../model/tradingPairPreset";
 import { openPanelWindow } from "../../platform/panelWindow";
 import {
@@ -55,9 +56,9 @@ import type { AppSection } from "../../components/tradingJournal/TradingJournalT
 dayjs.locale("zh-cn");
 
 const { Paragraph, Text, Title } = Typography;
-const SIDER_WIDTH = 220;
-const SIDER_COLLAPSED_WIDTH = 88;
-const HEADER_HEIGHT = 72;
+const SIDER_WIDTH = 200;
+const SIDER_COLLAPSED_WIDTH = 80;
+const HEADER_HEIGHT = 60;
 
 const SECTION_META: Record<AppSection, { title: string; description: string }> = {
   dashboard: {
@@ -77,6 +78,7 @@ const SECTION_META: Record<AppSection, { title: string; description: string }> =
 export function TradingJournalMain({ store }: { store: TradingJournalStore }) {
   const [section, setSection] = useState<AppSection>("dashboard");
   const [collapsed, setCollapsed] = useState(false);
+  const isFullscreen = useWindowFullscreenOnResize();
   const menuItems = [
     {
       key: "dashboard",
@@ -120,9 +122,17 @@ export function TradingJournalMain({ store }: { store: TradingJournalStore }) {
             boxShadow: "1px 0 0 rgba(15, 23, 42, 0.08)",
           }}
         >
-          <Flex vertical gap={16} style={{ minHeight: "100%", padding: 12 }}>
+          <Flex
+            vertical
+            gap={16}
+            style={{
+              minHeight: "100%",
+              paddingBottom: 12,
+              paddingTop: isFullscreen ? 12 : 32,
+            }}
+          >
             {collapsed ? null : (
-              <Flex align="center" gap={10} style={{ minHeight: 48, paddingInline: 8 }}>
+              <Flex align="center" gap={10} style={{ minHeight: 48, paddingInline: 16 }}>
                 <TrajonBrandMark />
                 <Space orientation="vertical" size={0}>
                   <Text strong style={{ color: "rgba(0, 0, 0, 0.88)", fontSize: 16 }}>
@@ -233,7 +243,7 @@ export function TradingJournalMain({ store }: { store: TradingJournalStore }) {
               padding: `${HEADER_HEIGHT + 16}px 20px 20px`,
             }}
           >
-            {section === "dashboard" ? <DashboardPanel store={store} /> : null}
+            {section === "dashboard" ? <DashboardPanel /> : null}
             {section === "calendar" ? <CalendarHistorySection store={store} /> : null}
             {section === "settings" ? <SettingsSection store={store} /> : null}
           </div>
@@ -282,65 +292,19 @@ function TrajonBrandMark() {
   );
 }
 
-function DashboardPanel({ store }: { store: TradingJournalStore }) {
-  const defaultPreset = store.state.defaultPresetSymbol
-    ? store.state.pairPresets.find((preset) => preset.symbol === store.state.defaultPresetSymbol)
-    : undefined;
-  const [selectedPresetSymbol, setSelectedPresetSymbol] = useState<string | undefined>(
-    defaultPreset?.symbol,
-  );
-
-  useEffect(() => {
-    setSelectedPresetSymbol(defaultPreset?.symbol);
-  }, [defaultPreset?.symbol]);
-
+function DashboardPanel() {
   return (
-      <Space orientation="vertical" size={20} style={{ width: "100%" }}>
-        <Empty
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description={
-            <Space orientation="vertical" size={4}>
-              <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>Dashboard 暂时留空</Text>
-              <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>后续会在这里逐步补回 dashboard 模块。</Text>
-            </Space>
-          }
-        />
-
-        <Card style={panelCardStyle}>
-          <Space orientation="vertical" size={12} style={{ width: "100%" }}>
-            <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>打开 Panel 前选择预设</Text>
-            <Paragraph style={{ margin: 0, color: "rgba(0, 0, 0, 0.45)" }}>
-              先选一个交易对预设，再打开盘中记录 Panel。
-            </Paragraph>
-
-            <Flex gap={12} wrap="wrap" align="end">
-              <div data-testid="dashboard-panel-preset-select" style={{ minWidth: 260, flex: 1 }}>
-                <Select
-                  value={selectedPresetSymbol}
-                  virtual={false}
-                  placeholder="选择预设"
-                  options={store.state.pairPresets.map((preset) => ({
-                    value: preset.symbol,
-                    label: `${preset.symbol} · ${preset.timeframe}`,
-                  }))}
-                  onChange={(value) => setSelectedPresetSymbol(value)}
-                  style={{ width: "100%" }}
-                />
-              </div>
-
-              <Button
-                type="primary"
-                disabled={!selectedPresetSymbol}
-                onClick={() => {
-                  void openPanelWindow({ presetSymbol: selectedPresetSymbol });
-                }}
-              >
-                使用所选预设打开 Panel
-              </Button>
-            </Flex>
+    <Space orientation="vertical" size={20} style={{ width: "100%" }}>
+      <Empty
+        image={Empty.PRESENTED_IMAGE_SIMPLE}
+        description={
+          <Space orientation="vertical" size={4}>
+            <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>Dashboard 暂时留空</Text>
+            <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>后续会在这里逐步补回 dashboard 模块。</Text>
           </Space>
-        </Card>
-      </Space>
+        }
+      />
+    </Space>
   );
 }
 
