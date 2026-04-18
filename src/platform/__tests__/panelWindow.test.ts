@@ -68,7 +68,7 @@ describe("openPanelWindow", () => {
     });
 
     expect(createWindow).toHaveBeenCalledWith("trading-panel", {
-      title: "Trading Panel",
+      title: "Trajon",
       url: "/?view=panel",
       width: 400,
       maxWidth: 400,
@@ -91,7 +91,7 @@ describe("openPanelWindow", () => {
     });
 
     expect(createWindow).toHaveBeenCalledWith("trading-panel", {
-      title: "Trading Panel",
+      title: "Trajon",
       url: "/?view=panel",
       width: 300,
       maxWidth: 400,

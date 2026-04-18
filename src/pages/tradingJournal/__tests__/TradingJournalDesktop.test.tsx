@@ -139,13 +139,6 @@ vi.mock("../../../stores/useTradingJournalState", async () => {
             }));
             return Promise.resolve();
           },
-          updateChartView(nextChartView: Partial<TradingPanelState["chart"]>) {
-            setState((currentState) => ({
-              ...currentState,
-              chart: { ...currentState.chart, ...nextChartView },
-            }));
-            return Promise.resolve();
-          },
           setPanelPinned(panelPinned: boolean) {
             setState((currentState) => ({
               ...currentState,
@@ -221,10 +214,6 @@ function buildState(): TradingPanelState {
     },
     pairPresets: [],
     defaultPresetSymbol: undefined,
-    chart: {
-      symbol: "BINANCE:BTCUSDT",
-      interval: "60",
-    },
     panelPinned: true,
   };
 }
@@ -286,12 +275,7 @@ describe("TradingJournalDesktop", () => {
     const panelRoot = screen.getAllByRole("main")[0];
     expect(panelRoot.getAttribute("style") ?? "").not.toContain("padding:");
 
-    const handwrittenStyledCards = Array.from(document.querySelectorAll(".ant-card[style]"));
-    expect(handwrittenStyledCards.length).toBeGreaterThan(0);
-    for (const card of handwrittenStyledCards) {
-      const style = card.getAttribute("style") ?? "";
-      expect(style).not.toContain("border-radius:");
-    }
+    expect(document.querySelectorAll(".ant-card")).toHaveLength(0);
   });
 
   it("avoids handwritten dark border styles in trading panel surfaces", () => {
@@ -309,157 +293,47 @@ describe("TradingJournalDesktop", () => {
 
     rerender(<TradingJournalDesktop view={{ view: "panel" }} />);
 
-    const styledCards = Array.from(document.querySelectorAll(".ant-card[style]"));
-    expect(styledCards.length).toBeGreaterThan(0);
-    for (const card of styledCards) {
-      const style = card.getAttribute("style") ?? "";
-      expect(style).not.toContain("var(--app-border)");
-      expect(style).not.toContain("var(--app-border-strong)");
-      expect(style).not.toContain("border-style: dashed");
+    expect(document.querySelectorAll(".ant-card")).toHaveLength(0);
+  });
+
+  it("does not render removed app custom property styles in the desktop or panel views", () => {
+    seedState(buildState());
+    const { rerender, container } = render(<TradingJournalDesktop view={{ view: "main" }} />);
+
+    for (const element of Array.from(container.querySelectorAll("[style]"))) {
+      expect(element.getAttribute("style") ?? "").not.toContain("var(--");
+    }
+
+    rerender(<TradingJournalDesktop view={{ view: "panel" }} />);
+
+    for (const element of Array.from(container.querySelectorAll("[style]"))) {
+      expect(element.getAttribute("style") ?? "").not.toContain("var(--");
     }
   });
 
   describe("main view – desktop shell structure", () => {
-    it("renders an empty analysis placeholder while keeping the desktop shell", () => {
+    it("renders an empty dashboard placeholder while keeping the desktop shell", () => {
       seedState(buildState());
       render(<TradingJournalDesktop view={{ view: "main" }} />);
 
-      expectTextPresent("分析页面暂时留空");
-      expectTextPresent("后续会在这里逐步补回分析模块。");
+      expectTextPresent("Dashboard 暂时留空");
+      expectTextPresent("后续会在这里逐步补回 dashboard 模块。");
     });
 
-    it("renders the sidebar branding and navigation menu", () => {
+    it("renders the fixed shell header, branding, and navigation menu", () => {
       seedState(buildState());
       render(<TradingJournalDesktop view={{ view: "main" }} />);
 
+      expect(screen.getByText("Trajon")).toBeInTheDocument();
+      expect(screen.getByText("总览当前记录入口与常用操作。")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "开始交易" })).toBeInTheDocument();
       const menus = screen.getAllByRole("menu");
       expect(menus.length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByRole("menuitem").length).toBeGreaterThanOrEqual(4);
-      expectTextPresent("分析");
-      expectTextPresent("Chart");
+      expect(screen.getAllByRole("menuitem").length).toBeGreaterThanOrEqual(3);
+      expectTextPresent("Dashboard");
       expectTextPresent("日历");
       expectTextPresent("设置");
-    });
-
-    it("switches to the chart section when the chart menu item is clicked", () => {
-      seedState(buildState());
-      render(<TradingJournalDesktop view={{ view: "main" }} />);
-
-      fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
-
-      expect(screen.getByText("图表工作台")).toBeInTheDocument();
-      expect(screen.queryByText("分析页面暂时留空")).not.toBeInTheDocument();
-    });
-
-    it("renders symbol and interval controls in the chart section", () => {
-      seedState(buildState());
-      render(<TradingJournalDesktop view={{ view: "main" }} />);
-
-      fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
-
-      expect(screen.getByText("选择标的")).toBeInTheDocument();
-      expect(screen.getByText("时间周期")).toBeInTheDocument();
-      expect(screen.getByText("BINANCE:BTCUSDT")).toBeInTheDocument();
-      expect(screen.getAllByText("60").length).toBeGreaterThanOrEqual(1);
-    });
-
-    it("includes AAPL and Kweichow Moutai in chart symbol options", () => {
-      seedState(buildState());
-      render(<TradingJournalDesktop view={{ view: "main" }} />);
-
-      fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
-
-      openAntdSelect("chart-symbol-select");
-
-      expect(screen.getByRole("option", { name: "NASDAQ:AAPL" })).toBeInTheDocument();
-      expect(screen.getByRole("option", { name: "SSE:600519" })).toBeInTheDocument();
-    });
-
-    it("renders a stable TradingView widget container", () => {
-      seedState(buildState());
-      render(<TradingJournalDesktop view={{ view: "main" }} />);
-
-      fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
-
-      expect(screen.getByTestId("tradingview-widget-shell")).toBeInTheDocument();
-      expect(screen.getByTestId("tradingview-widget-container")).toBeInTheDocument();
-    });
-
-    it("gives the TradingView autosize container an explicit height", () => {
-      seedState(buildState());
-      render(<TradingJournalDesktop view={{ view: "main" }} />);
-
-      fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
-
-      expect(screen.getByTestId("tradingview-widget-container")).toHaveStyle({
-        height: "520px",
-        overflow: "hidden",
-      });
-    });
-
-    it("updates the chart widget configuration when symbol changes", () => {
-      seedState(buildState());
-      render(<TradingJournalDesktop view={{ view: "main" }} />);
-
-      fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
-      openAntdSelect("chart-symbol-select");
-      chooseAntdOption("BINANCE:ETHUSDT");
-
-      expect(within(screen.getByTestId("chart-symbol-select")).getByText("BINANCE:ETHUSDT")).toBeInTheDocument();
-      expect(screen.getByTestId("tradingview-widget-status")).toHaveTextContent(
-        "当前图表: BINANCE:ETHUSDT / 60",
-      );
-    });
-
-    it("injects the TradingView advanced chart embed script", () => {
-      seedState(buildState());
-      render(<TradingJournalDesktop view={{ view: "main" }} />);
-
-      fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
-
-      const widgetScript = screen
-        .getByTestId("tradingview-widget-container")
-        .querySelector('script[src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js"]');
-
-      expect(widgetScript).not.toBeNull();
-    });
-
-    it("restores persisted chart symbol and interval when opening the chart page", () => {
-      seedState({
-        ...buildState(),
-        chart: {
-          symbol: "BINANCE:ETHUSDT",
-          interval: "240",
-        },
-      });
-
-      render(<TradingJournalDesktop view={{ view: "main" }} />);
-      fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
-
-      expect(screen.getByText("BINANCE:ETHUSDT")).toBeInTheDocument();
-      expect(screen.getByText("240")).toBeInTheDocument();
-      expect(screen.getByTestId("tradingview-widget-status")).toHaveTextContent(
-        "当前图表: BINANCE:ETHUSDT / 240",
-      );
-    });
-
-    it("restores newly added stock symbols when reopening the chart page", () => {
-      seedState({
-        ...buildState(),
-        chart: {
-          symbol: "NASDAQ:AAPL",
-          interval: "1D",
-        },
-      });
-
-      render(<TradingJournalDesktop view={{ view: "main" }} />);
-      fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
-
-      expect(screen.getByText("NASDAQ:AAPL")).toBeInTheDocument();
-      expect(screen.getByText("1D")).toBeInTheDocument();
-      expect(screen.getByTestId("tradingview-widget-status")).toHaveTextContent(
-        "当前图表: NASDAQ:AAPL / 1D",
-      );
+      expect(screen.queryByRole("menuitem", { name: /Chart/ })).not.toBeInTheDocument();
     });
 
     it("uses Ant Design layout and card composition for the desktop workspace", () => {
@@ -481,43 +355,71 @@ describe("TradingJournalDesktop", () => {
       for (const card of cards) {
         const style = card.getAttribute("style") ?? "";
         expect(style).not.toContain("border-radius: 28px");
-        expect(style).not.toContain("box-shadow: var(--app-shadow-soft)");
-        expect(style).not.toContain("background: var(--app-surface-strong)");
+        expect(style).not.toContain("box-shadow: 0 12px 24px rgba(37, 99, 235, 0.16)");
+        expect(style).not.toContain("background: rgb(255, 255, 255)");
       }
     });
 
-    it("renders the float button for opening the panel window", () => {
+    it("opens the panel from the fixed header action", () => {
       seedState(buildState());
       render(<TradingJournalDesktop view={{ view: "main" }} />);
 
-      // FloatButton tooltip text is lazily rendered in jsdom, so we assert on the button element itself
-      const floatButtons = document.querySelectorAll(".ant-float-btn");
-      expect(floatButtons.length).toBeGreaterThanOrEqual(1);
+      fireEvent.click(screen.getByRole("button", { name: "开始交易" }));
+
+      expect(openPanelWindow).toHaveBeenCalledWith();
+    });
+
+    it("opens the panel with the selected preset from header dropdown", async () => {
+      seedState({
+        journals: [],
+        config: { timerEnabled: false, timerInterval: 300 },
+        pairPresets: [
+          { symbol: "XAUUSD", timeframe: "5m" },
+          { symbol: "BTCUSDT", timeframe: "15m" },
+        ],
+        defaultPresetSymbol: undefined,
+        panelPinned: false,
+      });
+
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
+
+      const moreButton = screen.getByRole("button", { name: "更多交易对" });
+      fireEvent.click(moreButton);
+      fireEvent.click(await screen.findByRole("menuitem", { name: "开始交易 XAUUSD" }));
+
+      expect(openPanelWindow).toHaveBeenCalledWith({ presetSymbol: "XAUUSD" });
+    });
+
+    it("hides the brand mark when the sider is collapsed", () => {
+      seedState(buildState());
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
+
+      expect(screen.getByTestId("trading-journal-brand-mark")).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "收起导航" }));
+
+      expect(screen.queryByTestId("trading-journal-brand-mark")).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "展开导航" })).toBeInTheDocument();
     });
   });
 
-  describe("main view – analysis page", () => {
+  describe("main view – dashboard page", () => {
     it("shows the same empty placeholder regardless of journal state", () => {
       seedState({
         journals: [],
         config: { timerEnabled: false, timerInterval: 300 },
         pairPresets: [],
         defaultPresetSymbol: undefined,
-        chart: {
-          symbol: "BINANCE:BTCUSDT",
-          interval: "60",
-        },
         panelPinned: false,
       });
       render(<TradingJournalDesktop view={{ view: "main" }} />);
 
-      expectTextPresent("分析页面暂时留空");
-      expectTextPresent("后续会在这里逐步补回分析模块。");
+      expectTextPresent("Dashboard 暂时留空");
+      expectTextPresent("后续会在这里逐步补回 dashboard 模块。");
       expect(document.querySelectorAll(".ant-empty").length).toBeGreaterThanOrEqual(1);
       expect(screen.queryByText("盘中复盘工作台")).not.toBeInTheDocument();
     });
 
-    it("lets the user choose a preset in analytics before opening panel", () => {
+    it("lets the user choose a preset in dashboard before opening panel", () => {
       seedState({
         journals: [],
         config: { timerEnabled: false, timerInterval: 300 },
@@ -526,16 +428,12 @@ describe("TradingJournalDesktop", () => {
           { symbol: "ETHUSDT", timeframe: "15m" },
         ],
         defaultPresetSymbol: "BTCUSDT",
-        chart: {
-          symbol: "BINANCE:BTCUSDT",
-          interval: "60",
-        },
         panelPinned: false,
       });
 
       render(<TradingJournalDesktop view={{ view: "main" }} />);
 
-      openAntdSelect("analytics-panel-preset-select");
+      openAntdSelect("dashboard-panel-preset-select");
       chooseAntdOption("ETHUSDT · 15m");
       fireEvent.click(screen.getByRole("button", { name: "使用所选预设打开 Panel" }));
 
@@ -544,7 +442,7 @@ describe("TradingJournalDesktop", () => {
       });
     });
 
-    it("does not render the temporary fs demo card on the analysis page", () => {
+    it("does not render the temporary fs demo card on the dashboard page", () => {
       seedState(buildState());
       render(<TradingJournalDesktop view={{ view: "main" }} />);
 
@@ -588,26 +486,20 @@ describe("TradingJournalDesktop", () => {
       expect(screen.getAllByRole("radio", { name: "平仓" }).length).toBeGreaterThanOrEqual(1);
     });
 
-    it("uses Ant Design cards, segmented controls, and list composition in panel view", () => {
+    it("uses segmented controls without card composition in panel view", () => {
       seedState(buildState());
       render(<TradingJournalDesktop view={{ view: "panel" }} />);
 
-      expect(document.querySelectorAll(".ant-card").length).toBeGreaterThanOrEqual(3);
+      expect(document.querySelectorAll(".ant-card")).toHaveLength(0);
       expect(document.querySelectorAll(".ant-segmented").length).toBeGreaterThanOrEqual(1);
       expect(document.querySelectorAll(".ant-empty").length).toBeGreaterThanOrEqual(0);
     });
 
-    it("avoids custom card radius overrides in panel view", () => {
+    it("renders the panel without Ant Design cards", () => {
       seedState(buildState());
       render(<TradingJournalDesktop view={{ view: "panel" }} />);
 
-      const cards = Array.from(document.querySelectorAll(".ant-card"));
-      expect(cards.length).toBeGreaterThanOrEqual(1);
-      for (const card of cards) {
-        const style = card.getAttribute("style") ?? "";
-        expect(style).not.toContain("border-radius: 24px");
-        expect(style).not.toContain("border-radius: 28px");
-      }
+      expect(document.querySelectorAll(".ant-card")).toHaveLength(0);
     });
 
     it("shows the timeline section with event count", () => {
@@ -622,6 +514,30 @@ describe("TradingJournalDesktop", () => {
       render(<TradingJournalDesktop view={{ view: "panel" }} />);
 
       expectTextPresent(/开启 · 5m/);
+    });
+
+    it("keeps panel descriptive copy behind tooltip icons", () => {
+      seedState({
+        ...buildState(),
+        journals: [
+          createJournal({
+            id: "open-without-summary",
+            symbol: "NQ",
+            market: "CME",
+            createdAt: "2026-04-04T09:30:00.000Z",
+            status: "open",
+            summary: "",
+          }),
+        ],
+      });
+
+      render(<TradingJournalDesktop view={{ view: "panel" }} />);
+
+      expect(screen.getByText("暂无总结")).toBeInTheDocument();
+      expect(screen.queryByText("建议在收盘后补上执行结论与改进点。")).not.toBeInTheDocument();
+      expect(screen.queryByText("把关键事件先记下来，复杂 dashboard 留到主界面复盘。")).not.toBeInTheDocument();
+      expect(document.querySelectorAll(".ant-tooltip-open").length).toBe(0);
+      expect(document.querySelectorAll(".anticon-info-circle").length).toBeGreaterThanOrEqual(2);
     });
 
     it("closes the panel after finishing the current journal", async () => {
@@ -660,10 +576,6 @@ describe("TradingJournalDesktop", () => {
         config: { timerEnabled: false, timerInterval: 300 },
         pairPresets: [{ symbol: "BTCUSDT", timeframe: "5m" }],
         defaultPresetSymbol: "BTCUSDT",
-        chart: {
-          symbol: "BINANCE:BTCUSDT",
-          interval: "60",
-        },
         panelPinned: false,
       });
 
@@ -681,10 +593,6 @@ describe("TradingJournalDesktop", () => {
         config: { timerEnabled: false, timerInterval: 300 },
         pairPresets: [{ symbol: "BTCUSDT", timeframe: "5m" }],
         defaultPresetSymbol: "BTCUSDT",
-        chart: {
-          symbol: "BINANCE:BTCUSDT",
-          interval: "60",
-        },
         panelPinned: false,
       });
       render(<TradingJournalDesktop view={{ view: "panel" }} />);
@@ -700,10 +608,6 @@ describe("TradingJournalDesktop", () => {
         config: { timerEnabled: false, timerInterval: 300 },
         pairPresets: [{ symbol: "BTCUSDT", timeframe: "5m" }],
         defaultPresetSymbol: "BTCUSDT",
-        chart: {
-          symbol: "BINANCE:BTCUSDT",
-          interval: "60",
-        },
         panelPinned: false,
       });
       render(<TradingJournalDesktop view={{ view: "panel" }} />);
@@ -721,10 +625,6 @@ describe("TradingJournalDesktop", () => {
           { symbol: "ETHUSDT", timeframe: "15m" },
         ],
         defaultPresetSymbol: "BTCUSDT",
-        chart: {
-          symbol: "BINANCE:BTCUSDT",
-          interval: "60",
-        },
         panelPinned: false,
       });
 
@@ -743,10 +643,6 @@ describe("TradingJournalDesktop", () => {
         config: { timerEnabled: false, timerInterval: 300 },
         pairPresets: [{ symbol: "BTCUSDT", timeframe: "5m" }],
         defaultPresetSymbol: "BTCUSDT",
-        chart: {
-          symbol: "BINANCE:BTCUSDT",
-          interval: "60",
-        },
         panelPinned: true,
       });
 
@@ -765,10 +661,6 @@ describe("TradingJournalDesktop", () => {
         config: { timerEnabled: false, timerInterval: 300 },
         pairPresets: [],
         defaultPresetSymbol: undefined,
-        chart: {
-          symbol: "BINANCE:BTCUSDT",
-          interval: "60",
-        },
         panelPinned: true,
       });
 
@@ -791,10 +683,6 @@ describe("TradingJournalDesktop", () => {
         config: { timerEnabled: false, timerInterval: 300 },
         pairPresets: [{ symbol: "BTCUSDT", timeframe: "5m" }],
         defaultPresetSymbol: undefined,
-        chart: {
-          symbol: "BINANCE:BTCUSDT",
-          interval: "60",
-        },
         panelPinned: true,
       });
 
@@ -817,10 +705,6 @@ describe("TradingJournalDesktop", () => {
         config: { timerEnabled: false, timerInterval: 300 },
         pairPresets: [{ symbol: "BTCUSDT", timeframe: "5m" }],
         defaultPresetSymbol: "BTCUSDT",
-        chart: {
-          symbol: "BINANCE:BTCUSDT",
-          interval: "60",
-        },
         panelPinned: false,
       });
 
@@ -839,10 +723,6 @@ describe("TradingJournalDesktop", () => {
           { symbol: "ETHUSDT", timeframe: "15m" },
         ],
         defaultPresetSymbol: "BTCUSDT",
-        chart: {
-          symbol: "BINANCE:BTCUSDT",
-          interval: "60",
-        },
         panelPinned: false,
       });
 

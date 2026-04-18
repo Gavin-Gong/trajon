@@ -64,17 +64,11 @@ export const tradingPairPresetSchema = z.object({
   timeframe: z.enum(TIMEFRAME_PRESET_VALUES),
 });
 
-export const chartViewSchema = z.object({
-  symbol: trimmedStringSchema.min(1),
-  interval: trimmedStringSchema.min(1),
-});
-
 export const tradingJournalStateSchema = z.object({
   journals: z.array(tradeJournalSchema),
   config: globalConfigSchema,
   pairPresets: z.array(tradingPairPresetSchema),
   defaultPresetSymbol: optionalTrimmedStringSchema.transform((value) => value?.toUpperCase()),
-  chart: chartViewSchema,
   panelPinned: z.boolean(),
 });
 
@@ -82,6 +76,5 @@ export const appConfigValueSchema = z.object({
   config: globalConfigSchema.optional(),
   pairPresets: z.array(tradingPairPresetSchema).optional(),
   defaultPresetSymbol: optionalTrimmedStringSchema.transform((value) => value?.toUpperCase()),
-  chart: chartViewSchema.optional(),
   panelPinned: z.boolean().optional(),
 });

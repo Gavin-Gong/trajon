@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { TradeEventComposerResult, TradeEventDraft, TradeJournal } from "../domain/tradingJournalDomain";
 import type { GlobalConfig } from "../model/globalConfig";
 import type { TimeframePreset } from "../model/tradingPairPreset";
-import type { ChartViewState, TradingPanelState } from "../model/storage";
+import type { TradingPanelState } from "../model/storage";
 import {
   createTradingJournalService,
   type createTradingJournalService as createTradingJournalServiceType,
@@ -21,10 +21,6 @@ const defaultState: TradingPanelState = {
   },
   pairPresets: [],
   defaultPresetSymbol: undefined,
-  chart: {
-    symbol: "BINANCE:BTCUSDT",
-    interval: "60",
-  },
   panelPinned: true,
 };
 
@@ -157,17 +153,6 @@ export function useTradingJournalState(
       }));
     },
 
-    async updateChartView(nextChartView: Partial<ChartViewState>) {
-      await serviceRef.current.updateChartView(nextChartView);
-      setState((currentState) => ({
-        ...currentState,
-        chart: {
-          ...currentState.chart,
-          ...nextChartView,
-        },
-      }));
-    },
-
     async setPanelPinned(panelPinned: boolean) {
       await serviceRef.current.setPanelPinned(panelPinned);
       setState((currentState) => ({
@@ -187,7 +172,6 @@ export function useTradingJournalState(
       upsertPairPreset: (symbol: string, timeframe: TimeframePreset) => Promise<void>;
       removePairPreset: (symbol: string) => Promise<void>;
       setDefaultPresetSymbol: (symbol?: string) => Promise<void>;
-      updateChartView: (nextChartView: Partial<ChartViewState>) => Promise<void>;
       setPanelPinned: (panelPinned: boolean) => Promise<void>;
     },
   };

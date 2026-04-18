@@ -6,7 +6,7 @@ import {
   type TradeEventDraft,
   type TradeJournal,
 } from "../../domain/tradingJournalDomain";
-import type { ChartViewState, TradingPanelState } from "../../model/storage";
+import type { TradingPanelState } from "../../model/storage";
 import type { GlobalConfig } from "../../model/globalConfig";
 import type { TimeframePreset, TradingPairPreset } from "../../model/tradingPairPreset";
 
@@ -65,16 +65,6 @@ export function createTradingJournalService(
         summary: summary.trim(),
         status: "done",
         updatedAt: new Date().toISOString(),
-      });
-    },
-
-    async updateChartView(nextChart: Partial<ChartViewState>): Promise<void> {
-      const state = await repository.loadState();
-      await repository.writeAppState({
-        chart: {
-          ...state.chart,
-          ...nextChart,
-        },
       });
     },
 

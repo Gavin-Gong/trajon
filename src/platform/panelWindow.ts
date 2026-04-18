@@ -133,7 +133,7 @@ export async function openPanelWindow(
   );
 
   windowApi.createWindow(PANEL_WINDOW_LABEL, {
-    title: "Trading Panel",
+    title: "Trajon",
     url: buildPanelUrl({ presetSymbol: options.presetSymbol }),
     width: Math.min(bounds?.width ?? 300, PANEL_MAX_WIDTH),
     maxWidth: PANEL_MAX_WIDTH,

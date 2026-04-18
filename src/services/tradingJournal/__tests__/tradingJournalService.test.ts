@@ -18,7 +18,6 @@ describe("createTradingJournalService", () => {
       config: { timerEnabled: false, timerInterval: 300 },
       pairPresets: [],
       defaultPresetSymbol: undefined,
-      chart: { symbol: "BINANCE:BTCUSDT", interval: "60" },
       panelPinned: true,
     });
   });
@@ -29,7 +28,7 @@ describe("createTradingJournalService", () => {
     const state = await service.loadTradingPanelState();
 
     expect(repository.loadState).toHaveBeenCalledTimes(1);
-    expect(state.chart.symbol).toBe("BINANCE:BTCUSDT");
+    expect(state.panelPinned).toBe(true);
   });
 
   it("creates a journal and persists it", async () => {
@@ -59,7 +58,6 @@ describe("createTradingJournalService", () => {
       config: { timerEnabled: false, timerInterval: 300 },
       pairPresets: [],
       defaultPresetSymbol: undefined,
-      chart: { symbol: "BINANCE:BTCUSDT", interval: "60" },
       panelPinned: true,
     });
 
@@ -90,7 +88,6 @@ describe("createTradingJournalService", () => {
       config: { timerEnabled: false, timerInterval: 300 },
       pairPresets: [],
       defaultPresetSymbol: undefined,
-      chart: { symbol: "BINANCE:BTCUSDT", interval: "60" },
       panelPinned: true,
     });
 
@@ -122,7 +119,6 @@ describe("createTradingJournalService", () => {
       config: { timerEnabled: false, timerInterval: 300 },
       pairPresets: [{ symbol: "BTCUSDT", timeframe: "5m" }],
       defaultPresetSymbol: undefined,
-      chart: { symbol: "BINANCE:BTCUSDT", interval: "60" },
       panelPinned: true,
     });
 

@@ -22,7 +22,7 @@ export const shellCardStyle: CSSProperties = {};
 
 export const mutedShellCardStyle: CSSProperties = {
   ...shellCardStyle,
-  background: "var(--app-panel-muted)",
+  background: "rgba(15, 23, 42, 0.04)",
   boxShadow: "none",
 };
 
@@ -35,14 +35,38 @@ export const panelCardStyle: CSSProperties = {
   ...shellCardStyle,
 };
 
+export const plainPanelSectionStyle: CSSProperties = {
+  padding: 16,
+};
+
+export const plainMutedBlockStyle: CSSProperties = {
+  padding: 12,
+};
+
+export const plainDashedBlockStyle: CSSProperties = {
+  ...plainMutedBlockStyle,
+  background: "transparent",
+  border: "1px dashed rgba(15, 23, 42, 0.14)",
+};
+
+const plainTimelineEventStyle: CSSProperties = {
+  borderBottom: "1px solid rgba(15, 23, 42, 0.08)",
+  paddingBottom: 12,
+};
+
+const plainTimelineHighlightStyle: CSSProperties = {
+};
+
 export type TradingJournalStore = ReturnType<typeof useTradingJournalState>;
 
 export function TimelineSection({
   journal,
   title,
+  surface = "card",
 }: {
   journal: TradeJournal | undefined;
   title: string;
+  surface?: "card" | "plain";
 }) {
   const events = useMemo(
     () =>
@@ -56,14 +80,14 @@ export function TimelineSection({
   );
   const highlightedId = useHighlightedTopEvent(events);
 
-  return (
-    <Card style={panelCardStyle}>
+  const content = (
+    <>
       <Flex justify="space-between" align="start" gap={12} style={{ marginBottom: 16 }}>
         <Space orientation="vertical" size={4}>
-          <Title level={3} style={{ margin: 0, color: "var(--app-text)" }}>
+          <Title level={5} style={{ margin: 0, color: "rgba(0, 0, 0, 0.88)" }}>
             {title}
           </Title>
-          <Paragraph style={{ margin: 0, color: "var(--app-muted)" }}>
+          <Paragraph style={{ margin: 0, color: "rgba(0, 0, 0, 0.45)" }}>
             把同一笔交易拆成事件链，而不是只记结果。
           </Paragraph>
         </Space>
@@ -74,12 +98,12 @@ export function TimelineSection({
         {events.length === 0 ? (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={
-              <Space orientation="vertical" size={4}>
-                <Text strong style={{ color: "var(--app-text)" }}>
+              description={
+                <Space orientation="vertical" size={4}>
+                <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>
                   准备记录下一条观察
                 </Text>
-                <Text style={{ color: "var(--app-muted)" }}>
+                <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>
                   你的最新进场、加减仓和笔记会按时间顺序出现在这里。
                 </Text>
               </Space>
@@ -87,12 +111,16 @@ export function TimelineSection({
           />
         ) : (
           events.map((event) => (
-            <Card
+            <div
               key={event.id}
               style={{
-                ...panelCardStyle,
+                ...(surface === "plain" ? plainTimelineEventStyle : panelCardStyle),
                 width: "100%",
-                boxShadow: highlightedId === event.id ? "var(--app-shadow-soft)" : "none",
+                ...(highlightedId === event.id
+                  ? surface === "plain"
+                    ? plainTimelineHighlightStyle
+                    : { boxShadow: "0 12px 24px rgba(37, 99, 235, 0.16)" }
+                  : undefined),
               }}
             >
               <Space orientation="vertical" size={12} style={{ width: "100%" }}>
@@ -102,16 +130,16 @@ export function TimelineSection({
                       <Tag color={tagColorForVariant(eventVariant(event.type))}>
                         {EVENT_SYMBOLS[event.type]} {EVENT_LABELS[event.type]}
                       </Tag>
-                      <Text strong style={{ color: "var(--app-text)" }}>
+                      <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>
                         {journal?.symbol || "Unknown"}
                       </Text>
                     </Flex>
                     <Flex wrap="wrap" gap={8}>
-                      <Text style={{ color: "var(--app-muted)", fontSize: 12 }}>
+                      <Text style={{ color: "rgba(0, 0, 0, 0.45)", fontSize: 12 }}>
                         {formatClock(new Date(event.timestamp))}
                       </Text>
                       {journal?.market ? (
-                        <Text style={{ color: "var(--app-muted)", fontSize: 12 }}>
+                        <Text style={{ color: "rgba(0, 0, 0, 0.45)", fontSize: 12 }}>
                           {journal.market}
                         </Text>
                       ) : null}
@@ -125,17 +153,23 @@ export function TimelineSection({
                   </Space>
                 </Flex>
                 {event.content ? (
-                  <Paragraph style={{ margin: 0, color: "var(--app-muted)", lineHeight: 1.8 }}>
+                  <Paragraph style={{ margin: 0, color: "rgba(0, 0, 0, 0.45)", lineHeight: 1.8 }}>
                     {event.content}
                   </Paragraph>
                 ) : null}
               </Space>
-            </Card>
+            </div>
           ))
         )}
       </Space>
-    </Card>
+    </>
   );
+
+  if (surface === "plain") {
+    return <div style={plainPanelSectionStyle}>{content}</div>;
+  }
+
+  return <Card style={panelCardStyle}>{content}</Card>;
 }
 
 function useHighlightedTopEvent(events: TradeEvent[]) {

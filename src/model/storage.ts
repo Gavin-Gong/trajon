@@ -2,17 +2,11 @@ import type { TradeJournal } from "./model";
 import type { GlobalConfig } from "./globalConfig";
 import type { TradingPairPreset } from "./tradingPairPreset";
 
-export type ChartViewState = {
-  symbol: string;
-  interval: string;
-};
-
 export type TradingPanelState = {
   journals: TradeJournal[];
   config: GlobalConfig;
   pairPresets: TradingPairPreset[];
   defaultPresetSymbol?: string;
-  chart: ChartViewState;
   panelPinned: boolean;
 };
 

@@ -8,7 +8,6 @@ const service = {
   createTradeJournal: vi.fn(),
   createTradeEvent: vi.fn(),
   finishTradeJournal: vi.fn(),
-  updateChartView: vi.fn(),
   setPanelPinned: vi.fn(),
   updateConfig: vi.fn(),
   upsertPairPreset: vi.fn(),
@@ -24,7 +23,6 @@ describe("useTradingJournalState", () => {
       config: { timerEnabled: false, timerInterval: 300 },
       pairPresets: [],
       defaultPresetSymbol: undefined,
-      chart: { symbol: "BINANCE:BTCUSDT", interval: "60" },
       panelPinned: true,
     });
   });
@@ -36,7 +34,7 @@ describe("useTradingJournalState", () => {
       expect(service.loadTradingPanelState).toHaveBeenCalledTimes(1);
     });
 
-    expect(result.current.state.chart.symbol).toBe("BINANCE:BTCUSDT");
+    expect(result.current.state.panelPinned).toBe(true);
   });
 
   it("creates journals through the service and updates local state", async () => {
@@ -80,7 +78,6 @@ describe("useTradingJournalState", () => {
       config: { timerEnabled: false, timerInterval: 300 },
       pairPresets: [],
       defaultPresetSymbol: undefined,
-      chart: { symbol: "BINANCE:BTCUSDT", interval: "60" },
       panelPinned: true,
     });
     service.createTradeEvent.mockResolvedValue({

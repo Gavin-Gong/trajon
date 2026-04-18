@@ -14,14 +14,13 @@ type SqlDatabase = {
   select: <T>(sql: string, bindValues?: unknown[]) => Promise<T[]>;
 };
 
-type AppStateUpdate = Partial<Pick<TradingPanelState, "config" | "pairPresets" | "defaultPresetSymbol" | "chart" | "panelPinned">>;
+type AppStateUpdate = Partial<Pick<TradingPanelState, "config" | "pairPresets" | "defaultPresetSymbol" | "panelPinned">>;
 
 const DEFAULT_STATE: TradingPanelState = {
   journals: [],
   config: { timerEnabled: false, timerInterval: 300 },
   pairPresets: [],
   defaultPresetSymbol: undefined,
-  chart: { symbol: "BINANCE:BTCUSDT", interval: "60" },
   panelPinned: true,
 };
 

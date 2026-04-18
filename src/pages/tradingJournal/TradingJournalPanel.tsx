@@ -1,8 +1,7 @@
-import { PushpinFilled, PushpinOutlined } from "@ant-design/icons";
+import { InfoCircleOutlined, PushpinFilled, PushpinOutlined } from "@ant-design/icons";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   Button,
-  Card,
   Flex,
   Form,
   Input,
@@ -11,6 +10,7 @@ import {
   Space,
   Statistic,
   Tag,
+  Tooltip,
   Typography,
 } from "antd";
 import { useEffect, useMemo, useState } from "react";
@@ -28,13 +28,13 @@ import {
 } from "../../domain/tradingJournalDomain";
 import {
   EVENT_LABELS,
-  dashedShellCardStyle,
   feedbackMessage,
   formatClock,
   formatNumber,
   formatReminderStatus,
-  mutedShellCardStyle,
-  panelCardStyle,
+  plainDashedBlockStyle,
+  plainMutedBlockStyle,
+  plainPanelSectionStyle,
   quantityHint,
   tagColorForVariant,
   TimelineSection,
@@ -44,6 +44,24 @@ import {
 } from "../../components/tradingJournal/TradingJournalShared";
 
 const { Paragraph, Text, Title } = Typography;
+
+const panelShellStyle = {
+  margin: "0 auto",
+  width: "100%",
+  maxWidth: 430,
+};
+
+const clockShellStyle = {
+  minWidth: 108,
+  padding: "10px 12px",
+  textAlign: "center" as const,
+};
+
+const infoIconStyle = {
+  color: "rgba(0, 0, 0, 0.45)",
+  cursor: "help",
+  fontSize: 14,
+};
 
 export function TradingJournalPanel({
   store,
@@ -90,8 +108,8 @@ export function TradingJournalPanel({
 
   return (
     <main style={{ minHeight: "100vh" }}>
-      <Flex vertical gap={16} style={{ margin: "0 auto", width: "100%", maxWidth: 430 }}>
-        <Card style={panelCardStyle}>
+      <Flex vertical gap={16} style={panelShellStyle}>
+        <div style={plainPanelSectionStyle}>
           <Flex align="center" justify="space-between" gap={12}>
             <Button
               type={isPinned ? "primary" : "default"}
@@ -111,29 +129,34 @@ export function TradingJournalPanel({
                 style={{
                   fontSize: 11,
                   letterSpacing: "0.18em",
-                  color: "var(--app-muted-strong)",
+                  color: "rgba(0, 0, 0, 0.65)",
                   textTransform: "uppercase",
                 }}
               >
                 Quick Capture Panel
               </Text>
-              <Text style={{ color: "var(--app-muted)" }}>
-                提醒 {formatReminderStatus(state.config.timerEnabled, state.config.timerInterval)}
-              </Text>
+              <Flex align="center" gap={6} wrap="wrap">
+                <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>
+                  提醒 {formatReminderStatus(state.config.timerEnabled, state.config.timerInterval)}
+                </Text>
+                <Tooltip title="提醒仅用于盘中节奏检查，不会替代交易记录。">
+                  <InfoCircleOutlined aria-label="提醒说明" style={infoIconStyle} />
+                </Tooltip>
+              </Flex>
             </Space>
 
-            <Card
-              size="small"
+            <div
               style={{
-                background: reminder.isFlashing ? "var(--app-accent-soft)" : "white",
-                boxShadow: reminder.isFlashing ? "var(--app-shadow-soft)" : "none",
+                ...clockShellStyle,
+                background: reminder.isFlashing ? "rgba(37, 99, 235, 0.12)" : "white",
+                boxShadow: reminder.isFlashing ? "0 12px 24px rgba(37, 99, 235, 0.16)" : undefined,
               }}
             >
               <Statistic
                 value={formatClock(reminder.now)}
                 styles={{
                   content: {
-                    color: reminder.isFlashing ? "var(--app-accent)" : "var(--app-text)",
+                    color: reminder.isFlashing ? "#2563eb" : "rgba(0, 0, 0, 0.88)",
                     fontSize: 15,
                     fontWeight: 700,
                     letterSpacing: "0.08em",
@@ -141,25 +164,25 @@ export function TradingJournalPanel({
                   },
                 }}
               />
-            </Card>
+            </div>
           </Flex>
-        </Card>
+        </div>
 
-        <Card style={panelCardStyle}>
+        <div style={plainPanelSectionStyle}>
           <Space orientation="vertical" size={16} style={{ width: "100%" }}>
             {journal ? (
               <>
                 <Flex justify="space-between" align="start" gap={12}>
                   <Space orientation="vertical" size={8}>
                     <Flex align="center" gap={8} wrap="wrap">
-                      <Title level={3} style={{ margin: 0, color: "var(--app-text)" }}>
+                      <Title level={5} style={{ margin: 0, color: "rgba(0, 0, 0, 0.88)" }}>
                         {journal.symbol || "待填写标的"}
                       </Title>
                       <Tag color={tagColorForVariant(journal.status === "open" ? "accent" : "neutral")}>
                         {journal.status === "open" ? "进行中" : "已完成"}
                       </Tag>
                     </Flex>
-                    <Text style={{ color: "var(--app-muted)" }}>
+                    <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>
                       {journal.market || "未标记市场"} · 净仓 {formatNumber(netPosition(journal.events))}
                     </Text>
                   </Space>
@@ -172,24 +195,27 @@ export function TradingJournalPanel({
                 </Flex>
 
                 {journal.summary ? (
-                  <Card style={mutedShellCardStyle}>
-                    <Paragraph style={{ margin: 0, color: "var(--app-muted)", lineHeight: 1.8 }}>
+                  <div style={plainMutedBlockStyle}>
+                    <Paragraph style={{ margin: 0, color: "rgba(0, 0, 0, 0.45)", lineHeight: 1.8 }}>
                       {journal.summary}
                     </Paragraph>
-                  </Card>
+                  </div>
                 ) : (
-                  <Card style={dashedShellCardStyle}>
-                    <Text style={{ color: "var(--app-muted)", lineHeight: 1.8 }}>
-                      这条 journal 还没有总结，建议在收盘后补上执行结论与改进点。
-                    </Text>
-                  </Card>
+                  <div style={plainDashedBlockStyle}>
+                    <Flex align="center" gap={6}>
+                      <Text style={{ color: "rgba(0, 0, 0, 0.45)", lineHeight: 1.8 }}>暂无总结</Text>
+                      <Tooltip title="建议在收盘后补上执行结论与改进点。">
+                        <InfoCircleOutlined aria-label="总结说明" style={infoIconStyle} />
+                      </Tooltip>
+                    </Flex>
+                  </div>
                 )}
               </>
             ) : null}
           </Space>
-        </Card>
+        </div>
 
-        <TimelineSection journal={journal} title="最近记录" />
+        <TimelineSection journal={journal} title="最近记录" surface="plain" />
 
         <QuickCaptureCard
           journal={journal}
@@ -259,22 +285,25 @@ function QuickCaptureCard({
   const canSubmit = journal !== undefined && validation.ok;
 
   return (
-    <Card style={panelCardStyle}>
+    <div style={plainPanelSectionStyle}>
       <Space orientation="vertical" size={16} style={{ width: "100%" }}>
         <Flex justify="space-between" align="start" gap={12}>
           <Space orientation="vertical" size={4}>
-            <Title level={3} style={{ margin: 0, color: "var(--app-text)", letterSpacing: "-0.02em" }}>
-              快速记录
-            </Title>
-            <Paragraph style={{ margin: 0, color: "var(--app-muted)", lineHeight: 1.6 }}>
-              {journal
-                ? journal.status === "done"
-                  ? "这条 journal 已完成，现在只允许补充笔记。"
-                  : "把关键事件先记下来，复杂分析留到主界面复盘。"
-                : "开始一条 journal 后，这里会切换成盘中快速记录模式。"}
-            </Paragraph>
+            <Flex align="center" gap={6} wrap="wrap">
+              <Title level={5} style={{ margin: 0, color: "rgba(0, 0, 0, 0.88)", letterSpacing: "-0.02em" }}>
+                快速记录
+              </Title>
+              <Tooltip
+                title={journal
+                  ? journal.status === "done"
+                    ? "这条 journal 已完成，现在只允许补充笔记。"
+                    : "把关键事件先记下来，复杂 dashboard 留到主界面复盘。"
+                  : "开始一条 journal 后，这里会切换成盘中快速记录模式。"}
+              >
+                <InfoCircleOutlined aria-label="快速记录说明" style={infoIconStyle} />
+              </Tooltip>
+            </Flex>
           </Space>
-          <Tag color={tagColorForVariant("neutral")}>⌘↩ 提交</Tag>
         </Flex>
 
         {journal ? (
@@ -300,9 +329,9 @@ function QuickCaptureCard({
                 <Form layout="vertical">
                   <Form.Item label="数量" style={{ marginBottom: 0 }}>
                     {selectedType === "exit" ? (
-                      <Card size="small" style={mutedShellCardStyle}>
-                        <Text style={{ color: "var(--app-text)" }}>{formatNumber(-currentNetPosition)}</Text>
-                      </Card>
+                      <div style={plainMutedBlockStyle}>
+                        <Text style={{ color: "rgba(0, 0, 0, 0.88)" }}>{formatNumber(-currentNetPosition)}</Text>
+                      </div>
                     ) : (
                       <Input
                         value={quantityInput}
@@ -326,7 +355,7 @@ function QuickCaptureCard({
             ) : null}
 
             {selectedType !== "log" ? (
-              <Text style={{ color: "var(--app-muted)" }}>
+              <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>
                 {quantityHint(selectedType, status, currentNetPosition)}
               </Text>
             ) : null}
@@ -350,7 +379,7 @@ function QuickCaptureCard({
             </Form>
 
             <Flex align="center" justify="space-between" gap={12}>
-              <Text style={{ color: didSubmit ? "var(--app-success)" : "var(--app-muted)" }}>
+              <Text style={{ color: didSubmit ? "#52c41a" : "rgba(0, 0, 0, 0.45)" }}>
                 {didSubmit ? "已记录" : feedbackMessage(selectedType, journal, validation, canSubmit)}
               </Text>
 
@@ -380,14 +409,14 @@ function QuickCaptureCard({
             </Flex>
           </>
         ) : (
-          <Card style={dashedShellCardStyle}>
-            <Text style={{ color: "var(--app-muted)", lineHeight: 1.8 }}>
+          <div style={plainDashedBlockStyle}>
+            <Text style={{ color: "rgba(0, 0, 0, 0.45)", lineHeight: 1.8 }}>
               正在准备新的 journal...
             </Text>
-          </Card>
+          </div>
         )}
       </Space>
-    </Card>
+    </div>
   );
 }
 

@@ -1,8 +1,9 @@
 import {
   CalendarOutlined,
   DashboardOutlined,
-  LineChartOutlined,
-  PlusOutlined,
+  EllipsisOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
   SettingOutlined,
 } from "@ant-design/icons";
 import {
@@ -13,9 +14,9 @@ import {
   Card,
   Descriptions,
   Divider,
+  Dropdown,
   Empty,
   Flex,
-  FloatButton,
   Layout,
   Menu,
   Select,
@@ -24,10 +25,10 @@ import {
   Tag,
   Typography,
 } from "antd";
-import type { BadgeProps as AntBadgeProps, CalendarProps } from "antd";
+import type { BadgeProps as AntBadgeProps, CalendarProps, MenuProps } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
 import "dayjs/locale/zh-cn";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   defaultCalendarSelection,
@@ -54,30 +55,33 @@ import type { AppSection } from "../../components/tradingJournal/TradingJournalT
 dayjs.locale("zh-cn");
 
 const { Paragraph, Text, Title } = Typography;
+const SIDER_WIDTH = 220;
+const SIDER_COLLAPSED_WIDTH = 88;
+const HEADER_HEIGHT = 72;
 
-const CHART_SYMBOL_OPTIONS = [
-  { label: "BTCUSDT", value: "BINANCE:BTCUSDT" },
-  { label: "ETHUSDT", value: "BINANCE:ETHUSDT" },
-  { label: "AAPL", value: "NASDAQ:AAPL" },
-  { label: "茅台", value: "SSE:600519" },
-  { label: "NQ", value: "CME_MINI:NQ1!" },
-  { label: "ES", value: "CME_MINI:ES1!" },
-] as const;
-
-const CHART_INTERVAL_OPTIONS = ["1", "5", "15", "30", "60", "240", "1D"] as const;
+const SECTION_META: Record<AppSection, { title: string; description: string }> = {
+  dashboard: {
+    title: "Dashboard",
+    description: "总览当前记录入口与常用操作。",
+  },
+  calendar: {
+    title: "日历回看",
+    description: "按日期查看 journal 记录与时间线。",
+  },
+  settings: {
+    title: "设置",
+    description: "管理预设、提醒与本地数据。",
+  },
+};
 
 export function TradingJournalMain({ store }: { store: TradingJournalStore }) {
-  const [section, setSection] = useState<AppSection>("analytics");
+  const [section, setSection] = useState<AppSection>("dashboard");
+  const [collapsed, setCollapsed] = useState(false);
   const menuItems = [
     {
-      key: "analytics",
+      key: "dashboard",
       icon: <DashboardOutlined />,
-      label: "分析",
-    },
-    {
-      key: "chart",
-      icon: <LineChartOutlined />,
-      label: "Chart",
+      label: "Dashboard",
     },
     {
       key: "calendar",
@@ -90,50 +94,195 @@ export function TradingJournalMain({ store }: { store: TradingJournalStore }) {
       label: "设置",
     },
   ];
+  const activeSection = SECTION_META[section];
+  const presetMenuItems: MenuProps["items"] = store.state.pairPresets.map((preset) => ({
+    key: preset.symbol,
+    label: `开始交易 ${preset.symbol}`,
+  }));
+  const siderOffset = collapsed ? SIDER_COLLAPSED_WIDTH : SIDER_WIDTH;
 
   return (
     <main>
       <Layout hasSider style={{ minHeight: "100vh", background: "transparent" }}>
         <Layout.Sider
-          width={280}
+          width={SIDER_WIDTH}
+          collapsedWidth={SIDER_COLLAPSED_WIDTH}
+          collapsed={collapsed}
+          trigger={null}
           theme="light"
           style={{
-            background: "transparent",
+            position: "fixed",
+            insetBlock: 0,
+            insetInlineStart: 0,
+            zIndex: 30,
+            overflow: "auto",
+            background: "rgba(255, 255, 255, 0.94)",
+            boxShadow: "1px 0 0 rgba(15, 23, 42, 0.08)",
           }}
         >
-          <Card style={{ ...shellCardStyle, position: "sticky", top: 24 }}>
-            <Flex vertical gap={24}>
-              <Menu
-                mode="inline"
-                selectedKeys={[section]}
-                items={menuItems}
-                onClick={({ key }) => setSection(key as AppSection)}
-                style={{ borderInlineEnd: 0, background: "transparent" }}
-              />
-            </Flex>
-          </Card>
+          <Flex vertical gap={16} style={{ minHeight: "100%", padding: 12 }}>
+            {collapsed ? null : (
+              <Flex align="center" gap={10} style={{ minHeight: 48, paddingInline: 8 }}>
+                <TrajonBrandMark />
+                <Space orientation="vertical" size={0}>
+                  <Text strong style={{ color: "rgba(0, 0, 0, 0.88)", fontSize: 16 }}>
+                    Trajon
+                  </Text>
+                  <Text style={{ color: "rgba(0, 0, 0, 0.45)", fontSize: 12 }}>
+                    Trading Flow
+                  </Text>
+                </Space>
+              </Flex>
+            )}
+
+            <Menu
+              mode="inline"
+              inlineCollapsed={collapsed}
+              selectedKeys={[section]}
+              items={menuItems}
+              onClick={({ key }) => setSection(key as AppSection)}
+              style={{ borderInlineEnd: 0, background: "transparent" }}
+            />
+          </Flex>
         </Layout.Sider>
 
-        <Layout.Content style={{ minWidth: 0 }}>
-          {section === "analytics" ? <AnalyticsPanel store={store} /> : null}
-          {section === "chart" ? <ChartSection store={store} /> : null}
-          {section === "calendar" ? <CalendarHistorySection store={store} /> : null}
-          {section === "settings" ? <SettingsSection store={store} /> : null}
+        <Layout.Content
+          style={{
+            minWidth: 0,
+            marginInlineStart: siderOffset,
+            transition: "margin-inline-start 0.2s ease",
+          }}
+        >
+          <Flex
+            align="center"
+            justify="space-between"
+            gap={16}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: siderOffset,
+              right: 0,
+              height: HEADER_HEIGHT,
+              paddingInline: 20,
+              zIndex: 20,
+              background: "rgba(255, 255, 255, 0.9)",
+              backdropFilter: "blur(12px)",
+              borderBottom: "1px solid rgba(15, 23, 42, 0.08)",
+              transition: "left 0.2s ease",
+            }}
+          >
+            <Flex align="center" gap={12} style={{ minWidth: 0 }}>
+              <Button
+                type="text"
+                aria-label={collapsed ? "展开导航" : "收起导航"}
+                icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                onClick={() => setCollapsed((current) => !current)}
+                style={{
+                  width: 40,
+                  height: 40,
+                  fontSize: 20,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              />
+
+              <Space orientation="vertical" size={0} style={{ minWidth: 0 }}>
+                <Text strong style={{ color: "rgba(0, 0, 0, 0.88)", fontSize: 17, lineHeight: 1.2 }}>
+                  {activeSection.title}
+                </Text>
+                <Text style={{ color: "rgba(0, 0, 0, 0.45)", fontSize: 13, lineHeight: 1.3 }}>
+                  {activeSection.description}
+                </Text>
+              </Space>
+            </Flex>
+
+            <Space.Compact>
+              <Button
+                type="primary"
+                onClick={() => {
+                  void openPanelWindow();
+                }}
+              >
+                开始交易
+              </Button>
+              <Dropdown
+                trigger={["click"]}
+                menu={{
+                  items:
+                    presetMenuItems.length > 0
+                      ? presetMenuItems
+                      : [{ key: "empty", label: "暂无预设", disabled: true }],
+                  onClick: ({ key }) => {
+                    if (key === "empty") {
+                      return;
+                    }
+
+                    void openPanelWindow({ presetSymbol: String(key) });
+                  },
+                }}
+                placement="bottomRight"
+              >
+                <Button aria-label="更多交易对" disabled={presetMenuItems.length === 0} icon={<EllipsisOutlined />} />
+              </Dropdown>
+            </Space.Compact>
+          </Flex>
+
+          <div
+            style={{
+              padding: `${HEADER_HEIGHT + 16}px 20px 20px`,
+            }}
+          >
+            {section === "dashboard" ? <DashboardPanel store={store} /> : null}
+            {section === "calendar" ? <CalendarHistorySection store={store} /> : null}
+            {section === "settings" ? <SettingsSection store={store} /> : null}
+          </div>
         </Layout.Content>
       </Layout>
-      <FloatButton
-        type="primary"
-        icon={<PlusOutlined />}
-        tooltip={<span>打开浮动面板</span>}
-        onClick={() => {
-          void openPanelWindow();
-        }}
-      />
     </main>
   );
 }
 
-function AnalyticsPanel({ store }: { store: TradingJournalStore }) {
+function TrajonBrandMark() {
+  return (
+    <svg
+      data-testid="trading-journal-brand-mark"
+      width="34"
+      height="34"
+      viewBox="0 0 256 256"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <circle
+        cx="152"
+        cy="88"
+        r="74"
+        stroke="#F7C548"
+        strokeWidth="30"
+        strokeLinecap="round"
+        strokeDasharray="330 140"
+        transform="rotate(-26 152 88)"
+      />
+      <circle
+        cx="104"
+        cy="168"
+        r="74"
+        stroke="#34C2D8"
+        strokeWidth="30"
+        strokeLinecap="round"
+        strokeDasharray="330 140"
+        transform="rotate(154 104 168)"
+      />
+      <circle cx="136" cy="100" r="54" fill="#050505" />
+      <circle cx="112" cy="156" r="54" fill="#050505" />
+      <circle cx="136" cy="100" r="18" fill="#F7C548" />
+      <circle cx="112" cy="156" r="18" fill="#34C2D8" />
+    </svg>
+  );
+}
+
+function DashboardPanel({ store }: { store: TradingJournalStore }) {
   const defaultPreset = store.state.defaultPresetSymbol
     ? store.state.pairPresets.find((preset) => preset.symbol === store.state.defaultPresetSymbol)
     : undefined;
@@ -146,27 +295,26 @@ function AnalyticsPanel({ store }: { store: TradingJournalStore }) {
   }, [defaultPreset?.symbol]);
 
   return (
-    <Card style={shellCardStyle}>
       <Space orientation="vertical" size={20} style={{ width: "100%" }}>
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
           description={
             <Space orientation="vertical" size={4}>
-              <Text strong style={{ color: "var(--app-text)" }}>分析页面暂时留空</Text>
-              <Text style={{ color: "var(--app-muted)" }}>后续会在这里逐步补回分析模块。</Text>
+              <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>Dashboard 暂时留空</Text>
+              <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>后续会在这里逐步补回 dashboard 模块。</Text>
             </Space>
           }
         />
 
         <Card style={panelCardStyle}>
           <Space orientation="vertical" size={12} style={{ width: "100%" }}>
-            <Text strong style={{ color: "var(--app-text)" }}>打开 Panel 前选择预设</Text>
-            <Paragraph style={{ margin: 0, color: "var(--app-muted)" }}>
+            <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>打开 Panel 前选择预设</Text>
+            <Paragraph style={{ margin: 0, color: "rgba(0, 0, 0, 0.45)" }}>
               先选一个交易对预设，再打开盘中记录 Panel。
             </Paragraph>
 
             <Flex gap={12} wrap="wrap" align="end">
-              <div data-testid="analytics-panel-preset-select" style={{ minWidth: 260, flex: 1 }}>
+              <div data-testid="dashboard-panel-preset-select" style={{ minWidth: 260, flex: 1 }}>
                 <Select
                   value={selectedPresetSymbol}
                   virtual={false}
@@ -193,126 +341,6 @@ function AnalyticsPanel({ store }: { store: TradingJournalStore }) {
           </Space>
         </Card>
       </Space>
-    </Card>
-  );
-}
-
-function ChartSection({ store }: { store: TradingJournalStore }) {
-  const { symbol, interval } = store.state.chart;
-
-  return (
-    <Space orientation="vertical" size={24} style={{ width: "100%" }}>
-      <Card style={shellCardStyle}>
-        <Space orientation="vertical" size={8} style={{ width: "100%" }}>
-          <Title level={2} style={{ margin: 0, color: "var(--app-text)", letterSpacing: "-0.02em" }}>
-            图表工作台
-          </Title>
-          <Paragraph style={{ margin: 0, color: "var(--app-muted)" }}>
-            这里将集成 TradingView widget，并提供标的与时间周期切换。
-          </Paragraph>
-        </Space>
-      </Card>
-
-      <Card style={shellCardStyle}>
-        <Flex gap={16} wrap="wrap" align="end">
-          <Space orientation="vertical" size={8} style={{ minWidth: 240 }}>
-            <Text strong style={{ color: "var(--app-text)" }}>选择标的</Text>
-            <div data-testid="chart-symbol-select">
-              <Select
-                value={symbol}
-                virtual={false}
-                options={CHART_SYMBOL_OPTIONS.map((option) => ({
-                  value: option.value,
-                  label: option.value,
-                }))}
-                onChange={(value) => {
-                  store.actions.updateChartView({ symbol: value });
-                }}
-                style={{
-                  minWidth: 240,
-                }}
-              />
-            </div>
-          </Space>
-
-          <Space orientation="vertical" size={8} style={{ minWidth: 180 }}>
-            <Text strong style={{ color: "var(--app-text)" }}>时间周期</Text>
-            <div data-testid="chart-interval-select">
-              <Select
-                value={interval}
-                virtual={false}
-                options={CHART_INTERVAL_OPTIONS.map((value) => ({ value, label: value }))}
-                onChange={(value) => {
-                  store.actions.updateChartView({ interval: value });
-                }}
-                style={{
-                  minWidth: 180,
-                }}
-              />
-            </div>
-          </Space>
-        </Flex>
-      </Card>
-
-      <TradingViewWidgetChart symbol={symbol} interval={interval} />
-    </Space>
-  );
-}
-
-function TradingViewWidgetChart({
-  symbol,
-  interval,
-}: {
-  symbol: string;
-  interval: string;
-}) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!containerRef.current) {
-      return;
-    }
-
-    containerRef.current.dataset.symbol = symbol;
-    containerRef.current.dataset.interval = interval;
-    containerRef.current.replaceChildren();
-
-    const script = document.createElement("script");
-    script.type = "text/javascript";
-    script.async = true;
-    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
-    script.text = JSON.stringify({
-      autosize: true,
-      symbol,
-      interval,
-      timezone: "Asia/Shanghai",
-      theme: "light",
-      style: "1",
-      locale: "zh_CN",
-      allow_symbol_change: false,
-      hide_top_toolbar: false,
-      hide_legend: false,
-      support_host: "https://www.tradingview.com",
-    });
-
-    containerRef.current.appendChild(script);
-  }, [interval, symbol]);
-
-  return (
-    <Card style={shellCardStyle}>
-      <Space orientation="vertical" size={12} style={{ width: "100%" }}>
-        <Text data-testid="tradingview-widget-status" style={{ color: "var(--app-text)" }}>
-          当前图表: {symbol} / {interval}
-        </Text>
-        <div data-testid="tradingview-widget-shell" style={{ width: "100%" }}>
-          <div
-            ref={containerRef}
-            data-testid="tradingview-widget-container"
-            style={{ height: 520, width: "100%", borderRadius: 20, overflow: "hidden" }}
-          />
-        </div>
-      </Space>
-    </Card>
   );
 }
 
@@ -378,13 +406,13 @@ function CalendarHistorySection({ store }: { store: TradingJournalStore }) {
                 <Button
                   type="link"
                   size="small"
-                  style={{
-                    fontWeight: selectedJournalId === journal.id ? 700 : 500,
-                    color:
-                      selectedJournalId === journal.id
-                        ? "var(--app-accent)"
-                        : "var(--app-text-soft)",
-                  }}
+                      style={{
+                        fontWeight: selectedJournalId === journal.id ? 700 : 500,
+                        color:
+                          selectedJournalId === journal.id
+                            ? "#2563eb"
+                            : "rgba(0, 0, 0, 0.65)",
+                      }}
                   onClick={(event) => {
                     event.stopPropagation();
                     setSelectedJournalId(journal.id);
@@ -417,15 +445,7 @@ function CalendarHistorySection({ store }: { store: TradingJournalStore }) {
       }}
     >
       <Card style={shellCardStyle}>
-        <Flex justify="space-between" align="end" wrap="wrap" gap={16} style={{ marginBottom: 16 }}>
-          <Space orientation="vertical" size={4}>
-            <Title level={2} style={{ margin: 0, color: "var(--app-text)", letterSpacing: "-0.02em" }}>
-              日历回看
-            </Title>
-            <Paragraph style={{ margin: 0, color: "var(--app-muted)" }}>
-              按创建日期浏览历史 journal，点击查看细节链路。
-            </Paragraph>
-          </Space>
+        <Flex justify="end" align="center" wrap="wrap" gap={16} style={{ marginBottom: 16 }}>
           <Tag color={tagColorForVariant("neutral")}>{monthJournals.length} 条</Tag>
         </Flex>
         <Calendar
@@ -450,8 +470,8 @@ function JournalDetailPanel({ journal }: { journal: TradeJournal | undefined }) 
           image={Empty.PRESENTED_IMAGE_SIMPLE}
           description={
             <Space orientation="vertical" size={4}>
-              <Text strong style={{ color: "var(--app-text)" }}>Journal 详情</Text>
-              <Text style={{ color: "var(--app-muted)" }}>
+              <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>Journal 详情</Text>
+              <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>
                 从左侧日历选择一条 journal，这里会展示时间线与总结。
               </Text>
             </Space>
@@ -467,14 +487,14 @@ function JournalDetailPanel({ journal }: { journal: TradeJournal | undefined }) 
         <Flex justify="space-between" align="start" gap={12}>
           <Space orientation="vertical" size={8}>
             <Flex align="center" gap={8} wrap="wrap">
-              <Title level={3} style={{ margin: 0, color: "var(--app-text)" }}>
+              <Title level={5} style={{ margin: 0, color: "rgba(0, 0, 0, 0.88)" }}>
                 {journal.symbol || "未命名"}
               </Title>
               <Tag color={tagColorForVariant(journal.status === "open" ? "accent" : "neutral")}>
                 {journal.status === "open" ? "进行中" : "已完成"}
               </Tag>
             </Flex>
-            <Text style={{ color: "var(--app-muted)" }}>
+            <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>
               {journal.market || "未标记市场"} · {formatJournalDate(journal.createdAt)}
             </Text>
           </Space>
@@ -495,7 +515,7 @@ function JournalDetailPanel({ journal }: { journal: TradeJournal | undefined }) 
         />
 
         {journal.summary ? (
-          <Paragraph style={{ margin: 0, color: "var(--app-muted)", lineHeight: 1.8 }}>
+          <Paragraph style={{ margin: 0, color: "rgba(0, 0, 0, 0.45)", lineHeight: 1.8 }}>
             {journal.summary}
           </Paragraph>
         ) : null}
@@ -530,20 +550,11 @@ function SettingsSection({ store }: { store: TradingJournalStore }) {
     >
       <Card style={shellCardStyle}>
         <Space orientation="vertical" size={16} style={{ width: "100%" }}>
-          <div>
-            <Title level={3} style={{ margin: 0, color: "var(--app-text)", letterSpacing: "-0.02em" }}>
-              设置
-            </Title>
-            <Paragraph style={{ margin: "4px 0 0", color: "var(--app-muted)" }}>
-              提醒频率保存在本地，用来支持浮动面板的盘中记录节奏。
-            </Paragraph>
-          </div>
-
           <Card style={mutedShellCardStyle}>
             <Flex justify="space-between" align="center" gap={16}>
               <Space orientation="vertical" size={4}>
-                <Text strong style={{ color: "var(--app-text)" }}>启用提醒</Text>
-                <Text style={{ color: "var(--app-muted)" }}>按固定频率提醒自己记录盘中观察。</Text>
+                <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>启用提醒</Text>
+                <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>按固定频率提醒自己记录盘中观察。</Text>
               </Space>
               <Switch
                 checked={config.timerEnabled}
@@ -556,8 +567,8 @@ function SettingsSection({ store }: { store: TradingJournalStore }) {
 
           <Card style={panelCardStyle}>
             <Space orientation="vertical" size={12} style={{ width: "100%" }}>
-              <Text strong style={{ color: "var(--app-text)" }}>提醒间隔</Text>
-              <Paragraph style={{ margin: 0, color: "var(--app-muted)" }}>
+              <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>提醒间隔</Text>
+              <Paragraph style={{ margin: 0, color: "rgba(0, 0, 0, 0.45)" }}>
                 建议与自己的盘中节奏保持一致，避免提醒过密造成打断。
               </Paragraph>
               <Select
@@ -576,14 +587,14 @@ function SettingsSection({ store }: { store: TradingJournalStore }) {
 
           <Card style={panelCardStyle}>
             <Space orientation="vertical" size={12} style={{ width: "100%" }}>
-              <Text strong style={{ color: "var(--app-text)" }}>交易对预设</Text>
-              <Paragraph style={{ margin: 0, color: "var(--app-muted)" }}>
+              <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>交易对预设</Text>
+              <Paragraph style={{ margin: 0, color: "rgba(0, 0, 0, 0.45)" }}>
                 为常用标的设置默认周期，并选择一个默认预设用于新建时自动带出。
               </Paragraph>
 
               <Flex gap={12} wrap="wrap" align="end">
                 <Space orientation="vertical" size={8} style={{ minWidth: 220, flex: 1 }}>
-                  <Text strong style={{ color: "var(--app-text)" }}>Symbol</Text>
+                  <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>Symbol</Text>
                   <div data-testid="pair-preset-symbol-input">
                     <AutoComplete
                       value={presetSymbolInput}
@@ -602,7 +613,7 @@ function SettingsSection({ store }: { store: TradingJournalStore }) {
                 </Space>
 
                 <Space orientation="vertical" size={8} style={{ minWidth: 140 }}>
-                  <Text strong style={{ color: "var(--app-text)" }}>Timeframe</Text>
+                  <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>Timeframe</Text>
                   <div data-testid="pair-preset-timeframe-select">
                     <Select
                       value={presetTimeframe}
@@ -644,19 +655,19 @@ function SettingsSection({ store }: { store: TradingJournalStore }) {
               </Button>
 
               <Space data-testid="pair-preset-list" orientation="vertical" size={8} style={{ width: "100%" }}>
-                <Text strong style={{ color: "var(--app-text)" }}>默认预设</Text>
+                <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>默认预设</Text>
                 {store.state.pairPresets.length === 0 ? (
-                  <Text style={{ color: "var(--app-muted)" }}>还没有保存任何交易对预设。</Text>
+                  <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>还没有保存任何交易对预设。</Text>
                 ) : (
                   store.state.pairPresets.map((preset) => {
                      const isDefault = store.state.defaultPresetSymbol === preset.symbol;
                      return (
-                       <Flex key={preset.symbol} justify="space-between" align="center" gap={12}>
-                         <Space align="center" size={8}>
-                           <Text strong style={{ color: "var(--app-text)" }}>{preset.symbol}</Text>
-                           <Tag color={tagColorForVariant("neutral")}>{preset.timeframe}</Tag>
-                           {isDefault ? <Tag color={tagColorForVariant("accent")}>默认预设</Tag> : null}
-                         </Space>
+                        <Flex key={preset.symbol} justify="space-between" align="center" gap={12}>
+                          <Space align="center" size={8}>
+                            <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>{preset.symbol}</Text>
+                            <Tag color={tagColorForVariant("neutral")}>{preset.timeframe}</Tag>
+                            {isDefault ? <Tag color={tagColorForVariant("accent")}>默认预设</Tag> : null}
+                          </Space>
                          {isDefault ? null : (
                            <Button
                              size="small"
@@ -681,10 +692,10 @@ function SettingsSection({ store }: { store: TradingJournalStore }) {
       <Card style={{ ...shellCardStyle, height: "fit-content" }}>
         <Space orientation="vertical" size={16} style={{ width: "100%" }}>
           <div>
-            <Title level={3} style={{ margin: 0, color: "var(--app-text)", letterSpacing: "-0.02em" }}>
+            <Title level={5} style={{ margin: 0, color: "rgba(0, 0, 0, 0.88)", letterSpacing: "-0.02em" }}>
               数据与导出
             </Title>
-            <Paragraph style={{ margin: "4px 0 0", color: "var(--app-muted)" }}>
+            <Paragraph style={{ margin: "4px 0 0", color: "rgba(0, 0, 0, 0.45)" }}>
               目前数据保存在本地。导出入口保留在这里，便于后续接入 CSV。
             </Paragraph>
           </div>
@@ -699,7 +710,7 @@ function SettingsSection({ store }: { store: TradingJournalStore }) {
           />
 
           <Card style={dashedShellCardStyle}>
-            <Text style={{ color: "var(--app-muted)", lineHeight: 1.8 }}>
+            <Text style={{ color: "rgba(0, 0, 0, 0.45)", lineHeight: 1.8 }}>
               当前版本优先把记录链路和复盘体验打磨稳定，导出能力后续接入。
             </Text>
           </Card>
