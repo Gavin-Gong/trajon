@@ -1,358 +1,128 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import * as globalConfigStorage from "./globalConfigStorage";
-import { TRADING_PANEL_STORAGE_KEY, useTradingPanelState } from "./tradingPanelStore";
+import { useTradingPanelState } from "./tradingPanelStore";
 
-vi.mock("./globalConfigStorage", () => ({
-  readGlobalConfigFallback: vi.fn(),
-  readGlobalConfig: vi.fn(),
-  writeGlobalConfig: vi.fn(),
-}));
+const service = {
+  loadTradingPanelState: vi.fn(),
+  createTradeJournal: vi.fn(),
+  createTradeEvent: vi.fn(),
+  finishTradeJournal: vi.fn(),
+  updateChartView: vi.fn(),
+  setPanelPinned: vi.fn(),
+  updateConfig: vi.fn(),
+  upsertPairPreset: vi.fn(),
+  removePairPreset: vi.fn(),
+  setDefaultPresetSymbol: vi.fn(),
+};
 
-const readGlobalConfigFallbackMock = vi.mocked(globalConfigStorage.readGlobalConfigFallback);
-const readGlobalConfigMock = vi.mocked(globalConfigStorage.readGlobalConfig);
-const writeGlobalConfigMock = vi.mocked(globalConfigStorage.writeGlobalConfig);
-
-function readPersistedState() {
-  const raw = window.localStorage.getItem(TRADING_PANEL_STORAGE_KEY);
-  return raw ? JSON.parse(raw) : null;
-}
-
-describe("useTradingPanelState preset actions", () => {
+describe("useTradingPanelState", () => {
   beforeEach(() => {
-    window.localStorage.clear();
-    vi.resetAllMocks();
-    readGlobalConfigFallbackMock.mockReturnValue(null);
-    readGlobalConfigMock.mockResolvedValue(null);
-    writeGlobalConfigMock.mockResolvedValue();
+    vi.clearAllMocks();
+    service.loadTradingPanelState.mockResolvedValue({
+      journals: [],
+      config: { timerEnabled: false, timerInterval: 300 },
+      pairPresets: [],
+      defaultPresetSymbol: undefined,
+      chart: { symbol: "BINANCE:BTCUSDT", interval: "60" },
+      panelPinned: true,
+    });
   });
 
-  it("writes config actions through the global config storage helper", async () => {
-    const { result } = renderHook(() => useTradingPanelState());
+  it("hydrates from the service on mount", async () => {
+    const { result } = renderHook(() => useTradingPanelState({ service }));
 
     await waitFor(() => {
-      expect(readGlobalConfigMock).toHaveBeenCalledTimes(1);
+      expect(service.loadTradingPanelState).toHaveBeenCalledTimes(1);
     });
 
-    act(() => {
-      result.current.actions.upsertPairPreset(" btcusdt ", "5m");
-      result.current.actions.setDefaultPresetSymbol("BTCUSDT");
-      result.current.actions.updateConfig({
-        timerEnabled: true,
-        timerInterval: 900,
-      });
+    expect(result.current.state.chart.symbol).toBe("BINANCE:BTCUSDT");
+  });
+
+  it("creates journals through the service and updates local state", async () => {
+    const createdJournal = {
+      id: "journal-1",
+      createdAt: "2026-04-18T00:00:00.000Z",
+      updatedAt: "2026-04-18T00:00:00.000Z",
+      symbol: "ETHUSDT",
+      market: "BINANCE",
+      summary: "",
+      status: "open",
+      events: [],
+    };
+    service.createTradeJournal.mockResolvedValue(createdJournal);
+
+    const { result } = renderHook(() => useTradingPanelState({ service }));
+    await waitFor(() => expect(service.loadTradingPanelState).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      await result.current.actions.createJournal("ETHUSDT", "BINANCE");
     });
 
-    expect(result.current.state.pairPresets).toEqual([
-      { symbol: "BTCUSDT", timeframe: "5m" },
-    ]);
-    expect(result.current.state.defaultPresetSymbol).toBe("BTCUSDT");
-    expect(result.current.state.config).toEqual({
-      timerEnabled: true,
-      timerInterval: 900,
-    });
+    expect(service.createTradeJournal).toHaveBeenCalledWith("ETHUSDT", "BINANCE");
+    expect(result.current.state.journals).toEqual([createdJournal]);
+  });
 
-    await waitFor(() => {
-      expect(writeGlobalConfigMock).toHaveBeenLastCalledWith({
-        config: {
-          timerEnabled: true,
-          timerInterval: 900,
+  it("records events through the service and updates local state", async () => {
+    service.loadTradingPanelState.mockResolvedValue({
+      journals: [
+        {
+          id: "journal-1",
+          createdAt: "2026-04-18T00:00:00.000Z",
+          updatedAt: "2026-04-18T00:00:00.000Z",
+          symbol: "ETHUSDT",
+          market: "BINANCE",
+          summary: "",
+          status: "open",
+          events: [],
         },
-        pairPresets: [{ symbol: "BTCUSDT", timeframe: "5m" }],
-        defaultPresetSymbol: "BTCUSDT",
-      });
+      ],
+      config: { timerEnabled: false, timerInterval: 300 },
+      pairPresets: [],
+      defaultPresetSymbol: undefined,
+      chart: { symbol: "BINANCE:BTCUSDT", interval: "60" },
+      panelPinned: true,
     });
-  });
-
-  it("persists config changes immediately enough for a fresh remount", async () => {
-    let resolveWrite: (() => void) | undefined;
-    writeGlobalConfigMock.mockImplementation(
-      () =>
-        new Promise<void>((resolve) => {
-          resolveWrite = resolve;
-        }),
-    );
-
-    const { result } = renderHook(() => useTradingPanelState());
-
-    await waitFor(() => {
-      expect(readGlobalConfigMock).toHaveBeenCalledTimes(1);
-    });
-
-    act(() => {
-      result.current.actions.upsertPairPreset("ethusdt", "15m");
-      result.current.actions.setDefaultPresetSymbol("ETHUSDT");
-    });
-
-    expect(writeGlobalConfigMock).toHaveBeenCalledWith({
-      config: {
-        timerEnabled: false,
-        timerInterval: 300,
-      },
-      pairPresets: [{ symbol: "ETHUSDT", timeframe: "15m" }],
-      defaultPresetSymbol: "ETHUSDT",
-    });
-
-    resolveWrite?.();
-  });
-
-  it("does not write config during initial mount when hydration reads successfully", async () => {
-    renderHook(() => useTradingPanelState());
-
-    await waitFor(() => {
-      expect(readGlobalConfigMock).toHaveBeenCalledTimes(1);
-    });
-
-    expect(writeGlobalConfigMock).not.toHaveBeenCalled();
-  });
-
-  it("clears the default preset when the preset is removed", () => {
-    const { result } = renderHook(() => useTradingPanelState());
-
-    act(() => {
-      result.current.actions.upsertPairPreset("ETHUSDT", "1h");
-      result.current.actions.setDefaultPresetSymbol("ethusdt");
-    });
-
-    expect(result.current.state.defaultPresetSymbol).toBe("ETHUSDT");
-
-    act(() => {
-      result.current.actions.removePairPreset(" ethusdt ");
-    });
-
-    expect(result.current.state.pairPresets).toEqual([]);
-    expect(result.current.state.defaultPresetSymbol).toBeUndefined();
-  });
-
-  it("only accepts existing presets when setting the default symbol", () => {
-    const { result } = renderHook(() => useTradingPanelState());
-
-    act(() => {
-      result.current.actions.setDefaultPresetSymbol("BTCUSDT");
-    });
-
-    expect(result.current.state.defaultPresetSymbol).toBeUndefined();
-
-    act(() => {
-      result.current.actions.upsertPairPreset("btcusdt", "5m");
-      result.current.actions.setDefaultPresetSymbol(" btcusdt ");
-    });
-
-    expect(result.current.state.defaultPresetSymbol).toBe("BTCUSDT");
-  });
-
-  it("persists only session state to localStorage for non-config actions", async () => {
-    const { result } = renderHook(() => useTradingPanelState());
-
-    await waitFor(() => {
-      expect(readGlobalConfigMock).toHaveBeenCalledTimes(1);
-    });
-
-    act(() => {
-      result.current.actions.createJournal("ETHUSDT", "BINANCE");
-      result.current.actions.updateChartView({
-        symbol: "BINANCE:ETHUSDT",
-        interval: "240",
-      });
-      result.current.actions.setPanelPinned(false);
-    });
-
-    await waitFor(() => {
-      expect(readPersistedState()).toEqual({
-        journals: [
-          expect.objectContaining({
-            symbol: "ETHUSDT",
-            market: "BINANCE",
-            status: "open",
-          }),
-        ],
-        chart: {
-          symbol: "BINANCE:ETHUSDT",
-          interval: "240",
-        },
-        panelPinned: false,
-      });
-    });
-
-    expect(readPersistedState()).not.toHaveProperty("config");
-    expect(readPersistedState()).not.toHaveProperty("pairPresets");
-    expect(readPersistedState()).not.toHaveProperty("defaultPresetSymbol");
-    expect(writeGlobalConfigMock).not.toHaveBeenCalled();
-  });
-
-  it("refreshes journal updatedAt when finishing or recording events", async () => {
-    const { result } = renderHook(() => useTradingPanelState());
-
-    await waitFor(() => {
-      expect(readGlobalConfigMock).toHaveBeenCalledTimes(1);
-    });
-
-    act(() => {
-      result.current.actions.createJournal("ETHUSDT", "BINANCE");
-    });
-
-    const createdJournal = result.current.state.journals[0];
-    expect(createdJournal).toBeDefined();
-
-    await new Promise((resolve) => window.setTimeout(resolve, 5));
-
-    act(() => {
-      result.current.actions.recordEvent(createdJournal.id, {
+    service.createTradeEvent.mockResolvedValue({
+      ok: true,
+      event: {
+        id: "event-1",
+        createdAt: "2026-04-18T00:01:00.000Z",
+        updatedAt: "2026-04-18T00:01:00.000Z",
+        timestamp: "2026-04-18T00:01:00.000Z",
         type: "log",
-        content: "Noted reaction",
+        content: "noted",
+      },
+    });
+
+    const { result } = renderHook(() => useTradingPanelState({ service }));
+    await waitFor(() => expect(service.loadTradingPanelState).toHaveBeenCalledTimes(1));
+
+    let response;
+    await act(async () => {
+      response = await result.current.actions.recordEvent("journal-1", {
+        type: "log",
+        content: "noted",
         priceInput: "",
         quantityInput: "",
       });
     });
 
-    const journalAfterEvent = result.current.state.journals[0];
-    expect(Date.parse(journalAfterEvent?.updatedAt ?? "")).toBeGreaterThanOrEqual(
-      Date.parse(createdJournal.updatedAt),
-    );
-    expect(journalAfterEvent?.events[0]?.updatedAt).toBe(journalAfterEvent?.events[0]?.timestamp);
-
-    await new Promise((resolve) => window.setTimeout(resolve, 5));
-
-    act(() => {
-      result.current.actions.finishJournal(createdJournal.id, "Wrapped up");
-    });
-
-    const finishedJournal = result.current.state.journals[0];
-    expect(finishedJournal?.status).toBe("done");
-    expect(Date.parse(finishedJournal?.updatedAt ?? "")).toBeGreaterThanOrEqual(
-      Date.parse(journalAfterEvent?.updatedAt ?? ""),
-    );
+    expect(response).toEqual(expect.objectContaining({ ok: true }));
+    expect(service.createTradeEvent).toHaveBeenCalled();
+    expect(result.current.state.journals[0]?.events).toHaveLength(1);
   });
 
-  it("uses legacy localStorage config when file config is absent", async () => {
-    window.localStorage.setItem(
-      TRADING_PANEL_STORAGE_KEY,
-      JSON.stringify({
-        journals: [],
-        config: {
-          timerEnabled: true,
-          timerInterval: 120,
-        },
-        pairPresets: [{ symbol: "ethusdt", timeframe: "15m" }],
-        defaultPresetSymbol: "ethusdt",
-        chart: {
-          symbol: "BINANCE:ETHUSDT",
-          interval: "240",
-        },
-        panelPinned: false,
-      }),
+  it("does not write the legacy localStorage key", async () => {
+    const setItemSpy = vi.spyOn(window.localStorage.__proto__, "setItem");
+
+    renderHook(() => useTradingPanelState({ service }));
+    await waitFor(() => expect(service.loadTradingPanelState).toHaveBeenCalledTimes(1));
+
+    expect(setItemSpy).not.toHaveBeenCalledWith(
+      "trading-flow:trading-panel-state",
+      expect.anything(),
     );
-
-    const { result } = renderHook(() => useTradingPanelState());
-
-    await waitFor(() => {
-      expect(result.current.state.config).toEqual({
-        timerEnabled: true,
-        timerInterval: 120,
-      });
-      expect(result.current.state.pairPresets).toEqual([
-        { symbol: "ETHUSDT", timeframe: "15m" },
-      ]);
-      expect(result.current.state.defaultPresetSymbol).toBe("ETHUSDT");
-    });
-  });
-
-  it("prefers file config over legacy localStorage config when available", async () => {
-    window.localStorage.setItem(
-      TRADING_PANEL_STORAGE_KEY,
-      JSON.stringify({
-        journals: [],
-        config: {
-          timerEnabled: false,
-          timerInterval: 120,
-        },
-        pairPresets: [{ symbol: "btcusdt", timeframe: "5m" }],
-        defaultPresetSymbol: "btcusdt",
-        chart: {
-          symbol: "BINANCE:ETHUSDT",
-          interval: "240",
-        },
-        panelPinned: false,
-      }),
-    );
-
-    readGlobalConfigMock.mockResolvedValue({
-      config: {
-        timerEnabled: true,
-        timerInterval: 900,
-      },
-      pairPresets: [{ symbol: "ETHUSDT", timeframe: "1h" }],
-      defaultPresetSymbol: "ETHUSDT",
-    });
-
-    const { result } = renderHook(() => useTradingPanelState());
-
-    await waitFor(() => {
-      expect(result.current.state.config).toEqual({
-        timerEnabled: true,
-        timerInterval: 900,
-      });
-      expect(result.current.state.pairPresets).toEqual([
-        { symbol: "ETHUSDT", timeframe: "1h" },
-      ]);
-      expect(result.current.state.defaultPresetSymbol).toBe("ETHUSDT");
-    });
-  });
-
-  it("does not write config when initial file hydration fails", async () => {
-    readGlobalConfigMock.mockRejectedValue(new Error("fs read failed"));
-
-    renderHook(() => useTradingPanelState());
-
-    await waitFor(() => {
-      expect(readGlobalConfigMock).toHaveBeenCalledTimes(1);
-    });
-
-    expect(writeGlobalConfigMock).not.toHaveBeenCalled();
-  });
-
-  it("does not let delayed file hydration overwrite user config edits", async () => {
-    let resolveRead: ((value: Awaited<ReturnType<typeof globalConfigStorage.readGlobalConfig>>) => void) | undefined;
-    readGlobalConfigMock.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolveRead = resolve;
-        }),
-    );
-
-    const { result } = renderHook(() => useTradingPanelState());
-
-    act(() => {
-      result.current.actions.upsertPairPreset("btcusdt", "5m");
-      result.current.actions.setDefaultPresetSymbol("btcusdt");
-      result.current.actions.updateConfig({
-        timerEnabled: true,
-        timerInterval: 900,
-      });
-    });
-
-    act(() => {
-      resolveRead?.({
-        config: {
-          timerEnabled: false,
-          timerInterval: 120,
-        },
-        pairPresets: [{ symbol: "ETHUSDT", timeframe: "1h" }],
-        defaultPresetSymbol: "ETHUSDT",
-      });
-    });
-
-    await waitFor(() => {
-      expect(result.current.state.config).toEqual({
-        timerEnabled: true,
-        timerInterval: 900,
-      });
-    });
-
-    expect(result.current.state.pairPresets).toEqual([
-      { symbol: "BTCUSDT", timeframe: "5m" },
-    ]);
-    expect(result.current.state.defaultPresetSymbol).toBe("BTCUSDT");
+    setItemSpy.mockRestore();
   });
 });

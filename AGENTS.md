@@ -39,9 +39,8 @@
 - `src/panelWindow.ts` 在 Tauri 环境创建 label 为 `trading-panel` 的独立 webview；在浏览器或测试环境会退化成 `window.open` popup。
 - 调用窗口 API 前要保留现有的 runtime 判断和 browser fallback，否则 Vitest/jsdom 环境很容易报错。
 - `panelPinned` 会同步到 Tauri 窗口置顶状态，但这个行为只在 Tauri runtime 下生效。
-- `src/detailWindow.ts` 和 `src/detailTopmost.ts` 已有 helper 和测试，但当前没有看到 UI 接线；除非任务明确要求，不要假设 detail window 已经是正式产品流程。
 
 ## 测试与改动落点
 - 交易规则相关改动优先补 `src/tradingPanelDomain.test.ts`；状态持久化或 hook 行为优先补 `src/tradingPanelStore.test.tsx`。
-- 入口/主题相关回归看 `src/main.test.tsx`；窗口行为看 `src/panelWindow.test.ts`、`src/detailWindow.test.ts`、`src/detailTopmost.test.ts`。
+- 入口/主题相关回归看 `src/main.test.tsx`；窗口行为看 `src/panelWindow.test.ts`。
 - `src-tauri/target/` 和 `src-tauri/gen/schemas/` 是构建产物/生成物，不要把它们当源码编辑或总结。

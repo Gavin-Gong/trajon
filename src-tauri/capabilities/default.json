@@ -21,6 +21,8 @@
       ]
     },
     "sql:default",
+    "sql:allow-execute",
+    "notification:default",
     "opener:default"
   ]
 }

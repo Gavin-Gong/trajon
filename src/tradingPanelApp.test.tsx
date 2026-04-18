@@ -2,14 +2,162 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MainSurface } from "./components/tradingPanel/TradingPanelMain";
-import { GLOBAL_CONFIG_FALLBACK_STORAGE_KEY } from "./globalConfigStorage";
-import { TRADING_PANEL_STORAGE_KEY, type TradingPanelState } from "./model/storage";
+import type { TradingPanelState } from "./model/storage";
 import { PanelSurface } from "./components/tradingPanel/TradingPanelPanel";
 import * as PanelLifecycleModule from "./panelLifecycle";
 import { composeTradeEvent, createJournal } from "./tradingPanelDomain";
 import { TradingPanelDesktop } from "./tradingPanelApp";
 import { parseAppView } from "./panelWindow";
 import { openPanelWindow } from "./panelWindow";
+
+const mockedStoreState = vi.hoisted(() => ({
+  value: undefined as TradingPanelState | undefined,
+}));
+
+vi.mock("./tradingPanelStore", async () => {
+  const React = await import("react");
+  const domain = await import("./tradingPanelDomain");
+
+  function cloneState(state: TradingPanelState): TradingPanelState {
+    return JSON.parse(JSON.stringify(state)) as TradingPanelState;
+  }
+
+  return {
+    useTradingPanelState() {
+      const [state, setState] = React.useState<TradingPanelState>(() =>
+        mockedStoreState.value ? cloneState(mockedStoreState.value) : cloneState(buildState()),
+      );
+      const stateRef = React.useRef(state);
+
+      React.useEffect(() => {
+        stateRef.current = state;
+      }, [state]);
+
+      return {
+        state,
+        actions: {
+          createJournal(symbol: string, market: string) {
+            const journal = domain.createJournal({ symbol: symbol.trim(), market: market.trim() });
+            setState((currentState) => ({
+              ...currentState,
+              journals: [...currentState.journals, journal],
+            }));
+            return journal;
+          },
+          finishJournal(journalId: string, summary: string) {
+            setState((currentState) => ({
+              ...currentState,
+              journals: currentState.journals.map((journal) =>
+                journal.id === journalId
+                  ? {
+                      ...journal,
+                      summary: summary.trim(),
+                      status: "done",
+                      updatedAt: new Date().toISOString(),
+                    }
+                  : journal,
+              ),
+            }));
+            return Promise.resolve();
+          },
+          recordEvent(journalId: string, draft: Parameters<typeof domain.composeTradeEvent>[0]) {
+            const journal = stateRef.current.journals.find((item) => item.id === journalId);
+            if (!journal) {
+              return { ok: false, error: "missingContent" } as const;
+            }
+
+            const result = domain.composeTradeEvent(
+              draft,
+              journal.events.reduce((total, event) => total + (event.quantity ?? 0), 0),
+              journal.status,
+            );
+            if (!result.ok) {
+              return result;
+            }
+
+            setState((currentState) => ({
+              ...currentState,
+              journals: currentState.journals.map((item) =>
+                item.id === journalId
+                  ? {
+                      ...item,
+                      updatedAt: result.event.updatedAt,
+                      events: [result.event, ...item.events],
+                    }
+                  : item,
+              ),
+            }));
+            return result;
+          },
+          updateConfig(nextConfig: Partial<TradingPanelState["config"]>) {
+            setState((currentState) => ({
+              ...currentState,
+              config: { ...currentState.config, ...nextConfig },
+            }));
+            return Promise.resolve();
+          },
+          upsertPairPreset(symbol: string, timeframe: TradingPanelState["pairPresets"][number]["timeframe"]) {
+            const normalizedSymbol = symbol.trim().toUpperCase();
+            if (!normalizedSymbol) {
+              return Promise.resolve();
+            }
+
+            setState((currentState) => {
+              const nextPreset = { symbol: normalizedSymbol, timeframe };
+              const hasExisting = currentState.pairPresets.some((preset) => preset.symbol === normalizedSymbol);
+              return {
+                ...currentState,
+                pairPresets: hasExisting
+                  ? currentState.pairPresets.map((preset) =>
+                      preset.symbol === normalizedSymbol ? nextPreset : preset,
+                    )
+                  : [...currentState.pairPresets, nextPreset],
+              };
+            });
+            return Promise.resolve();
+          },
+          removePairPreset(symbol: string) {
+            const normalizedSymbol = symbol.trim().toUpperCase();
+            setState((currentState) => ({
+              ...currentState,
+              pairPresets: currentState.pairPresets.filter((preset) => preset.symbol !== normalizedSymbol),
+              defaultPresetSymbol:
+                currentState.defaultPresetSymbol === normalizedSymbol
+                  ? undefined
+                  : currentState.defaultPresetSymbol,
+            }));
+            return Promise.resolve();
+          },
+          setDefaultPresetSymbol(symbol?: string) {
+            const normalizedSymbol = symbol?.trim().toUpperCase();
+            setState((currentState) => ({
+              ...currentState,
+              defaultPresetSymbol:
+                normalizedSymbol && currentState.pairPresets.some((preset) => preset.symbol === normalizedSymbol)
+                  ? normalizedSymbol
+                  : undefined,
+            }));
+            return Promise.resolve();
+          },
+          updateChartView(nextChartView: Partial<TradingPanelState["chart"]>) {
+            setState((currentState) => ({
+              ...currentState,
+              chart: { ...currentState.chart, ...nextChartView },
+            }));
+            return Promise.resolve();
+          },
+          setPanelPinned(panelPinned: boolean) {
+            setState((currentState) => ({
+              ...currentState,
+              panelPinned,
+            }));
+            return Promise.resolve();
+          },
+        },
+      };
+    },
+  };
+});
 
 vi.mock("./panelWindow", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./panelWindow")>();
@@ -82,22 +230,7 @@ function buildState(): TradingPanelState {
 }
 
 function seedState(state: TradingPanelState) {
-  window.localStorage.setItem(
-    TRADING_PANEL_STORAGE_KEY,
-    JSON.stringify({
-      journals: state.journals,
-      chart: state.chart,
-      panelPinned: state.panelPinned,
-    }),
-  );
-  window.localStorage.setItem(
-    GLOBAL_CONFIG_FALLBACK_STORAGE_KEY,
-    JSON.stringify({
-      config: state.config,
-      pairPresets: state.pairPresets,
-      defaultPresetSymbol: state.defaultPresetSymbol,
-    }),
-  );
+  mockedStoreState.value = JSON.parse(JSON.stringify(state)) as TradingPanelState;
 }
 
 function expectTextPresent(text: string | RegExp) {
@@ -125,7 +258,7 @@ function typeIntoAntdAutoComplete(testId: string, value: string) {
 
 describe("TradingPanelDesktop", () => {
   beforeEach(() => {
-    window.localStorage.clear();
+    mockedStoreState.value = buildState();
   });
 
   it("keeps the main and panel surfaces in dedicated component modules", () => {
@@ -720,11 +853,12 @@ describe("TradingPanelDesktop", () => {
       fireEvent.click(screen.getByRole("button", { name: "设为默认-ETHUSDT" }));
 
       expect(within(screen.getByTestId("pair-preset-list")).getAllByText(/默认预设/).length).toBeGreaterThanOrEqual(1);
-      await waitFor(() => {
-        expect(window.localStorage.getItem(GLOBAL_CONFIG_FALLBACK_STORAGE_KEY)).toContain("ETHUSDT");
-      });
 
       unmount();
+      mockedStoreState.value = {
+        ...mockedStoreState.value!,
+        defaultPresetSymbol: "ETHUSDT",
+      };
       render(<TradingPanelDesktop view={{ view: "panel" }} />);
 
       await expect(screen.findByText("ETHUSDT")).resolves.toBeInTheDocument();

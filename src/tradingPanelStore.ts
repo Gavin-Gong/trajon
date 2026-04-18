@@ -1,35 +1,17 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import {
-  composeTradeEvent,
-  createJournal as createDomainJournal,
-  type TradeEventComposerResult,
-  type TradeEventDraft,
-  type TradeJournal,
-} from "./tradingPanelDomain";
-import {
-  TIMEFRAME_PRESET_VALUES,
-  type TimeframePreset,
-  type TradingPairPreset,
-} from "./model/tradingPairPreset";
-import {
-  TRADING_PANEL_STORAGE_KEY,
-  type ChartViewState,
-  type TradingPanelState,
-} from "./model/storage";
+import type { TradeEventComposerResult, TradeEventDraft, TradeJournal } from "./tradingPanelDomain";
 import type { GlobalConfig } from "./model/globalConfig";
+import type { TimeframePreset } from "./model/tradingPairPreset";
+import type { ChartViewState, TradingPanelState } from "./model/storage";
 import {
-  readGlobalConfigFallback,
-  readGlobalConfig,
-  type StoredGlobalConfig,
-  writeGlobalConfig,
-} from "./globalConfigStorage";
+  createTradingPanelService,
+  type createTradingPanelService as createTradingPanelServiceType,
+} from "./tradingPanelPersistence/tradingPanelService";
 
-export {
-  TRADING_PANEL_STORAGE_KEY,
-  type GlobalConfig,
-  type TradingPanelState,
-} from "./model/storage";
+export type { GlobalConfig, TradingPanelState } from "./model/storage";
+
+type TradingPanelService = ReturnType<typeof createTradingPanelServiceType>;
 
 const defaultState: TradingPanelState = {
   journals: [],
@@ -46,468 +28,167 @@ const defaultState: TradingPanelState = {
   panelPinned: true,
 };
 
-const TIMEFRAME_PRESETS = new Set<string>(TIMEFRAME_PRESET_VALUES);
-const CHART_SYMBOLS = new Set<string>([
-  "BINANCE:BTCUSDT",
-  "BINANCE:ETHUSDT",
-  "NASDAQ:AAPL",
-  "SSE:600519",
-  "CME_MINI:NQ1!",
-  "CME_MINI:ES1!",
-]);
-const CHART_INTERVALS = new Set<string>(["1", "5", "15", "30", "60", "240", "1D"]);
-
-type TradingPanelSessionState = Pick<TradingPanelState, "journals" | "chart" | "panelPinned">;
-type ConfigHydrationStatus = "pending" | "ready" | "failed";
-
-export function readTradingPanelState(): TradingPanelState {
-  if (typeof window === "undefined") {
-    return defaultState;
-  }
-
-  const raw = window.localStorage.getItem(TRADING_PANEL_STORAGE_KEY);
-  const sessionState = raw
-    ? (() => {
-        try {
-          return normalizeState(JSON.parse(raw));
-        } catch {
-          return defaultState;
-        }
-      })()
-    : defaultState;
-
-  const fallbackConfig = readGlobalConfigFallback();
-  return fallbackConfig ? normalizeState({ ...sessionState, ...fallbackConfig }) : sessionState;
-}
-
-function writeTradingPanelSessionState(state: TradingPanelState) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(TRADING_PANEL_STORAGE_KEY, JSON.stringify(pickSessionState(state)));
-}
-
-export function useTradingPanelState() {
-  const [state, setState] = useState<TradingPanelState>(() => readTradingPanelState());
-  const [configHydrationStatus, setConfigHydrationStatus] = useState<ConfigHydrationStatus>("pending");
-  const [configDirty, setConfigDirty] = useState(false);
-  const configHydrationStatusRef = useRef<ConfigHydrationStatus>("pending");
-
-  useEffect(() => {
-    configHydrationStatusRef.current = configHydrationStatus;
-  }, [configHydrationStatus]);
+export function useTradingPanelState(
+  options: { service?: TradingPanelService } = {},
+) {
+  const serviceRef = useRef<TradingPanelService>(options.service ?? createTradingPanelService());
+  const [state, setState] = useState<TradingPanelState>(defaultState);
 
   useEffect(() => {
     let cancelled = false;
 
-    void readGlobalConfig()
-      .then((storedConfig) => {
-        if (cancelled) {
-          return;
-        }
-
-        if (storedConfig) {
-          setState((currentState) => {
-            if (configDirty) {
-              return currentState;
-            }
-
-            return normalizeState({ ...currentState, ...storedConfig });
-          });
-        }
-
-        setConfigHydrationStatus("ready");
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setConfigHydrationStatus("failed");
-        }
-      });
+    void serviceRef.current.loadTradingPanelState().then((nextState) => {
+      if (!cancelled) {
+        setState(nextState);
+      }
+    });
 
     return () => {
       cancelled = true;
     };
-  }, [configDirty]);
+  }, []);
 
-  useEffect(() => {
-    writeTradingPanelSessionState(state);
-  }, [state.journals, state.chart, state.panelPinned]);
-
-  useEffect(() => {
-    if (configHydrationStatus !== "ready" || !configDirty) {
-      return;
-    }
-
-    setConfigDirty(false);
-    void writeGlobalConfig(pickStoredGlobalConfig(state));
-  }, [configDirty, configHydrationStatus, state.config, state.defaultPresetSymbol, state.pairPresets]);
-
-  const updateStoredConfig = useCallback(
-    (updater: (currentState: TradingPanelState) => TradingPanelState) => {
-      setState((currentState) => {
-        const nextState = updater(currentState);
-
-        if (configHydrationStatusRef.current === "ready") {
-          void writeGlobalConfig(pickStoredGlobalConfig(nextState));
-        } else {
-          setConfigDirty(true);
-        }
-
-        return nextState;
-      });
+  const actions = useMemo(() => ({
+    async createJournal(symbol: string, market: string) {
+      const journal = await serviceRef.current.createTradeJournal(symbol, market);
+      setState((currentState) => ({
+        ...currentState,
+        journals: [...currentState.journals, journal],
+      }));
+      return journal;
     },
-    [],
-  );
 
-  useEffect(() => {
-    function handleStorage(event: StorageEvent) {
-      if (event.key !== TRADING_PANEL_STORAGE_KEY || event.newValue === null) {
-        return;
-      }
+    async finishJournal(journalId: string, summary: string) {
+      await serviceRef.current.finishTradeJournal(journalId, summary);
+      setState((currentState) => ({
+        ...currentState,
+        journals: currentState.journals.map((journal) =>
+          journal.id === journalId
+            ? {
+                ...journal,
+                summary: summary.trim(),
+                status: "done",
+                updatedAt: new Date().toISOString(),
+              }
+            : journal,
+        ),
+      }));
+    },
 
-      const nextValue = event.newValue;
-
-      try {
-        setState((currentState) => ({
-          ...currentState,
-          ...normalizeSessionState(JSON.parse(nextValue)),
-        }));
-      } catch {
-        setState((currentState) => ({
-          ...currentState,
-          ...pickSessionState(defaultState),
-        }));
-      }
-    }
-
-    window.addEventListener("storage", handleStorage);
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-    };
-  }, []);
-
-  const createJournal = useCallback((symbol: string, market: string) => {
-    const journal = createDomainJournal({
-      symbol: symbol.trim(),
-      market: market.trim(),
-    });
-
-    setState((currentState) => ({
-      ...currentState,
-      journals: [...currentState.journals, journal],
-    }));
-
-    return journal;
-  }, []);
-
-  const finishJournal = useCallback((journalId: string, summary: string) => {
-    setState((currentState) => ({
-      ...currentState,
-      journals: currentState.journals.map((journal) =>
-        journal.id === journalId
-          ? {
-              ...journal,
-              summary: summary.trim(),
-              status: "done",
-              updatedAt: new Date().toISOString(),
-            }
-          : journal,
-      ),
-    }));
-  }, []);
-
-  const recordEvent = useCallback(
-    (journalId: string, draft: TradeEventDraft): TradeEventComposerResult => {
-      const journal = state.journals.find((item) => item.id === journalId);
-      if (!journal) {
-        return { ok: false, error: "missingContent" };
-      }
-
-      const result = composeTradeEvent(
-        draft,
-        journal.events.reduce((total, event) => total + (event.quantity ?? 0), 0),
-        journal.status,
-      );
-
+    async recordEvent(
+      journalId: string,
+      draft: TradeEventDraft,
+    ): Promise<TradeEventComposerResult> {
+      const result = await serviceRef.current.createTradeEvent(journalId, draft);
       if (!result.ok) {
         return result;
       }
 
       setState((currentState) => ({
         ...currentState,
-        journals: currentState.journals.map((item) =>
-          item.id === journalId
-            ? (() => {
-                const updatedAt = new Date().toISOString();
-
-                return {
-                  ...item,
-                  updatedAt,
-                  events: [result.event, ...item.events].sort(
-                    (left, right) =>
-                      new Date(right.timestamp).getTime() -
-                      new Date(left.timestamp).getTime(),
-                  ),
-                };
-              })()
-            : item,
+        journals: currentState.journals.map((journal) =>
+          journal.id === journalId
+            ? {
+                ...journal,
+                updatedAt: result.event.updatedAt,
+                events: [result.event, ...journal.events],
+              }
+            : journal,
         ),
       }));
 
       return result;
     },
-    [state.journals],
-  );
 
-  const updateConfig = useCallback((nextConfig: Partial<GlobalConfig>) => {
-    updateStoredConfig((currentState) => ({
-      ...currentState,
-      config: {
-        ...currentState.config,
-        ...nextConfig,
-      },
-    }));
-  }, [updateStoredConfig]);
-
-  const upsertPairPreset = useCallback((symbol: string, timeframe: TimeframePreset) => {
-    const normalizedSymbol = normalizeSymbol(symbol);
-    if (!normalizedSymbol) {
-      return;
-    }
-
-    updateStoredConfig((currentState) => {
-      const nextPreset: TradingPairPreset = {
-        symbol: normalizedSymbol,
-        timeframe,
-      };
-      const hasExisting = currentState.pairPresets.some(
-        (preset) => preset.symbol === normalizedSymbol,
-      );
-
-      return {
+    async updateConfig(nextConfig: Partial<GlobalConfig>) {
+      await serviceRef.current.updateConfig(nextConfig);
+      setState((currentState) => ({
         ...currentState,
-        pairPresets: hasExisting
-          ? currentState.pairPresets.map((preset) =>
-              preset.symbol === normalizedSymbol ? nextPreset : preset,
-            )
-          : [...currentState.pairPresets, nextPreset],
-      };
-    });
-  }, [updateStoredConfig]);
+        config: {
+          ...currentState.config,
+          ...nextConfig,
+        },
+      }));
+    },
 
-  const removePairPreset = useCallback((symbol: string) => {
-    const normalizedSymbol = normalizeSymbol(symbol);
-    if (!normalizedSymbol) {
-      return;
-    }
+    async upsertPairPreset(symbol: string, timeframe: TimeframePreset) {
+      await serviceRef.current.upsertPairPreset(symbol, timeframe);
+      const normalizedSymbol = symbol.trim().toUpperCase();
+      if (!normalizedSymbol) {
+        return;
+      }
 
-    updateStoredConfig((currentState) => ({
-      ...currentState,
-      pairPresets: currentState.pairPresets.filter(
-        (preset) => preset.symbol !== normalizedSymbol,
-      ),
-      defaultPresetSymbol:
-        currentState.defaultPresetSymbol === normalizedSymbol
-          ? undefined
-          : currentState.defaultPresetSymbol,
-    }));
-  }, [updateStoredConfig]);
+      setState((currentState) => {
+        const nextPreset = { symbol: normalizedSymbol, timeframe };
+        const exists = currentState.pairPresets.some((preset) => preset.symbol === normalizedSymbol);
+        return {
+          ...currentState,
+          pairPresets: exists
+            ? currentState.pairPresets.map((preset) =>
+                preset.symbol === normalizedSymbol ? nextPreset : preset,
+              )
+            : [...currentState.pairPresets, nextPreset],
+        };
+      });
+    },
 
-  const setDefaultPresetSymbol = useCallback((symbol?: string) => {
-    const normalizedSymbol = typeof symbol === "string" ? normalizeSymbol(symbol) : undefined;
+    async removePairPreset(symbol: string) {
+      await serviceRef.current.removePairPreset(symbol);
+      const normalizedSymbol = symbol.trim().toUpperCase();
+      setState((currentState) => ({
+        ...currentState,
+        pairPresets: currentState.pairPresets.filter((preset) => preset.symbol !== normalizedSymbol),
+        defaultPresetSymbol:
+          currentState.defaultPresetSymbol === normalizedSymbol
+            ? undefined
+            : currentState.defaultPresetSymbol,
+      }));
+    },
 
-    updateStoredConfig((currentState) => ({
-      ...currentState,
-      defaultPresetSymbol:
-        normalizedSymbol &&
-        currentState.pairPresets.some((preset) => preset.symbol === normalizedSymbol)
-          ? normalizedSymbol
-          : undefined,
-    }));
-  }, [updateStoredConfig]);
+    async setDefaultPresetSymbol(symbol?: string) {
+      await serviceRef.current.setDefaultPresetSymbol(symbol);
+      const normalizedSymbol = symbol?.trim().toUpperCase();
+      setState((currentState) => ({
+        ...currentState,
+        defaultPresetSymbol:
+          normalizedSymbol && currentState.pairPresets.some((preset) => preset.symbol === normalizedSymbol)
+            ? normalizedSymbol
+            : undefined,
+      }));
+    },
 
-  const updateChartView = useCallback((nextChartView: Partial<ChartViewState>) => {
-    setState((currentState) => ({
-      ...currentState,
-      chart: normalizeChartView({
-        ...currentState.chart,
-        ...nextChartView,
-      }),
-    }));
-  }, []);
+    async updateChartView(nextChartView: Partial<ChartViewState>) {
+      await serviceRef.current.updateChartView(nextChartView);
+      setState((currentState) => ({
+        ...currentState,
+        chart: {
+          ...currentState.chart,
+          ...nextChartView,
+        },
+      }));
+    },
 
-  const setPanelPinned = useCallback((panelPinned: boolean) => {
-    setState((currentState) => ({
-      ...currentState,
-      panelPinned,
-    }));
-  }, []);
-
-  return useMemo(
-    () => ({
-      state,
-      actions: {
-        createJournal,
-        finishJournal,
-        recordEvent,
-        removePairPreset,
-        setDefaultPresetSymbol,
-        setPanelPinned,
-        upsertPairPreset,
-        updateChartView,
-        updateConfig,
-      },
-    }),
-    [
-      createJournal,
-      finishJournal,
-      recordEvent,
-      removePairPreset,
-      setDefaultPresetSymbol,
-      setPanelPinned,
-      state,
-      updateChartView,
-      updateConfig,
-      updateStoredConfig,
-      upsertPairPreset,
-    ],
-  );
-}
-
-function pickSessionState(state: TradingPanelState): TradingPanelSessionState {
-  return {
-    journals: state.journals,
-    chart: state.chart,
-    panelPinned: state.panelPinned,
-  };
-}
-
-function normalizeSessionState(value: unknown): TradingPanelSessionState {
-  return pickSessionState(normalizeState(value));
-}
-
-function pickStoredGlobalConfig(state: TradingPanelState): StoredGlobalConfig {
-  return {
-    config: state.config,
-    pairPresets: state.pairPresets,
-    defaultPresetSymbol: state.defaultPresetSymbol,
-  };
-}
-
-function normalizeState(value: unknown): TradingPanelState {
-  if (!isRecord(value)) {
-    return defaultState;
-  }
+    async setPanelPinned(panelPinned: boolean) {
+      await serviceRef.current.setPanelPinned(panelPinned);
+      setState((currentState) => ({
+        ...currentState,
+        panelPinned,
+      }));
+    },
+  }), []);
 
   return {
-    journals: Array.isArray(value.journals)
-      ? value.journals.filter(isTradeJournal)
-      : defaultState.journals,
-    config: isRecord(value.config)
-      ? {
-          timerEnabled:
-            typeof value.config.timerEnabled === "boolean"
-              ? value.config.timerEnabled
-              : defaultState.config.timerEnabled,
-          timerInterval:
-            typeof value.config.timerInterval === "number"
-              ? value.config.timerInterval
-              : defaultState.config.timerInterval,
-        }
-      : defaultState.config,
-    pairPresets: normalizePairPresets(value.pairPresets),
-    defaultPresetSymbol: normalizeDefaultPresetSymbol(value.defaultPresetSymbol, value.pairPresets),
-    chart: normalizeChartView(value.chart),
-    panelPinned:
-      typeof value.panelPinned === "boolean"
-        ? value.panelPinned
-        : defaultState.panelPinned,
+    state,
+    actions: actions as {
+      createJournal: (symbol: string, market: string) => Promise<TradeJournal>;
+      finishJournal: (journalId: string, summary: string) => Promise<void>;
+      recordEvent: (journalId: string, draft: TradeEventDraft) => Promise<TradeEventComposerResult>;
+      updateConfig: (nextConfig: Partial<GlobalConfig>) => Promise<void>;
+      upsertPairPreset: (symbol: string, timeframe: TimeframePreset) => Promise<void>;
+      removePairPreset: (symbol: string) => Promise<void>;
+      setDefaultPresetSymbol: (symbol?: string) => Promise<void>;
+      updateChartView: (nextChartView: Partial<ChartViewState>) => Promise<void>;
+      setPanelPinned: (panelPinned: boolean) => Promise<void>;
+    },
   };
-}
-
-function normalizeChartView(value: unknown): ChartViewState {
-  if (!isRecord(value)) {
-    return defaultState.chart;
-  }
-
-  return {
-    symbol:
-      typeof value.symbol === "string" && CHART_SYMBOLS.has(value.symbol)
-        ? value.symbol
-        : defaultState.chart.symbol,
-    interval:
-      typeof value.interval === "string" && CHART_INTERVALS.has(value.interval)
-        ? value.interval
-        : defaultState.chart.interval,
-  };
-}
-
-function normalizePairPresets(value: unknown): TradingPairPreset[] {
-  if (!Array.isArray(value)) {
-    return defaultState.pairPresets;
-  }
-
-  return value.flatMap((item) => {
-    const preset = normalizePairPreset(item);
-    return preset ? [preset] : [];
-  });
-}
-
-function normalizePairPreset(value: unknown): TradingPairPreset | undefined {
-  if (!isRecord(value) || typeof value.symbol !== "string") {
-    return undefined;
-  }
-
-  const symbol = normalizeSymbol(value.symbol);
-  if (!symbol || typeof value.timeframe !== "string" || !TIMEFRAME_PRESETS.has(value.timeframe)) {
-    return undefined;
-  }
-
-  return {
-    symbol,
-    timeframe: value.timeframe as TimeframePreset,
-  };
-}
-
-function normalizeDefaultPresetSymbol(
-  defaultPresetSymbol: unknown,
-  pairPresetsValue: unknown,
-): string | undefined {
-  if (typeof defaultPresetSymbol !== "string") {
-    return undefined;
-  }
-
-  const normalizedSymbol = normalizeSymbol(defaultPresetSymbol);
-  if (!normalizedSymbol) {
-    return undefined;
-  }
-
-  const pairPresets = normalizePairPresets(pairPresetsValue);
-  return pairPresets.some((preset) => preset.symbol === normalizedSymbol)
-    ? normalizedSymbol
-    : undefined;
-}
-
-function normalizeSymbol(value: string): string {
-  return value.trim().toUpperCase();
-}
-
-function isTradeJournal(value: unknown): value is TradeJournal {
-  if (!isRecord(value) || !Array.isArray(value.events)) {
-    return false;
-  }
-
-  return (
-    typeof value.id === "string" &&
-    typeof value.createdAt === "string" &&
-    typeof value.symbol === "string" &&
-    typeof value.market === "string" &&
-    typeof value.summary === "string" &&
-    (value.status === "open" || value.status === "done")
-  );
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }

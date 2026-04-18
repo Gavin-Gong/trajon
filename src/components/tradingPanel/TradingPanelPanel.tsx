@@ -21,6 +21,7 @@ import {
   composeTradeEvent,
   currentJournal as selectCurrentJournal,
   netPosition,
+  type TradeEventComposerResult,
   type TradeEventDraft,
   type TradeEventType,
   type TradeJournal,
@@ -193,7 +194,9 @@ export function PanelSurface({
         <QuickCaptureCard
           journal={journal}
           onRecord={(draft) =>
-            journal ? store.actions.recordEvent(journal.id, draft) : { ok: false, error: "missingContent" }
+            journal
+              ? store.actions.recordEvent(journal.id, draft)
+              : Promise.resolve({ ok: false, error: "missingContent" } as const)
           }
         />
       </Flex>
@@ -221,7 +224,7 @@ function QuickCaptureCard({
   onRecord,
 }: {
   journal: TradeJournal | undefined;
-  onRecord: (draft: TradeEventDraft) => ReturnType<typeof composeTradeEvent>;
+  onRecord: (draft: TradeEventDraft) => Promise<TradeEventComposerResult>;
 }) {
   const currentNetPosition = journal ? netPosition(journal.events) : 0;
   const status = journal?.status ?? "open";
@@ -351,26 +354,27 @@ function QuickCaptureCard({
                 {didSubmit ? "已记录" : feedbackMessage(selectedType, journal, validation, canSubmit)}
               </Text>
 
-              <Button
-                type="primary"
-                disabled={!canSubmit}
-                onClick={() => {
-                  const result = onRecord(draft);
-                  if (!result.ok) {
-                    return;
-                  }
+               <Button
+                 type="primary"
+                 disabled={!canSubmit}
+                 onClick={() => {
+                   void onRecord(draft).then((result) => {
+                     if (!result.ok) {
+                       return;
+                     }
 
-                  setDidSubmit(true);
-                  setSelectedType("log");
-                  setQuantityInput("");
-                  setPriceInput("");
-                  setContent("");
+                     setDidSubmit(true);
+                     setSelectedType("log");
+                     setQuantityInput("");
+                     setPriceInput("");
+                     setContent("");
 
-                  window.setTimeout(() => {
-                    setDidSubmit(false);
-                  }, 1200);
-                }}
-              >
+                     window.setTimeout(() => {
+                       setDidSubmit(false);
+                     }, 1200);
+                   });
+                 }}
+               >
                 {didSubmit ? "已记录" : "记录事件"}
               </Button>
             </Flex>
