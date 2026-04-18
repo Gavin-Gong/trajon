@@ -3,7 +3,7 @@ import Database from "@tauri-apps/plugin-sql";
 
 export const DATABASE_DIRECTORY = "databases";
 export const BACKUP_DIRECTORY = `${DATABASE_DIRECTORY}/backups`;
-export const DATABASE_FILE_NAME = "trading-flow.db";
+export const DATABASE_FILE_NAME = "trajon.db";
 export const DATABASE_PATH = `sqlite:${DATABASE_DIRECTORY}/${DATABASE_FILE_NAME}`;
 
 const SQLITE_UNAVAILABLE_ERROR = "Tauri SQLite storage is only available in the desktop app";
@@ -38,7 +38,7 @@ function getDatabaseFilePath(): string {
   return `${DATABASE_DIRECTORY}/${DATABASE_FILE_NAME}`;
 }
 
-export async function openTradingFlowDatabase(): Promise<Database> {
+export async function openTrajonDatabase(): Promise<Database> {
   assertTauriSqlAvailable();
 
   if (cachedDatabase) {
@@ -50,7 +50,7 @@ export async function openTradingFlowDatabase(): Promise<Database> {
   return cachedDatabase;
 }
 
-export async function closeTradingFlowDatabase(): Promise<void> {
+export async function closeTrajonDatabase(): Promise<void> {
   if (!cachedDatabase) {
     return;
   }
@@ -60,7 +60,7 @@ export async function closeTradingFlowDatabase(): Promise<void> {
   await db.close();
 }
 
-export async function backupTradingFlowDatabase(fileName: string): Promise<string> {
+export async function backupTrajonDatabase(fileName: string): Promise<string> {
   assertTauriSqlAvailable();
 
   const databaseFilePath = getDatabaseFilePath();
@@ -70,7 +70,7 @@ export async function backupTradingFlowDatabase(fileName: string): Promise<strin
     throw new Error("SQLite database file does not exist yet");
   }
 
-  await closeTradingFlowDatabase();
+  await closeTrajonDatabase();
   await ensureBackupDirectory();
   await copyFile(databaseFilePath, backupPath, {
     fromPathBaseDir: BaseDirectory.AppData,
@@ -79,7 +79,7 @@ export async function backupTradingFlowDatabase(fileName: string): Promise<strin
   return backupPath;
 }
 
-export async function restoreTradingFlowDatabase(fileName: string): Promise<void> {
+export async function restoreTrajonDatabase(fileName: string): Promise<void> {
   assertTauriSqlAvailable();
 
   const backupPath = `${BACKUP_DIRECTORY}/${fileName.trim()}`;
@@ -87,7 +87,7 @@ export async function restoreTradingFlowDatabase(fileName: string): Promise<void
     throw new Error("SQLite backup file does not exist");
   }
 
-  await closeTradingFlowDatabase();
+  await closeTrajonDatabase();
   await ensureDatabaseDirectory();
 
   const databaseFilePath = getDatabaseFilePath();

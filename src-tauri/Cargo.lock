@@ -5455,7 +5455,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "trading-flow"
+name = "trajon"
 version = "0.1.0"
 dependencies = [
  "serde",

@@ -103,20 +103,6 @@ export function TradingJournalMain({ store }: { store: TradingJournalStore }) {
         >
           <Card style={{ ...shellCardStyle, position: "sticky", top: 24 }}>
             <Flex vertical gap={24}>
-              <Space orientation="vertical" size={12}>
-                <Title
-                  level={4}
-                  style={{
-                    margin: 0,
-                    color: "var(--app-text)",
-                    fontSize: "clamp(1.9rem,2vw,2.6rem)",
-                    letterSpacing: "-0.04em",
-                  }}
-                >
-                  Trading Flow
-                </Title>
-              </Space>
-
               <Menu
                 mode="inline"
                 selectedKeys={[section]}

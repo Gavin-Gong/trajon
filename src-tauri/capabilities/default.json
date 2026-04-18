@@ -14,8 +14,8 @@
     {
       "identifier": "fs:scope",
       "allow": [
-        { "path": "$HOME/.trading-flow" },
-        { "path": "$HOME/.trading-flow/**" },
+        { "path": "$HOME/.trajon" },
+        { "path": "$HOME/.trajon/**" },
         { "path": "$APPDATA/databases" },
         { "path": "$APPDATA/databases/**" }
       ]

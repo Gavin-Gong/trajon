@@ -1,4 +1,4 @@
-import { openTradingFlowDatabase } from "../../database/sqliteStorage";
+import { openTrajonDatabase } from "../../database/sqliteStorage";
 import type { TradeEvent, TradeJournal } from "../../domain/tradingJournalDomain";
 import type { TradingPanelState } from "../../model/storage";
 import { runTradingJournalMigrations } from "./tradingJournalMigrations";
@@ -30,7 +30,7 @@ export function createTradingJournalRepository() {
 
   async function getDatabase(): Promise<SqlDatabase> {
     if (!databasePromise) {
-        databasePromise = openTradingFlowDatabase().then(async (db) => {
+        databasePromise = openTrajonDatabase().then(async (db) => {
         await runTradingJournalMigrations(db as SqlDatabase);
         return db as SqlDatabase;
       });

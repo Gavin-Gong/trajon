@@ -27,10 +27,10 @@ import {
   DATABASE_DIRECTORY,
   DATABASE_FILE_NAME,
   DATABASE_PATH,
-  backupTradingFlowDatabase,
-  closeTradingFlowDatabase,
-  openTradingFlowDatabase,
-  restoreTradingFlowDatabase,
+  backupTrajonDatabase,
+  closeTrajonDatabase,
+  openTrajonDatabase,
+  restoreTrajonDatabase,
 } from "../sqliteStorage";
 
 declare global {
@@ -54,7 +54,7 @@ describe("sqliteStorage", () => {
   it("opens the app-scoped SQLite database in Tauri", async () => {
     window.__TAURI_INTERNALS__ = {};
 
-    const db = await openTradingFlowDatabase();
+    const db = await openTrajonDatabase();
 
     expect(mkdir).toHaveBeenCalledWith(DATABASE_DIRECTORY, {
       baseDir: BaseDirectory.AppData,
@@ -65,7 +65,7 @@ describe("sqliteStorage", () => {
   });
 
   it("rejects desktop database access outside Tauri", async () => {
-    await expect(openTradingFlowDatabase()).rejects.toThrow(
+    await expect(openTrajonDatabase()).rejects.toThrow(
       "Tauri SQLite storage is only available in the desktop app",
     );
   });
@@ -74,8 +74,8 @@ describe("sqliteStorage", () => {
     window.__TAURI_INTERNALS__ = {};
     vi.mocked(exists).mockResolvedValue(true);
 
-    await openTradingFlowDatabase();
-    const backupPath = await backupTradingFlowDatabase("backup.db");
+    await openTrajonDatabase();
+    const backupPath = await backupTrajonDatabase("backup.db");
 
     expect(closeMock).toHaveBeenCalledTimes(1);
     expect(mkdir).toHaveBeenCalledWith(BACKUP_DIRECTORY, {
@@ -97,7 +97,7 @@ describe("sqliteStorage", () => {
     window.__TAURI_INTERNALS__ = {};
     vi.mocked(exists).mockResolvedValue(false);
 
-    await expect(backupTradingFlowDatabase("backup.db")).rejects.toThrow(
+    await expect(backupTrajonDatabase("backup.db")).rejects.toThrow(
       "SQLite database file does not exist yet",
     );
   });
@@ -108,8 +108,8 @@ describe("sqliteStorage", () => {
       .mockResolvedValueOnce(true)
       .mockResolvedValueOnce(true);
 
-    await openTradingFlowDatabase();
-    await restoreTradingFlowDatabase("backup.db");
+    await openTrajonDatabase();
+    await restoreTrajonDatabase("backup.db");
 
     expect(closeMock).toHaveBeenCalledTimes(1);
     expect(remove).toHaveBeenCalledWith(`${DATABASE_DIRECTORY}/${DATABASE_FILE_NAME}`, {
@@ -129,7 +129,7 @@ describe("sqliteStorage", () => {
     window.__TAURI_INTERNALS__ = {};
     vi.mocked(exists).mockResolvedValue(false);
 
-    await expect(restoreTradingFlowDatabase("missing.db")).rejects.toThrow(
+    await expect(restoreTrajonDatabase("missing.db")).rejects.toThrow(
       "SQLite backup file does not exist",
     );
   });
@@ -137,9 +137,9 @@ describe("sqliteStorage", () => {
   it("closes the cached database connection once", async () => {
     window.__TAURI_INTERNALS__ = {};
 
-    await openTradingFlowDatabase();
-    await closeTradingFlowDatabase();
-    await closeTradingFlowDatabase();
+    await openTrajonDatabase();
+    await closeTrajonDatabase();
+    await closeTrajonDatabase();
 
     expect(closeMock).toHaveBeenCalledTimes(1);
   });

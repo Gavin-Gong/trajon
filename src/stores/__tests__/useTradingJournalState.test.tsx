@@ -120,7 +120,7 @@ describe("useTradingJournalState", () => {
     await waitFor(() => expect(service.loadTradingPanelState).toHaveBeenCalledTimes(1));
 
     expect(setItemSpy).not.toHaveBeenCalledWith(
-      "trading-flow:trading-panel-state",
+      "trajon:trading-panel-state",
       expect.anything(),
     );
     setItemSpy.mockRestore();

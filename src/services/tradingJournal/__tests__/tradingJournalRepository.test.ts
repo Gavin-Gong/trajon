@@ -4,10 +4,10 @@ import type { TradeEvent, TradeJournal } from "../../../domain/tradingJournalDom
 import { createTradingJournalRepository } from "../tradingJournalRepository";
 import { runTradingJournalMigrations } from "../tradingJournalMigrations";
 
-const openTradingFlowDatabaseMock = vi.hoisted(() => vi.fn());
+const openTrajonDatabaseMock = vi.hoisted(() => vi.fn());
 
 vi.mock("../../../database/sqliteStorage", () => ({
-  openTradingFlowDatabase: openTradingFlowDatabaseMock,
+  openTrajonDatabase: openTrajonDatabaseMock,
 }));
 
 describe("runTradingJournalMigrations", () => {
@@ -32,7 +32,7 @@ describe("runTradingJournalMigrations", () => {
 
 describe("createTradingJournalRepository", () => {
   beforeEach(() => {
-    openTradingFlowDatabaseMock.mockReset();
+    openTrajonDatabaseMock.mockReset();
   });
 
   it("loads default state from an empty database", async () => {
@@ -45,7 +45,7 @@ describe("createTradingJournalRepository", () => {
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([]),
     };
-    openTradingFlowDatabaseMock.mockResolvedValue(db);
+    openTrajonDatabaseMock.mockResolvedValue(db);
 
     const repository = createTradingJournalRepository();
     const state = await repository.loadState();
@@ -70,7 +70,7 @@ describe("createTradingJournalRepository", () => {
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([]),
     };
-    openTradingFlowDatabaseMock.mockResolvedValue(db);
+    openTrajonDatabaseMock.mockResolvedValue(db);
 
     const repository = createTradingJournalRepository();
     const journal: TradeJournal = {
@@ -140,7 +140,7 @@ describe("createTradingJournalRepository", () => {
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([]),
     };
-    openTradingFlowDatabaseMock.mockResolvedValue(db);
+    openTrajonDatabaseMock.mockResolvedValue(db);
 
     const repository = createTradingJournalRepository();
 

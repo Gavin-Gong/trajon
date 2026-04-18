@@ -332,8 +332,6 @@ describe("TradingJournalDesktop", () => {
       seedState(buildState());
       render(<TradingJournalDesktop view={{ view: "main" }} />);
 
-      expect(screen.getAllByText("Trading Flow").length).toBeGreaterThanOrEqual(1);
-
       const menus = screen.getAllByRole("menu");
       expect(menus.length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByRole("menuitem").length).toBeGreaterThanOrEqual(4);
