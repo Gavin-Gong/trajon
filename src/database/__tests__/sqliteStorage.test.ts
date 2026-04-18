@@ -31,7 +31,7 @@ import {
   closeTradingFlowDatabase,
   openTradingFlowDatabase,
   restoreTradingFlowDatabase,
-} from "./sqliteStorage";
+} from "../sqliteStorage";
 
 declare global {
   interface Window {

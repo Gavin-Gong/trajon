@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import defaultCapability from "../src-tauri/capabilities/default.json";
+import defaultCapability from "../../../src-tauri/capabilities/default.json";
 
 import {
   buildPanelUrl,
   openPanelWindow,
   parseAppView,
   readStoredPanelBounds,
-} from "./panelWindow";
+} from "../panelWindow";
 
 describe("parseAppView", () => {
   it("uses the main view by default", () => {

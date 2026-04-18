@@ -1,13 +1,13 @@
-import { openTradingFlowDatabase } from "../sqliteStorage";
-import type { TradeEvent, TradeJournal } from "../tradingPanelDomain";
-import type { TradingPanelState } from "../model/storage";
-import { runTradingPanelMigrations } from "../tradingPanelMigrations";
+import { openTradingFlowDatabase } from "../../database/sqliteStorage";
+import type { TradeEvent, TradeJournal } from "../../domain/tradingJournalDomain";
+import type { TradingPanelState } from "../../model/storage";
+import { runTradingJournalMigrations } from "./tradingJournalMigrations";
 import {
   appConfigValueSchema,
   tradeEventRowSchema,
   tradeJournalRowSchema,
-  tradingPanelStateSchema,
-} from "./tradingPanelSchemas";
+  tradingJournalStateSchema,
+} from "./tradingJournalSchemas";
 
 type SqlDatabase = {
   execute: (sql: string, bindValues?: unknown[]) => Promise<unknown>;
@@ -25,13 +25,13 @@ const DEFAULT_STATE: TradingPanelState = {
   panelPinned: true,
 };
 
-export function createTradingPanelRepository() {
+export function createTradingJournalRepository() {
   let databasePromise: Promise<SqlDatabase> | undefined;
 
   async function getDatabase(): Promise<SqlDatabase> {
     if (!databasePromise) {
-      databasePromise = openTradingFlowDatabase().then(async (db) => {
-        await runTradingPanelMigrations(db as SqlDatabase);
+        databasePromise = openTradingFlowDatabase().then(async (db) => {
+        await runTradingJournalMigrations(db as SqlDatabase);
         return db as SqlDatabase;
       });
     }
@@ -83,7 +83,7 @@ export function createTradingPanelRepository() {
       }
 
       const configPatch = parseAppConfigRows(appConfigRows);
-      return tradingPanelStateSchema.parse({
+      return tradingJournalStateSchema.parse({
         ...DEFAULT_STATE,
         ...configPatch,
         journals: journals.map((journal) => ({

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createTradingPanelService } from "./tradingPanelPersistence/tradingPanelService";
+import { createTradingJournalService } from "../tradingJournalService";
 
 const repository = {
   loadState: vi.fn(),
@@ -10,7 +10,7 @@ const repository = {
   writeAppState: vi.fn(),
 };
 
-describe("createTradingPanelService", () => {
+describe("createTradingJournalService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     repository.loadState.mockResolvedValue({
@@ -24,7 +24,7 @@ describe("createTradingPanelService", () => {
   });
 
   it("loads persisted state from the repository", async () => {
-    const service = createTradingPanelService({ repository });
+    const service = createTradingJournalService({ repository });
 
     const state = await service.loadTradingPanelState();
 
@@ -33,7 +33,7 @@ describe("createTradingPanelService", () => {
   });
 
   it("creates a journal and persists it", async () => {
-    const service = createTradingPanelService({ repository });
+    const service = createTradingJournalService({ repository });
 
     const journal = await service.createTradeJournal(" btcusdt ", " binance ");
 
@@ -63,7 +63,7 @@ describe("createTradingPanelService", () => {
       panelPinned: true,
     });
 
-    const service = createTradingPanelService({ repository });
+    const service = createTradingJournalService({ repository });
     const failed = await service.createTradeEvent("journal-1", {
       type: "entry",
       content: "Open long",
@@ -126,7 +126,7 @@ describe("createTradingPanelService", () => {
       panelPinned: true,
     });
 
-    const service = createTradingPanelService({ repository });
+    const service = createTradingJournalService({ repository });
 
     await service.finishTradeJournal("journal-1", "  wrapped up  ");
     expect(repository.updateTradeJournal).toHaveBeenCalledWith(

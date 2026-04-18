@@ -46,7 +46,7 @@ const migrations: Migration[] = [
   },
 ];
 
-export async function runTradingPanelMigrations(db: SqlExecutor): Promise<void> {
+export async function runTradingJournalMigrations(db: SqlExecutor): Promise<void> {
   await db.execute(`CREATE TABLE IF NOT EXISTS migrations (
     version INTEGER PRIMARY KEY,
     applied_at TEXT NOT NULL

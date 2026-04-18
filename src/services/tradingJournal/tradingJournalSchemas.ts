@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { TIMEFRAME_PRESET_VALUES } from "../model/tradingPairPreset";
+import { TIMEFRAME_PRESET_VALUES } from "../../model/tradingPairPreset";
 
 const isoDateTimeSchema = z.iso.datetime();
 const trimmedStringSchema = z.string().trim();
@@ -69,7 +69,7 @@ export const chartViewSchema = z.object({
   interval: trimmedStringSchema.min(1),
 });
 
-export const tradingPanelStateSchema = z.object({
+export const tradingJournalStateSchema = z.object({
   journals: z.array(tradeJournalSchema),
   config: globalConfigSchema,
   pairPresets: z.array(tradingPairPresetSchema),

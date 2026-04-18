@@ -34,9 +34,9 @@ import {
   groupJournalsByDay,
   netPosition,
   type TradeJournal,
-} from "../../tradingPanelDomain";
+} from "../../domain/tradingJournalDomain";
 import { TIMEFRAME_PRESET_VALUES, type TimeframePreset } from "../../model/tradingPairPreset";
-import { openPanelWindow } from "../../panelWindow";
+import { openPanelWindow } from "../../platform/panelWindow";
 import {
   formatJournalDate,
   formatNumber,
@@ -47,9 +47,9 @@ import {
   shellCardStyle,
   tagColorForVariant,
   TimelineSection,
-  type TradingPanelStore,
-} from "./TradingPanelShared";
-import type { AppSection } from "./TradingPanelTypes";
+  type TradingJournalStore,
+} from "../../components/tradingJournal/TradingJournalShared";
+import type { AppSection } from "../../components/tradingJournal/TradingJournalTypes";
 
 dayjs.locale("zh-cn");
 
@@ -66,7 +66,7 @@ const CHART_SYMBOL_OPTIONS = [
 
 const CHART_INTERVAL_OPTIONS = ["1", "5", "15", "30", "60", "240", "1D"] as const;
 
-export function MainSurface({ store }: { store: TradingPanelStore }) {
+export function TradingJournalMain({ store }: { store: TradingJournalStore }) {
   const [section, setSection] = useState<AppSection>("analytics");
   const menuItems = [
     {
@@ -147,7 +147,7 @@ export function MainSurface({ store }: { store: TradingPanelStore }) {
   );
 }
 
-function AnalyticsPanel({ store }: { store: TradingPanelStore }) {
+function AnalyticsPanel({ store }: { store: TradingJournalStore }) {
   const defaultPreset = store.state.defaultPresetSymbol
     ? store.state.pairPresets.find((preset) => preset.symbol === store.state.defaultPresetSymbol)
     : undefined;
@@ -211,7 +211,7 @@ function AnalyticsPanel({ store }: { store: TradingPanelStore }) {
   );
 }
 
-function ChartSection({ store }: { store: TradingPanelStore }) {
+function ChartSection({ store }: { store: TradingJournalStore }) {
   const { symbol, interval } = store.state.chart;
 
   return (
@@ -330,7 +330,7 @@ function TradingViewWidgetChart({
   );
 }
 
-function CalendarHistorySection({ store }: { store: TradingPanelStore }) {
+function CalendarHistorySection({ store }: { store: TradingJournalStore }) {
   const journals = store.state.journals;
   const [displayedMonth, setDisplayedMonth] = useState<Dayjs>(() => dayjs());
   const [selectedJournalId, setSelectedJournalId] = useState<string | undefined>();
@@ -522,7 +522,7 @@ function JournalDetailPanel({ journal }: { journal: TradeJournal | undefined }) 
   );
 }
 
-function SettingsSection({ store }: { store: TradingPanelStore }) {
+function SettingsSection({ store }: { store: TradingJournalStore }) {
   const { config } = store.state;
   const [presetSymbolInput, setPresetSymbolInput] = useState("");
   const [presetTimeframe, setPresetTimeframe] = useState<TimeframePreset>("5m");

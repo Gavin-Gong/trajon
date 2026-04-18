@@ -3,14 +3,14 @@ import type {
   TradeEventType,
   TradeJournal,
   TradeJournalStatus,
-} from "./model/model";
+} from "../model/model";
 
 export type {
   TradeEvent,
   TradeEventType,
   TradeJournal,
   TradeJournalStatus,
-} from "./model/model";
+} from "../model/model";
 
 export type TradeEventDraft = {
   type: TradeEventType;

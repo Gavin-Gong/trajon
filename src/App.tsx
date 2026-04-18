@@ -1,10 +1,10 @@
-import { parseAppView } from "./panelWindow";
-import { TradingPanelDesktop } from "./tradingPanelApp";
+import { TradingJournalDesktop } from "./pages/tradingJournal/TradingJournalDesktop";
+import { parseAppView } from "./platform/panelWindow";
 import "./App.css";
 
 function App() {
   const view = parseAppView(window.location.search);
-  return <TradingPanelDesktop view={view} />;
+  return <TradingJournalDesktop view={view} />;
 }
 
 export default App;

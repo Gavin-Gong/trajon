@@ -5,20 +5,20 @@ import {
   type TradeEventComposerResult,
   type TradeEventDraft,
   type TradeJournal,
-} from "../tradingPanelDomain";
-import type { ChartViewState, TradingPanelState } from "../model/storage";
-import type { GlobalConfig } from "../model/globalConfig";
-import type { TimeframePreset, TradingPairPreset } from "../model/tradingPairPreset";
+} from "../../domain/tradingJournalDomain";
+import type { ChartViewState, TradingPanelState } from "../../model/storage";
+import type { GlobalConfig } from "../../model/globalConfig";
+import type { TimeframePreset, TradingPairPreset } from "../../model/tradingPairPreset";
 
-import { createTradingPanelRepository } from "./tradingPanelRepository";
-import { appConfigValueSchema, globalConfigSchema } from "./tradingPanelSchemas";
+import { createTradingJournalRepository } from "./tradingJournalRepository";
+import { appConfigValueSchema, globalConfigSchema } from "./tradingJournalSchemas";
 
-type TradingPanelRepository = ReturnType<typeof createTradingPanelRepository>;
+type TradingJournalRepository = ReturnType<typeof createTradingJournalRepository>;
 
-export function createTradingPanelService(
-  options: { repository?: TradingPanelRepository } = {},
+export function createTradingJournalService(
+  options: { repository?: TradingJournalRepository } = {},
 ) {
-  const repository = options.repository ?? createTradingPanelRepository();
+  const repository = options.repository ?? createTradingJournalRepository();
 
   return {
     loadTradingPanelState(): Promise<TradingPanelState> {

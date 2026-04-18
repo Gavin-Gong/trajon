@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import type { TradeEventComposerResult, TradeEventDraft, TradeJournal } from "./tradingPanelDomain";
-import type { GlobalConfig } from "./model/globalConfig";
-import type { TimeframePreset } from "./model/tradingPairPreset";
-import type { ChartViewState, TradingPanelState } from "./model/storage";
+import type { TradeEventComposerResult, TradeEventDraft, TradeJournal } from "../domain/tradingJournalDomain";
+import type { GlobalConfig } from "../model/globalConfig";
+import type { TimeframePreset } from "../model/tradingPairPreset";
+import type { ChartViewState, TradingPanelState } from "../model/storage";
 import {
-  createTradingPanelService,
-  type createTradingPanelService as createTradingPanelServiceType,
-} from "./tradingPanelPersistence/tradingPanelService";
+  createTradingJournalService,
+  type createTradingJournalService as createTradingJournalServiceType,
+} from "../services/tradingJournal/tradingJournalService";
 
-export type { GlobalConfig, TradingPanelState } from "./model/storage";
+export type { GlobalConfig, TradingPanelState } from "../model/storage";
 
-type TradingPanelService = ReturnType<typeof createTradingPanelServiceType>;
+type TradingJournalService = ReturnType<typeof createTradingJournalServiceType>;
 
 const defaultState: TradingPanelState = {
   journals: [],
@@ -28,10 +28,10 @@ const defaultState: TradingPanelState = {
   panelPinned: true,
 };
 
-export function useTradingPanelState(
-  options: { service?: TradingPanelService } = {},
+export function useTradingJournalState(
+  options: { service?: TradingJournalService } = {},
 ) {
-  const serviceRef = useRef<TradingPanelService>(options.service ?? createTradingPanelService());
+  const serviceRef = useRef<TradingJournalService>(options.service ?? createTradingJournalService());
   const [state, setState] = useState<TradingPanelState>(defaultState);
 
   useEffect(() => {

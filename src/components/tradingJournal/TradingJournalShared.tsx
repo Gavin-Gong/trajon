@@ -10,11 +10,11 @@ import {
   type TradeEventComposerError,
   type TradeEventType,
   type TradeJournal,
-} from "../../tradingPanelDomain";
-import { serializePanelBounds } from "../../panelWindow";
+} from "../../domain/tradingJournalDomain";
+import { serializePanelBounds } from "../../platform/panelWindow";
 import { PANEL_BOUNDS_STORAGE_KEY } from "../../model/storage";
-import { useTradingPanelState } from "../../tradingPanelStore";
-import type { AppTagVariant } from "./TradingPanelTypes";
+import { useTradingJournalState } from "../../stores/useTradingJournalState";
+import type { AppTagVariant } from "./TradingJournalTypes";
 
 const { Paragraph, Text, Title } = Typography;
 
@@ -35,7 +35,7 @@ export const panelCardStyle: CSSProperties = {
   ...shellCardStyle,
 };
 
-export type TradingPanelStore = ReturnType<typeof useTradingPanelState>;
+export type TradingJournalStore = ReturnType<typeof useTradingJournalState>;
 
 export function TimelineSection({
   journal,
@@ -189,6 +189,8 @@ function eventVariant(type: TradeEventType): AppTagVariant {
     case "log":
       return "accent";
   }
+
+  return "neutral";
 }
 
 export function useReminderClock(enabled: boolean, interval: number) {

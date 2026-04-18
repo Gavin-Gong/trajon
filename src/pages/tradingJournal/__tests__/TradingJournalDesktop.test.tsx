@@ -1,29 +1,29 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { MainSurface } from "./components/tradingPanel/TradingPanelMain";
-import type { TradingPanelState } from "./model/storage";
-import { PanelSurface } from "./components/tradingPanel/TradingPanelPanel";
-import * as PanelLifecycleModule from "./panelLifecycle";
-import { composeTradeEvent, createJournal } from "./tradingPanelDomain";
-import { TradingPanelDesktop } from "./tradingPanelApp";
-import { parseAppView } from "./panelWindow";
-import { openPanelWindow } from "./panelWindow";
+import { TradingJournalMain } from "../TradingJournalMain";
+import type { TradingPanelState } from "../../../model/storage";
+import { TradingJournalPanel } from "../TradingJournalPanel";
+import * as PanelLifecycleModule from "../../../platform/panelLifecycle";
+import { composeTradeEvent, createJournal } from "../../../domain/tradingJournalDomain";
+import { TradingJournalDesktop } from "../TradingJournalDesktop";
+import { parseAppView } from "../../../platform/panelWindow";
+import { openPanelWindow } from "../../../platform/panelWindow";
 
 const mockedStoreState = vi.hoisted(() => ({
   value: undefined as TradingPanelState | undefined,
 }));
 
-vi.mock("./tradingPanelStore", async () => {
+vi.mock("../../../stores/useTradingJournalState", async () => {
   const React = await import("react");
-  const domain = await import("./tradingPanelDomain");
+  const domain = await import("../../../domain/tradingJournalDomain");
 
   function cloneState(state: TradingPanelState): TradingPanelState {
     return JSON.parse(JSON.stringify(state)) as TradingPanelState;
   }
 
   return {
-    useTradingPanelState() {
+    useTradingJournalState() {
       const [state, setState] = React.useState<TradingPanelState>(() =>
         mockedStoreState.value ? cloneState(mockedStoreState.value) : cloneState(buildState()),
       );
@@ -159,8 +159,8 @@ vi.mock("./tradingPanelStore", async () => {
   };
 });
 
-vi.mock("./panelWindow", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("./panelWindow")>();
+vi.mock("../../../platform/panelWindow", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../../platform/panelWindow")>();
   return {
     ...actual,
     openPanelWindow: vi.fn(() => Promise.resolve()),
@@ -256,19 +256,19 @@ function typeIntoAntdAutoComplete(testId: string, value: string) {
   fireEvent.change(input as Element, { target: { value } });
 }
 
-describe("TradingPanelDesktop", () => {
+describe("TradingJournalDesktop", () => {
   beforeEach(() => {
     mockedStoreState.value = buildState();
   });
 
   it("keeps the main and panel surfaces in dedicated component modules", () => {
-    expect(MainSurface).toBeTypeOf("function");
-    expect(PanelSurface).toBeTypeOf("function");
+    expect(TradingJournalMain).toBeTypeOf("function");
+    expect(TradingJournalPanel).toBeTypeOf("function");
   });
 
   it("avoids handwritten padding and border radius styles in rendered surfaces", () => {
     seedState(buildState());
-    const { rerender } = render(<TradingPanelDesktop view={{ view: "main" }} />);
+    const { rerender } = render(<TradingJournalDesktop view={{ view: "main" }} />);
 
     const mainRoot = screen.getAllByRole("main")[0];
     expect(mainRoot.getAttribute("style") ?? "").not.toContain("padding:");
@@ -281,7 +281,7 @@ describe("TradingPanelDesktop", () => {
     expect(content).not.toBeNull();
     expect(content?.getAttribute("style") ?? "").not.toContain("padding:");
 
-    rerender(<TradingPanelDesktop view={{ view: "panel" }} />);
+    rerender(<TradingJournalDesktop view={{ view: "panel" }} />);
 
     const panelRoot = screen.getAllByRole("main")[0];
     expect(panelRoot.getAttribute("style") ?? "").not.toContain("padding:");
@@ -296,7 +296,7 @@ describe("TradingPanelDesktop", () => {
 
   it("avoids handwritten dark border styles in trading panel surfaces", () => {
     seedState(buildState());
-    const { rerender } = render(<TradingPanelDesktop view={{ view: "main" }} />);
+    const { rerender } = render(<TradingJournalDesktop view={{ view: "main" }} />);
 
     const sider = document.querySelector(".ant-layout-sider");
     expect(sider).not.toBeNull();
@@ -307,7 +307,7 @@ describe("TradingPanelDesktop", () => {
       expect(divider.getAttribute("style") ?? "").not.toContain("border-color:");
     }
 
-    rerender(<TradingPanelDesktop view={{ view: "panel" }} />);
+    rerender(<TradingJournalDesktop view={{ view: "panel" }} />);
 
     const styledCards = Array.from(document.querySelectorAll(".ant-card[style]"));
     expect(styledCards.length).toBeGreaterThan(0);
@@ -322,7 +322,7 @@ describe("TradingPanelDesktop", () => {
   describe("main view – desktop shell structure", () => {
     it("renders an empty analysis placeholder while keeping the desktop shell", () => {
       seedState(buildState());
-      render(<TradingPanelDesktop view={{ view: "main" }} />);
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
 
       expectTextPresent("分析页面暂时留空");
       expectTextPresent("后续会在这里逐步补回分析模块。");
@@ -330,7 +330,7 @@ describe("TradingPanelDesktop", () => {
 
     it("renders the sidebar branding and navigation menu", () => {
       seedState(buildState());
-      render(<TradingPanelDesktop view={{ view: "main" }} />);
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
 
       expect(screen.getAllByText("Trading Flow").length).toBeGreaterThanOrEqual(1);
 
@@ -345,7 +345,7 @@ describe("TradingPanelDesktop", () => {
 
     it("switches to the chart section when the chart menu item is clicked", () => {
       seedState(buildState());
-      render(<TradingPanelDesktop view={{ view: "main" }} />);
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
 
       fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
 
@@ -355,7 +355,7 @@ describe("TradingPanelDesktop", () => {
 
     it("renders symbol and interval controls in the chart section", () => {
       seedState(buildState());
-      render(<TradingPanelDesktop view={{ view: "main" }} />);
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
 
       fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
 
@@ -367,7 +367,7 @@ describe("TradingPanelDesktop", () => {
 
     it("includes AAPL and Kweichow Moutai in chart symbol options", () => {
       seedState(buildState());
-      render(<TradingPanelDesktop view={{ view: "main" }} />);
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
 
       fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
 
@@ -379,7 +379,7 @@ describe("TradingPanelDesktop", () => {
 
     it("renders a stable TradingView widget container", () => {
       seedState(buildState());
-      render(<TradingPanelDesktop view={{ view: "main" }} />);
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
 
       fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
 
@@ -389,7 +389,7 @@ describe("TradingPanelDesktop", () => {
 
     it("gives the TradingView autosize container an explicit height", () => {
       seedState(buildState());
-      render(<TradingPanelDesktop view={{ view: "main" }} />);
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
 
       fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
 
@@ -401,7 +401,7 @@ describe("TradingPanelDesktop", () => {
 
     it("updates the chart widget configuration when symbol changes", () => {
       seedState(buildState());
-      render(<TradingPanelDesktop view={{ view: "main" }} />);
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
 
       fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
       openAntdSelect("chart-symbol-select");
@@ -415,7 +415,7 @@ describe("TradingPanelDesktop", () => {
 
     it("injects the TradingView advanced chart embed script", () => {
       seedState(buildState());
-      render(<TradingPanelDesktop view={{ view: "main" }} />);
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
 
       fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
 
@@ -435,7 +435,7 @@ describe("TradingPanelDesktop", () => {
         },
       });
 
-      render(<TradingPanelDesktop view={{ view: "main" }} />);
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
       fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
 
       expect(screen.getByText("BINANCE:ETHUSDT")).toBeInTheDocument();
@@ -454,7 +454,7 @@ describe("TradingPanelDesktop", () => {
         },
       });
 
-      render(<TradingPanelDesktop view={{ view: "main" }} />);
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
       fireEvent.click(screen.getByRole("menuitem", { name: /Chart/ }));
 
       expect(screen.getByText("NASDAQ:AAPL")).toBeInTheDocument();
@@ -466,7 +466,7 @@ describe("TradingPanelDesktop", () => {
 
     it("uses Ant Design layout and card composition for the desktop workspace", () => {
       seedState(buildState());
-      render(<TradingPanelDesktop view={{ view: "main" }} />);
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
 
       expect(document.querySelectorAll(".ant-layout").length).toBeGreaterThanOrEqual(1);
       expect(document.querySelectorAll(".ant-layout-sider").length).toBeGreaterThanOrEqual(1);
@@ -476,7 +476,7 @@ describe("TradingPanelDesktop", () => {
 
     it("avoids custom card radius and shadow overrides in the desktop shell", () => {
       seedState(buildState());
-      render(<TradingPanelDesktop view={{ view: "main" }} />);
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
 
       const cards = Array.from(document.querySelectorAll(".ant-card"));
       expect(cards.length).toBeGreaterThanOrEqual(1);
@@ -490,7 +490,7 @@ describe("TradingPanelDesktop", () => {
 
     it("renders the float button for opening the panel window", () => {
       seedState(buildState());
-      render(<TradingPanelDesktop view={{ view: "main" }} />);
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
 
       // FloatButton tooltip text is lazily rendered in jsdom, so we assert on the button element itself
       const floatButtons = document.querySelectorAll(".ant-float-btn");
@@ -511,7 +511,7 @@ describe("TradingPanelDesktop", () => {
         },
         panelPinned: false,
       });
-      render(<TradingPanelDesktop view={{ view: "main" }} />);
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
 
       expectTextPresent("分析页面暂时留空");
       expectTextPresent("后续会在这里逐步补回分析模块。");
@@ -535,7 +535,7 @@ describe("TradingPanelDesktop", () => {
         panelPinned: false,
       });
 
-      render(<TradingPanelDesktop view={{ view: "main" }} />);
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
 
       openAntdSelect("analytics-panel-preset-select");
       chooseAntdOption("ETHUSDT · 15m");
@@ -548,7 +548,7 @@ describe("TradingPanelDesktop", () => {
 
     it("does not render the temporary fs demo card on the analysis page", () => {
       seedState(buildState());
-      render(<TradingPanelDesktop view={{ view: "main" }} />);
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
 
       expect(screen.queryByText("Tauri FS Demo")).not.toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "写入示例" })).not.toBeInTheDocument();
@@ -559,7 +559,7 @@ describe("TradingPanelDesktop", () => {
   describe("panel view – entry point", () => {
     it("renders the panel surface with clock and Antd pin button", () => {
       seedState(buildState());
-      render(<TradingPanelDesktop view={{ view: "panel" }} />);
+      render(<TradingJournalDesktop view={{ view: "panel" }} />);
 
       expect(screen.getByText("Quick Capture Panel")).toBeInTheDocument();
       expect(screen.getByTitle("当前保持置顶")).toBeInTheDocument();
@@ -568,7 +568,7 @@ describe("TradingPanelDesktop", () => {
 
     it("shows the active journal summary in panel view", () => {
       seedState(buildState());
-      render(<TradingPanelDesktop view={{ view: "panel" }} />);
+      render(<TradingJournalDesktop view={{ view: "panel" }} />);
 
       const mains = screen.getAllByRole("main");
       expect(mains.length).toBeGreaterThanOrEqual(1);
@@ -581,7 +581,7 @@ describe("TradingPanelDesktop", () => {
 
     it("renders the quick capture section with event type chips", () => {
       seedState(buildState());
-      render(<TradingPanelDesktop view={{ view: "panel" }} />);
+      render(<TradingJournalDesktop view={{ view: "panel" }} />);
 
       expectTextPresent("快速记录");
       expect(screen.getAllByRole("radio", { name: "笔记" }).length).toBeGreaterThanOrEqual(1);
@@ -592,7 +592,7 @@ describe("TradingPanelDesktop", () => {
 
     it("uses Ant Design cards, segmented controls, and list composition in panel view", () => {
       seedState(buildState());
-      render(<TradingPanelDesktop view={{ view: "panel" }} />);
+      render(<TradingJournalDesktop view={{ view: "panel" }} />);
 
       expect(document.querySelectorAll(".ant-card").length).toBeGreaterThanOrEqual(3);
       expect(document.querySelectorAll(".ant-segmented").length).toBeGreaterThanOrEqual(1);
@@ -601,7 +601,7 @@ describe("TradingPanelDesktop", () => {
 
     it("avoids custom card radius overrides in panel view", () => {
       seedState(buildState());
-      render(<TradingPanelDesktop view={{ view: "panel" }} />);
+      render(<TradingJournalDesktop view={{ view: "panel" }} />);
 
       const cards = Array.from(document.querySelectorAll(".ant-card"));
       expect(cards.length).toBeGreaterThanOrEqual(1);
@@ -614,14 +614,14 @@ describe("TradingPanelDesktop", () => {
 
     it("shows the timeline section with event count", () => {
       seedState(buildState());
-      render(<TradingPanelDesktop view={{ view: "panel" }} />);
+      render(<TradingJournalDesktop view={{ view: "panel" }} />);
 
       expectTextPresent("最近记录");
     });
 
     it("shows reminder status in the panel header", () => {
       seedState(buildState());
-      render(<TradingPanelDesktop view={{ view: "panel" }} />);
+      render(<TradingJournalDesktop view={{ view: "panel" }} />);
 
       expectTextPresent(/开启 · 5m/);
     });
@@ -632,7 +632,7 @@ describe("TradingPanelDesktop", () => {
         .spyOn(PanelLifecycleModule, "closePanelWindow")
         .mockResolvedValue(undefined);
 
-      render(<TradingPanelDesktop view={{ view: "panel" }} />);
+      render(<TradingJournalDesktop view={{ view: "panel" }} />);
       fireEvent.click(screen.getByRole("button", { name: "结束 Journal" }));
       fireEvent.change(screen.getByPlaceholderText("可选：这笔交易哪里做得好，哪里需要改进？"), {
         target: { value: "Finished and closed." },
@@ -669,7 +669,7 @@ describe("TradingPanelDesktop", () => {
         panelPinned: false,
       });
 
-      render(<TradingPanelDesktop view={{ view: "panel" }} />);
+      render(<TradingJournalDesktop view={{ view: "panel" }} />);
 
       expect(screen.getByText("BTCUSDT")).toBeInTheDocument();
       expect(screen.queryByText("Closed the session.")).not.toBeInTheDocument();
@@ -689,7 +689,7 @@ describe("TradingPanelDesktop", () => {
         },
         panelPinned: false,
       });
-      render(<TradingPanelDesktop view={{ view: "panel" }} />);
+      render(<TradingJournalDesktop view={{ view: "panel" }} />);
 
       expect(screen.getByText("BTCUSDT")).toBeInTheDocument();
       expect(screen.queryByText("没有活跃 Journal")).not.toBeInTheDocument();
@@ -708,7 +708,7 @@ describe("TradingPanelDesktop", () => {
         },
         panelPinned: false,
       });
-      render(<TradingPanelDesktop view={{ view: "panel" }} />);
+      render(<TradingJournalDesktop view={{ view: "panel" }} />);
 
       expect(screen.queryByText(/先创建今天的 journal，快速记录区才会解锁/)).not.toBeInTheDocument();
       expect(screen.getByRole("button", { name: "记录事件" })).toBeInTheDocument();
@@ -731,7 +731,7 @@ describe("TradingPanelDesktop", () => {
       });
 
       const view = parseAppView("?view=panel&presetSymbol=ETHUSDT");
-      render(<TradingPanelDesktop view={view} />);
+      render(<TradingJournalDesktop view={view} />);
 
       expect(screen.getByText("ETHUSDT")).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "开始记录今天的交易" })).not.toBeInTheDocument();
@@ -752,7 +752,7 @@ describe("TradingPanelDesktop", () => {
         panelPinned: true,
       });
 
-      render(<TradingPanelDesktop view={{ view: "main" }} />);
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
       fireEvent.click(screen.getByRole("menuitem", { name: /设置/ }));
 
       expect(screen.getByText("交易对预设")).toBeInTheDocument();
@@ -774,7 +774,7 @@ describe("TradingPanelDesktop", () => {
         panelPinned: true,
       });
 
-      render(<TradingPanelDesktop view={{ view: "main" }} />);
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
       fireEvent.click(screen.getByRole("menuitem", { name: /设置/ }));
 
       typeIntoAntdAutoComplete("pair-preset-symbol-input", "ethusdt");
@@ -800,7 +800,7 @@ describe("TradingPanelDesktop", () => {
         panelPinned: true,
       });
 
-      render(<TradingPanelDesktop view={{ view: "main" }} />);
+      render(<TradingJournalDesktop view={{ view: "main" }} />);
       fireEvent.click(screen.getByRole("menuitem", { name: /设置/ }));
 
       typeIntoAntdAutoComplete("pair-preset-symbol-input", "btcusdt");
@@ -826,7 +826,7 @@ describe("TradingPanelDesktop", () => {
         panelPinned: false,
       });
 
-      render(<TradingPanelDesktop view={{ view: "panel" }} />);
+      render(<TradingJournalDesktop view={{ view: "panel" }} />);
 
       expect(screen.getByText("BTCUSDT")).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "开始记录今天的交易" })).not.toBeInTheDocument();
@@ -848,7 +848,7 @@ describe("TradingPanelDesktop", () => {
         panelPinned: false,
       });
 
-      const { unmount } = render(<TradingPanelDesktop view={{ view: "main" }} />);
+      const { unmount } = render(<TradingJournalDesktop view={{ view: "main" }} />);
       fireEvent.click(screen.getByRole("menuitem", { name: /设置/ }));
       fireEvent.click(screen.getByRole("button", { name: "设为默认-ETHUSDT" }));
 
@@ -859,7 +859,7 @@ describe("TradingPanelDesktop", () => {
         ...mockedStoreState.value!,
         defaultPresetSymbol: "ETHUSDT",
       };
-      render(<TradingPanelDesktop view={{ view: "panel" }} />);
+      render(<TradingJournalDesktop view={{ view: "panel" }} />);
 
       await expect(screen.findByText("ETHUSDT")).resolves.toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "开始记录今天的交易" })).not.toBeInTheDocument();

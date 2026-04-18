@@ -10,7 +10,7 @@ import {
   netPosition,
   visibleMonthDays,
   type TradeEventDraft,
-} from "./tradingPanelDomain";
+} from "../tradingJournalDomain";
 
 function buildDraft(overrides: Partial<TradeEventDraft> = {}): TradeEventDraft {
   return {

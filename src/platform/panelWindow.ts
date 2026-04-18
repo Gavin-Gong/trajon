@@ -1,6 +1,6 @@
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
-import { PANEL_BOUNDS_STORAGE_KEY, type PanelBounds } from "./model/storage";
+import { PANEL_BOUNDS_STORAGE_KEY, type PanelBounds } from "../model/storage";
 
 type ExistingWindow = {
   show: () => Promise<void>;
@@ -32,7 +32,7 @@ type StorageApi = {
 type AppView = { view: "main" } | { view: "panel"; presetSymbol?: string };
 
 export const PANEL_WINDOW_LABEL = "trading-panel";
-export { PANEL_BOUNDS_STORAGE_KEY, type PanelBounds } from "./model/storage";
+export { PANEL_BOUNDS_STORAGE_KEY, type PanelBounds } from "../model/storage";
 const PANEL_MAX_WIDTH = 400;
 
 const defaultWindowApi: WindowApi = {

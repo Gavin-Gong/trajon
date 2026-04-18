@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useTradingPanelState } from "./tradingPanelStore";
+import { useTradingJournalState } from "../useTradingJournalState";
 
 const service = {
   loadTradingPanelState: vi.fn(),
@@ -16,7 +16,7 @@ const service = {
   setDefaultPresetSymbol: vi.fn(),
 };
 
-describe("useTradingPanelState", () => {
+describe("useTradingJournalState", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     service.loadTradingPanelState.mockResolvedValue({
@@ -30,7 +30,7 @@ describe("useTradingPanelState", () => {
   });
 
   it("hydrates from the service on mount", async () => {
-    const { result } = renderHook(() => useTradingPanelState({ service }));
+    const { result } = renderHook(() => useTradingJournalState({ service }));
 
     await waitFor(() => {
       expect(service.loadTradingPanelState).toHaveBeenCalledTimes(1);
@@ -52,7 +52,7 @@ describe("useTradingPanelState", () => {
     };
     service.createTradeJournal.mockResolvedValue(createdJournal);
 
-    const { result } = renderHook(() => useTradingPanelState({ service }));
+    const { result } = renderHook(() => useTradingJournalState({ service }));
     await waitFor(() => expect(service.loadTradingPanelState).toHaveBeenCalledTimes(1));
 
     await act(async () => {
@@ -95,7 +95,7 @@ describe("useTradingPanelState", () => {
       },
     });
 
-    const { result } = renderHook(() => useTradingPanelState({ service }));
+    const { result } = renderHook(() => useTradingJournalState({ service }));
     await waitFor(() => expect(service.loadTradingPanelState).toHaveBeenCalledTimes(1));
 
     let response;
@@ -116,7 +116,7 @@ describe("useTradingPanelState", () => {
   it("does not write the legacy localStorage key", async () => {
     const setItemSpy = vi.spyOn(window.localStorage.__proto__, "setItem");
 
-    renderHook(() => useTradingPanelState({ service }));
+    renderHook(() => useTradingJournalState({ service }));
     await waitFor(() => expect(service.loadTradingPanelState).toHaveBeenCalledTimes(1));
 
     expect(setItemSpy).not.toHaveBeenCalledWith(

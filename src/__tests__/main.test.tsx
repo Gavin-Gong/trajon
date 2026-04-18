@@ -16,7 +16,7 @@ vi.mock("react-dom/client", () => ({
   },
 }));
 
-vi.mock("./App", () => ({
+vi.mock("../App", () => ({
   default: function MockApp() {
     return <div data-testid="mock-app" />;
   },
@@ -30,7 +30,7 @@ describe("main entry", () => {
   });
 
   it("wraps the app with the root Ant Design theme provider", async () => {
-    await import("./main");
+    await import("../main");
 
     expect(createRootMock).toHaveBeenCalledWith(document.getElementById("root"));
     expect(renderMock).toHaveBeenCalledTimes(1);

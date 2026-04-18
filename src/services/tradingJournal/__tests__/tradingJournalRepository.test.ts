@@ -1,22 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { TradeEvent, TradeJournal } from "./tradingPanelDomain";
-import { createTradingPanelRepository } from "./tradingPanelPersistence/tradingPanelRepository";
-import { runTradingPanelMigrations } from "./tradingPanelMigrations";
+import type { TradeEvent, TradeJournal } from "../../../domain/tradingJournalDomain";
+import { createTradingJournalRepository } from "../tradingJournalRepository";
+import { runTradingJournalMigrations } from "../tradingJournalMigrations";
 
 const openTradingFlowDatabaseMock = vi.hoisted(() => vi.fn());
 
-vi.mock("./sqliteStorage", () => ({
+vi.mock("../../../database/sqliteStorage", () => ({
   openTradingFlowDatabase: openTradingFlowDatabaseMock,
 }));
 
-describe("runTradingPanelMigrations", () => {
+describe("runTradingJournalMigrations", () => {
   it("creates the base trading panel tables and indexes", async () => {
     const execute = vi.fn().mockResolvedValue(undefined);
     const select = vi.fn().mockResolvedValue([]);
     const db = { execute, select };
 
-    await runTradingPanelMigrations(db as never);
+    await runTradingJournalMigrations(db as never);
 
     expect(
       execute.mock.calls.some(([sql]) => String(sql).includes("CREATE TABLE IF NOT EXISTS trade_journals")),
@@ -30,7 +30,7 @@ describe("runTradingPanelMigrations", () => {
   });
 });
 
-describe("createTradingPanelRepository", () => {
+describe("createTradingJournalRepository", () => {
   beforeEach(() => {
     openTradingFlowDatabaseMock.mockReset();
   });
@@ -47,7 +47,7 @@ describe("createTradingPanelRepository", () => {
     };
     openTradingFlowDatabaseMock.mockResolvedValue(db);
 
-    const repository = createTradingPanelRepository();
+    const repository = createTradingJournalRepository();
     const state = await repository.loadState();
 
     expect(state).toEqual({
@@ -72,7 +72,7 @@ describe("createTradingPanelRepository", () => {
     };
     openTradingFlowDatabaseMock.mockResolvedValue(db);
 
-    const repository = createTradingPanelRepository();
+    const repository = createTradingJournalRepository();
     const journal: TradeJournal = {
       id: "journal-1",
       createdAt: "2026-04-18T00:00:00.000Z",
@@ -142,7 +142,7 @@ describe("createTradingPanelRepository", () => {
     };
     openTradingFlowDatabaseMock.mockResolvedValue(db);
 
-    const repository = createTradingPanelRepository();
+    const repository = createTradingJournalRepository();
 
     await expect(repository.loadState()).rejects.toThrow();
   });

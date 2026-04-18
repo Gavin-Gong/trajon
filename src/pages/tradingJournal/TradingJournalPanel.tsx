@@ -15,7 +15,7 @@ import {
 } from "antd";
 import { useEffect, useMemo, useState } from "react";
 
-import { closePanelWindow } from "../../panelLifecycle";
+import { closePanelWindow } from "../../platform/panelLifecycle";
 import {
   availableEventTypes,
   composeTradeEvent,
@@ -25,7 +25,7 @@ import {
   type TradeEventDraft,
   type TradeEventType,
   type TradeJournal,
-} from "../../tradingPanelDomain";
+} from "../../domain/tradingJournalDomain";
 import {
   EVENT_LABELS,
   dashedShellCardStyle,
@@ -38,18 +38,18 @@ import {
   quantityHint,
   tagColorForVariant,
   TimelineSection,
-  type TradingPanelStore,
+  type TradingJournalStore,
   usePersistPanelBounds,
   useReminderClock,
-} from "./TradingPanelShared";
+} from "../../components/tradingJournal/TradingJournalShared";
 
 const { Paragraph, Text, Title } = Typography;
 
-export function PanelSurface({
+export function TradingJournalPanel({
   store,
   presetSymbol,
 }: {
-  store: TradingPanelStore;
+  store: TradingJournalStore;
   presetSymbol?: string;
 }) {
   const { state, actions } = store;
