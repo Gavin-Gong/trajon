@@ -5,10 +5,10 @@ import {
   type TradeEventComposerResult,
   type TradeEventDraft,
   type TradeJournal,
-} from "../../domain/tradingJournalDomain";
-import type { TradingPanelState } from "../../model/storage";
-import type { GlobalConfig } from "../../model/globalConfig";
-import type { TimeframePreset, TradingPairPreset } from "../../model/tradingPairPreset";
+} from "../domain/journal";
+import type { TradingPanelState } from "../model/storage";
+import type { GlobalConfig } from "../model/globalConfig";
+import type { TimeframePreset, TradingPairPreset } from "../model/tradingPairPreset";
 
 import { createTradingJournalRepository } from "./tradingJournalRepository";
 import { appConfigValueSchema, globalConfigSchema } from "./tradingJournalSchemas";

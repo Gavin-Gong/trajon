@@ -1,17 +1,19 @@
 import { describe, expect, it } from "vitest";
 
+import { realizedPnlAnalytics } from "../analysis";
+import {
+  defaultCalendarSelection,
+  groupJournalsByDay,
+  visibleMonthDays,
+} from "../calendar";
 import {
   availableEventTypes,
   composeTradeEvent,
   createJournal,
   currentJournal,
-  defaultCalendarSelection,
-  realizedPnlAnalytics,
-  groupJournalsByDay,
   netPosition,
-  visibleMonthDays,
   type TradeEventDraft,
-} from "../tradingJournalDomain";
+} from "../journal";
 
 function buildDraft(overrides: Partial<TradeEventDraft> = {}): TradeEventDraft {
   return {

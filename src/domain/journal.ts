@@ -5,6 +5,8 @@ import type {
   TradeJournalStatus,
 } from "../model/model";
 
+import { isZero } from "./shared";
+
 export type {
   TradeEvent,
   TradeEventType,
@@ -35,36 +37,6 @@ export type TradeEventComposerResult =
 type QuantityValidationResult =
   | { ok: true; quantity: number }
   | { ok: false; error: TradeEventComposerError };
-
-export type CalendarDay = {
-  date: Date;
-  isInDisplayedMonth: boolean;
-};
-
-export type CalendarDayGroup = {
-  date: Date;
-  dayKey: string;
-  journals: TradeJournal[];
-};
-
-export type RealizedPnlPoint = {
-  timestamp: string;
-  value: number;
-};
-
-export type DailyRealizedPnlPoint = {
-  dayKey: string;
-  value: number;
-};
-
-export type RealizedPnlAnalytics = {
-  realizedTotal: number;
-  equityCurve: RealizedPnlPoint[];
-  dailyPnl: DailyRealizedPnlPoint[];
-  profitDays: number;
-  lossDays: number;
-  journalCount: number;
-};
 
 const DECIMAL_PRECISION_LIMIT = 2;
 
@@ -108,77 +80,6 @@ export function currentJournal(
   return [...journals]
     .filter((journal) => journal.status === "open")
     .sort(compareJournalForPanel)[0];
-}
-
-export function realizedPnlAnalytics(
-  journals: TradeJournal[],
-): RealizedPnlAnalytics {
-  const completedJournals = journals.filter((journal) => journal.status === "done");
-  const realizedEvents: Array<{ timestamp: string; pnl: number }> = [];
-
-  for (const journal of completedJournals) {
-    const orderedEvents = [...journal.events].sort(
-      (left, right) => new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime(),
-    );
-
-    let positionQuantity = 0;
-    let averageCost = 0;
-
-    for (const event of orderedEvents) {
-      if (event.type === "log" || event.price === undefined || event.quantity === undefined) {
-        continue;
-      }
-
-      if (positionQuantity === 0 || isSameDirection(event.quantity, positionQuantity)) {
-        const nextQuantity = positionQuantity + event.quantity;
-        averageCost =
-          nextQuantity === 0
-            ? 0
-            : ((positionQuantity * averageCost) + (event.quantity * event.price)) / nextQuantity;
-        positionQuantity = nextQuantity;
-        continue;
-      }
-
-      const closingQuantity = Math.min(Math.abs(event.quantity), Math.abs(positionQuantity));
-      const direction = Math.sign(positionQuantity);
-      const pnl = direction * (event.price - averageCost) * closingQuantity;
-      realizedEvents.push({ timestamp: event.timestamp, pnl: roundToTwo(pnl) });
-
-      positionQuantity += event.quantity;
-      if (positionQuantity === 0) {
-        averageCost = 0;
-      }
-    }
-  }
-
-  realizedEvents.sort(
-    (left, right) => new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime(),
-  );
-
-  let realizedTotal = 0;
-  const equityCurve = realizedEvents.map((event) => {
-    realizedTotal = roundToTwo(realizedTotal + event.pnl);
-    return { timestamp: event.timestamp, value: realizedTotal } satisfies RealizedPnlPoint;
-  });
-
-  const dailyMap = new Map<string, number>();
-  for (const event of realizedEvents) {
-    const dayKey = toUtcDayKey(event.timestamp);
-    dailyMap.set(dayKey, roundToTwo((dailyMap.get(dayKey) ?? 0) + event.pnl));
-  }
-
-  const dailyPnl = [...dailyMap.entries()]
-    .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
-    .map(([dayKey, value]) => ({ dayKey, value }) satisfies DailyRealizedPnlPoint);
-
-  return {
-    realizedTotal,
-    equityCurve,
-    dailyPnl,
-    profitDays: dailyPnl.filter((item) => item.value > 0).length,
-    lossDays: dailyPnl.filter((item) => item.value < 0).length,
-    journalCount: completedJournals.length,
-  };
 }
 
 export function composeTradeEvent(
@@ -251,66 +152,6 @@ export function composeTradeEvent(
           : quantityValidation.quantity,
     }),
   };
-}
-
-export function groupJournalsByDay(
-  journals: TradeJournal[],
-): CalendarDayGroup[] {
-  const groups = new Map<string, TradeJournal[]>();
-
-  for (const journal of journals) {
-    const dayKey = toUtcDayKey(journal.createdAt);
-    const existing = groups.get(dayKey) ?? [];
-    existing.push(journal);
-    groups.set(dayKey, existing);
-  }
-
-  return [...groups.entries()]
-    .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
-    .map(([dayKey, dayJournals]) => ({
-      dayKey,
-      date: new Date(`${dayKey}T00:00:00.000Z`),
-      journals: [...dayJournals].sort(compareJournalForCalendar),
-    }));
-}
-
-export function defaultCalendarSelection(
-  displayedMonth: Date,
-  journals: TradeJournal[],
-): TradeJournal | undefined {
-  const { start, end } = utcMonthBounds(displayedMonth);
-
-  return [...journals]
-    .filter((journal) => {
-      const createdTime = new Date(journal.createdAt).getTime();
-      return createdTime >= start.getTime() && createdTime < end.getTime();
-    })
-    .sort(compareJournalForCalendar)[0];
-}
-
-export function visibleMonthDays(displayedMonth: Date): CalendarDay[] {
-  const { start, end } = utcMonthBounds(displayedMonth);
-  const monthEnd = new Date(end.getTime() - ONE_DAY_MS);
-
-  const leadingCount = start.getUTCDay();
-  const gridStart = new Date(start.getTime() - leadingCount * ONE_DAY_MS);
-  const trailingCount = (7 - ((leadingCount + monthEnd.getUTCDate()) % 7)) % 7;
-  const visibleCount = leadingCount + monthEnd.getUTCDate() + trailingCount;
-
-  return Array.from({ length: visibleCount }, (_, offset) => {
-    const date = new Date(gridStart.getTime() + offset * ONE_DAY_MS);
-
-    return {
-      date,
-      isInDisplayedMonth:
-        date.getUTCFullYear() === start.getUTCFullYear() &&
-        date.getUTCMonth() === start.getUTCMonth(),
-    } satisfies CalendarDay;
-  });
-}
-
-export function isZero(value: number, tolerance = 0.000001): boolean {
-  return Math.abs(value) < tolerance;
 }
 
 function buildEvent(
@@ -435,41 +276,6 @@ function compareJournalForPanel(left: TradeJournal, right: TradeJournal): number
   return left.id.localeCompare(right.id);
 }
 
-function compareJournalForCalendar(
-  left: TradeJournal,
-  right: TradeJournal,
-): number {
-  const timeOrder = new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime();
-  if (timeOrder !== 0) {
-    return timeOrder;
-  }
-
-  const symbolOrder = left.symbol.toLowerCase().localeCompare(right.symbol.toLowerCase());
-  if (symbolOrder !== 0) {
-    return symbolOrder;
-  }
-
-  return left.id.localeCompare(right.id);
-}
-
-function utcMonthBounds(date: Date): { start: Date; end: Date } {
-  const start = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
-  const end = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1));
-  return { start, end };
-}
-
-function toUtcDayKey(value: string): string {
-  const date = new Date(value);
-  const year = date.getUTCFullYear();
-  const month = `${date.getUTCMonth() + 1}`.padStart(2, "0");
-  const day = `${date.getUTCDate()}`.padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function roundToTwo(value: number): number {
-  return Number(value.toFixed(2));
-}
-
 function createId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
@@ -477,5 +283,3 @@ function createId(): string {
 
   return `id-${Math.random().toString(36).slice(2, 10)}`;
 }
-
-const ONE_DAY_MS = 24 * 60 * 60 * 1000;

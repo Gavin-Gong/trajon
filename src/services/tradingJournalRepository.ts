@@ -1,6 +1,6 @@
-import { openTrajonDatabase } from "../../database/sqliteStorage";
-import type { TradeEvent, TradeJournal } from "../../domain/tradingJournalDomain";
-import type { TradingPanelState } from "../../model/storage";
+import { openTrajonDatabase } from "../database/sqliteStorage";
+import type { TradeEvent, TradeJournal } from "../domain/journal";
+import type { TradingPanelState } from "../model/storage";
 import { runTradingJournalMigrations } from "./tradingJournalMigrations";
 import {
   appConfigValueSchema,

@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import type { TradeEventComposerResult, TradeEventDraft, TradeJournal } from "../domain/tradingJournalDomain";
+import type { TradeEventComposerResult, TradeEventDraft, TradeJournal } from "../domain/journal";
 import type { GlobalConfig } from "../model/globalConfig";
 import type { TimeframePreset } from "../model/tradingPairPreset";
 import type { TradingPanelState } from "../model/storage";
 import {
   createTradingJournalService,
   type createTradingJournalService as createTradingJournalServiceType,
-} from "../services/tradingJournal/tradingJournalService";
+} from "../services/tradingJournalService";
 
 export type { GlobalConfig, TradingPanelState } from "../model/storage";
 

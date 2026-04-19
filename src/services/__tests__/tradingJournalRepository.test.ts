@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { TradeEvent, TradeJournal } from "../../../domain/tradingJournalDomain";
+import type { TradeEvent, TradeJournal } from "../../domain/journal";
 import { createTradingJournalRepository } from "../tradingJournalRepository";
 import { runTradingJournalMigrations } from "../tradingJournalMigrations";
 
 const openTrajonDatabaseMock = vi.hoisted(() => vi.fn());
 
-vi.mock("../../../database/sqliteStorage", () => ({
+vi.mock("../../database/sqliteStorage", () => ({
   openTrajonDatabase: openTrajonDatabaseMock,
 }));
 
