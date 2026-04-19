@@ -261,7 +261,7 @@ export function TradingJournalPanel({
           </Space>
         </div>
 
-        <TimelineSection journal={journal} title="最近记录" surface="plain" />
+        <TimelineSection journal={journal} title="最近记录" />
 
         <QuickCaptureCard
           journal={journal}

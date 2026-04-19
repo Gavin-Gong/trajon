@@ -1,6 +1,6 @@
 import React from "react";
-import { ConfigProvider } from "antd";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { AppThemeProvider } from "../theme/AppThemeProvider";
 
 const { createRootMock, renderMock } = vi.hoisted(() => {
   const renderMock = vi.fn();
@@ -29,7 +29,7 @@ describe("main entry", () => {
     renderMock.mockClear();
   });
 
-  it("wraps the app with the root Ant Design theme provider", async () => {
+  it("wraps the app with the root theme provider", async () => {
     await import("../main");
 
     expect(createRootMock).toHaveBeenCalledWith(document.getElementById("root"));
@@ -40,21 +40,9 @@ describe("main entry", () => {
     }>;
     expect(renderedTree.type).toBe(React.StrictMode);
 
-    const providerElement = React.Children.only(renderedTree.props.children) as React.ReactElement<{
-      theme: {
-        token: {
-          colorPrimary: string;
-          fontFamily: string;
-        };
-      };
+    const themeProviderElement = React.Children.only(renderedTree.props.children) as React.ReactElement<{
+      children: React.ReactNode;
     }>;
-    expect(providerElement.type).toBe(ConfigProvider);
-    expect(providerElement.props.theme).toMatchObject({
-      token: {
-        colorPrimary: "#2563eb",
-        fontFamily: '"SF Pro Text", "SF Pro Display", "Helvetica Neue", "Segoe UI", sans-serif',
-      },
-    });
-    expect(providerElement.props.theme.token).not.toHaveProperty("borderRadius");
+    expect(themeProviderElement.type).toBe(AppThemeProvider);
   });
 });
