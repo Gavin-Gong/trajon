@@ -24,17 +24,27 @@ export function feedbackMessage(
     return "可以记录观察。";
   }
 
+  if (selectedType === "plan") {
+    return "可以记录计划。";
+  }
+
   return "可以记录事件。";
 }
 
 function validationMessage(type: TradeEventType, error: TradeEventComposerError) {
   switch (error) {
     case "missingContent":
-      return type === "log" ? "观察记录需要填写文本。" : "请先补全必要字段。";
+      return type === "log"
+        ? "观察记录需要填写文本。"
+        : type === "plan"
+          ? "计划内容需要填写文本。"
+          : "请先补全必要字段。";
     case "missingQuantity":
       return type === "entry" ? "开仓需要填写带方向的数量。" : "请先填写数量。";
     case "invalidPrecision":
       return "数量和价格最多保留两位小数。";
+    case "negativePrice":
+      return "价格不能小于 0。";
     case "zeroQuantity":
       return "数量不能为 0。";
     case "wrongDirection":
@@ -69,6 +79,7 @@ export function quantityHint(
     case "exit":
       return "平仓会自动使用全部剩余仓位。";
     case "log":
+    case "plan":
       return "";
   }
 }

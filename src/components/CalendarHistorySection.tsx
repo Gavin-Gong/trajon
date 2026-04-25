@@ -1,4 +1,4 @@
-import { Badge as AntBadge, Button, Calendar, Card, Flex, Tag } from "antd";
+import { Badge as AntBadge, Button, Calendar, Card } from "antd";
 import type { BadgeProps as AntBadgeProps, CalendarProps } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
 import { useEffect, useMemo, useState } from "react";
@@ -9,14 +9,15 @@ import {
 } from "../domain/calendar";
 import type { TradeJournal } from "../domain/journal";
 import { tagColorForVariant } from "./EventPresentation";
+import { JournalDrawer } from "./JournalDrawer";
 import { shellCardStyle } from "./PanelStyles";
 import type { TradingJournalStore } from "./JournalStoreTypes";
-import { JournalDetailPanel } from "./JournalDetailPanel";
 
 export function CalendarHistorySection({ store }: { store: TradingJournalStore }) {
   const journals = store.state.journals;
   const [displayedMonth, setDisplayedMonth] = useState<Dayjs>(() => dayjs());
   const [selectedJournalId, setSelectedJournalId] = useState<string | undefined>();
+  const [openedJournalId, setOpenedJournalId] = useState<string | undefined>();
   const grouped = useMemo(() => groupJournalsByDay(journals), [journals]);
   const groupedMap = useMemo(() => new Map(grouped.map((group) => [group.dayKey, group.journals])), [grouped]);
   const monthJournals = useMemo(
@@ -43,8 +44,6 @@ export function CalendarHistorySection({ store }: { store: TradingJournalStore }
     });
   }, [displayedMonth, journals, monthJournals]);
 
-  const selectedJournal = journals.find((journal) => journal.id === selectedJournalId);
-
   const journalBadgeStatus = (journal: TradeJournal): AntBadgeProps["status"] =>
     journal.status === "open" ? "processing" : "success";
 
@@ -70,11 +69,12 @@ export function CalendarHistorySection({ store }: { store: TradingJournalStore }
                     fontWeight: selectedJournalId === journal.id ? 700 : 500,
                     color: selectedJournalId === journal.id ? "#2563eb" : "rgba(0, 0, 0, 0.65)",
                   }}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setSelectedJournalId(journal.id);
-                  }}
-                >
+                   onClick={(event) => {
+                     event.stopPropagation();
+                     setSelectedJournalId(journal.id);
+                     setOpenedJournalId(journal.id);
+                   }}
+                 >
                   {journal.symbol || "未命名"}
                 </Button>
               }
@@ -94,17 +94,8 @@ export function CalendarHistorySection({ store }: { store: TradingJournalStore }
   };
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gap: 24,
-        gridTemplateColumns: "minmax(0, 1fr) 380px",
-      }}
-    >
+    <>
       <Card style={shellCardStyle}>
-        <Flex justify="end" align="center" wrap="wrap" gap={16} style={{ marginBottom: 16 }}>
-          <Tag color={tagColorForVariant("neutral")}>{monthJournals.length} 条</Tag>
-        </Flex>
         <Calendar
           mode="month"
           value={displayedMonth}
@@ -114,7 +105,12 @@ export function CalendarHistorySection({ store }: { store: TradingJournalStore }
         />
       </Card>
 
-      <JournalDetailPanel journal={selectedJournal} />
-    </div>
+      <JournalDrawer
+        store={store}
+        open={Boolean(openedJournalId)}
+        journalId={openedJournalId}
+        onClose={() => setOpenedJournalId(undefined)}
+      />
+    </>
   );
 }

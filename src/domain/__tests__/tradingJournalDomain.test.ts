@@ -50,8 +50,12 @@ describe("currentJournal", () => {
 });
 
 describe("availableEventTypes", () => {
-  it("allows only log and entry on a flat open journal", () => {
-    expect(availableEventTypes("open", 0)).toEqual(["log", "entry"]);
+  it("puts plan first on a flat open journal before entry", () => {
+    expect(availableEventTypes("open", 0)).toEqual(["plan", "log", "entry"]);
+  });
+
+  it("does not allow plan after entry when the journal has a position", () => {
+    expect(availableEventTypes("open", 3)).toEqual(["log", "add", "reduce", "exit"]);
   });
 
   it("allows only log on a finished journal", () => {
@@ -60,6 +64,21 @@ describe("availableEventTypes", () => {
 });
 
 describe("composeTradeEvent", () => {
+  it("creates a plan when text is present before entry", () => {
+    const result = composeTradeEvent(
+      buildDraft({ type: "plan", content: "Wait for reclaim and only enter on confirmation" }),
+      0,
+      "open",
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.event.type).toBe("plan");
+      expect(result.event.content).toBe("Wait for reclaim and only enter on confirmation");
+      expect(result.event.quantity).toBeUndefined();
+    }
+  });
+
   it("creates a log when text is present", () => {
     const result = composeTradeEvent(buildDraft(), 0, "open");
 
@@ -105,6 +124,16 @@ describe("composeTradeEvent", () => {
     );
 
     expect(result).toEqual({ ok: false, error: "exceedsPosition" });
+  });
+
+  it("rejects negative prices", () => {
+    const result = composeTradeEvent(
+      buildDraft({ type: "entry", quantityInput: "1", priceInput: "-12.34" }),
+      0,
+      "open",
+    );
+
+    expect(result).toEqual({ ok: false, error: "negativePrice" });
   });
 });
 
@@ -229,5 +258,88 @@ describe("realizedPnlAnalytics", () => {
       { dayKey: "2026-04-19", value: -15 },
     ]);
     expect(analytics.journalCount).toBe(1);
+  });
+
+  it("builds a trailing-year heatmap with signed intensity buckets", () => {
+    const journal = createJournal({
+      id: "journal-heatmap",
+      symbol: "ETHUSDT",
+      market: "BINANCE",
+      status: "done",
+      events: [
+        {
+          id: "entry-1",
+          createdAt: "2026-04-18T09:00:00.000Z",
+          updatedAt: "2026-04-18T09:00:00.000Z",
+          timestamp: "2026-04-18T09:00:00.000Z",
+          type: "entry",
+          content: "Open",
+          price: 100,
+          quantity: 1,
+        },
+        {
+          id: "exit-1",
+          createdAt: "2026-04-18T10:00:00.000Z",
+          updatedAt: "2026-04-18T10:00:00.000Z",
+          timestamp: "2026-04-18T10:00:00.000Z",
+          type: "exit",
+          content: "Close green",
+          price: 110,
+          quantity: -1,
+        },
+        {
+          id: "entry-2",
+          createdAt: "2026-04-20T09:00:00.000Z",
+          updatedAt: "2026-04-20T09:00:00.000Z",
+          timestamp: "2026-04-20T09:00:00.000Z",
+          type: "entry",
+          content: "Open again",
+          price: 200,
+          quantity: 1,
+        },
+        {
+          id: "exit-2",
+          createdAt: "2026-04-20T11:00:00.000Z",
+          updatedAt: "2026-04-20T11:00:00.000Z",
+          timestamp: "2026-04-20T11:00:00.000Z",
+          type: "exit",
+          content: "Close red",
+          price: 195,
+          quantity: -1,
+        },
+        {
+          id: "entry-3",
+          createdAt: "2025-04-14T09:00:00.000Z",
+          updatedAt: "2025-04-14T09:00:00.000Z",
+          timestamp: "2025-04-14T09:00:00.000Z",
+          type: "entry",
+          content: "Too old",
+          price: 50,
+          quantity: 1,
+        },
+        {
+          id: "exit-3",
+          createdAt: "2025-04-14T10:00:00.000Z",
+          updatedAt: "2025-04-14T10:00:00.000Z",
+          timestamp: "2025-04-14T10:00:00.000Z",
+          type: "exit",
+          content: "Outside trailing year",
+          price: 80,
+          quantity: -1,
+        },
+      ],
+    });
+
+    const analytics = realizedPnlAnalytics([journal], { heatmapEndDayKey: "2026-04-20" });
+    const gainCell = analytics.heatmap.find((cell) => cell.dayKey === "2026-04-18");
+    const flatCell = analytics.heatmap.find((cell) => cell.dayKey === "2026-04-19");
+    const lossCell = analytics.heatmap.find((cell) => cell.dayKey === "2026-04-20");
+
+    expect(analytics.heatmap).toHaveLength(371);
+    expect(analytics.heatmap[0]?.dayKey).toBe("2025-04-15");
+    expect(analytics.heatmap[analytics.heatmap.length - 1]?.dayKey).toBe("2026-04-20");
+    expect(gainCell).toMatchObject({ dayKey: "2026-04-18", value: 10, bucket: 4, direction: "profit" });
+    expect(flatCell).toMatchObject({ dayKey: "2026-04-19", value: 0, bucket: 0, direction: "flat" });
+    expect(lossCell).toMatchObject({ dayKey: "2026-04-20", value: -5, bucket: 2, direction: "loss" });
   });
 });

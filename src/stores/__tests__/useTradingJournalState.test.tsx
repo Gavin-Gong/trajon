@@ -8,6 +8,10 @@ const service = {
   createTradeJournal: vi.fn(),
   createTradeEvent: vi.fn(),
   finishTradeJournal: vi.fn(),
+  updateTradeJournalSymbol: vi.fn(),
+  addJournalImages: vi.fn(),
+  removeJournalImage: vi.fn(),
+  deleteTradeJournal: vi.fn(),
   setPanelPinned: vi.fn(),
   updateConfig: vi.fn(),
   upsertPairPreset: vi.fn(),
@@ -25,6 +29,92 @@ describe("useTradingJournalState", () => {
       defaultPresetSymbol: undefined,
       panelPinned: true,
     });
+  });
+
+  it("adds images through the service and updates local state", async () => {
+    service.loadTradingPanelState.mockResolvedValue({
+      journals: [
+        {
+          id: "journal-1",
+          createdAt: "2026-04-18T00:00:00.000Z",
+          updatedAt: "2026-04-18T00:00:00.000Z",
+          symbol: "ETHUSDT",
+          market: "BINANCE",
+          summary: "",
+          status: "open",
+          events: [],
+          images: [],
+        },
+      ],
+      config: { timerEnabled: false, timerInterval: 300 },
+      pairPresets: [],
+      defaultPresetSymbol: undefined,
+      panelPinned: true,
+    });
+    service.addJournalImages.mockResolvedValue([
+      {
+        id: "image-1",
+        journalId: "journal-1",
+        createdAt: "2026-04-18T00:01:00.000Z",
+        updatedAt: "2026-04-18T00:01:00.000Z",
+        fileName: "journal-1-1713398460000-ethusdt.png",
+        relativePath: "images/journal-1-1713398460000-ethusdt.png",
+        sortOrder: 0,
+      },
+    ]);
+
+    const { result } = renderHook(() => useTradingJournalState({ service }));
+    await waitFor(() => expect(service.loadTradingPanelState).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      await result.current.actions.addJournalImages("journal-1", ["/tmp/chart.png"]);
+    });
+
+    expect(service.addJournalImages).toHaveBeenCalledWith("journal-1", ["/tmp/chart.png"]);
+    expect(result.current.state.journals[0]?.images).toHaveLength(1);
+  });
+
+  it("removes an image through the service and updates local state", async () => {
+    service.loadTradingPanelState.mockResolvedValue({
+      journals: [
+        {
+          id: "journal-1",
+          createdAt: "2026-04-18T00:00:00.000Z",
+          updatedAt: "2026-04-18T00:00:00.000Z",
+          symbol: "ETHUSDT",
+          market: "BINANCE",
+          summary: "",
+          status: "open",
+          events: [],
+          images: [
+            {
+              id: "image-1",
+              journalId: "journal-1",
+              createdAt: "2026-04-18T00:01:00.000Z",
+              updatedAt: "2026-04-18T00:01:00.000Z",
+              fileName: "journal-1-1713398460000-ethusdt.png",
+              relativePath: "images/journal-1-1713398460000-ethusdt.png",
+              sortOrder: 0,
+            },
+          ],
+        },
+      ],
+      config: { timerEnabled: false, timerInterval: 300 },
+      pairPresets: [],
+      defaultPresetSymbol: undefined,
+      panelPinned: true,
+    });
+    service.removeJournalImage.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useTradingJournalState({ service }));
+    await waitFor(() => expect(service.loadTradingPanelState).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      await result.current.actions.removeJournalImage("journal-1", "image-1");
+    });
+
+    expect(service.removeJournalImage).toHaveBeenCalledWith("journal-1", "image-1");
+    expect(result.current.state.journals[0]?.images).toEqual([]);
   });
 
   it("hydrates from the service on mount", async () => {
@@ -47,6 +137,8 @@ describe("useTradingJournalState", () => {
       summary: "",
       status: "open",
       events: [],
+      images: [],
+      tags: [],
     };
     service.createTradeJournal.mockResolvedValue(createdJournal);
 
@@ -73,6 +165,7 @@ describe("useTradingJournalState", () => {
           summary: "",
           status: "open",
           events: [],
+          images: [],
         },
       ],
       config: { timerEnabled: false, timerInterval: 300 },
@@ -121,5 +214,83 @@ describe("useTradingJournalState", () => {
       expect.anything(),
     );
     setItemSpy.mockRestore();
+  });
+
+  it("updates a journal symbol through the service and local state", async () => {
+    service.loadTradingPanelState.mockResolvedValue({
+      journals: [
+        {
+          id: "journal-1",
+          createdAt: "2026-04-18T00:00:00.000Z",
+          updatedAt: "2026-04-18T00:00:00.000Z",
+          symbol: "",
+          market: "BINANCE",
+          summary: "",
+          status: "open",
+          events: [],
+          images: [],
+          tags: [],
+        },
+      ],
+      config: { timerEnabled: false, timerInterval: 300 },
+      pairPresets: [],
+      defaultPresetSymbol: undefined,
+      panelPinned: true,
+    });
+    service.updateTradeJournalSymbol.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useTradingJournalState({ service }));
+    await waitFor(() => expect(service.loadTradingPanelState).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      await result.current.actions.updateJournalSymbol("journal-1", "BTCUSDT");
+    });
+
+    expect(service.updateTradeJournalSymbol).toHaveBeenCalledWith("journal-1", "BTCUSDT");
+    expect(result.current.state.journals[0]).toEqual(
+      expect.objectContaining({
+        symbol: "BTCUSDT",
+      }),
+    );
+  });
+
+  it("finishes journals with tags and updates local state", async () => {
+    service.loadTradingPanelState.mockResolvedValue({
+      journals: [
+        {
+          id: "journal-1",
+          createdAt: "2026-04-18T00:00:00.000Z",
+          updatedAt: "2026-04-18T00:00:00.000Z",
+          symbol: "ETHUSDT",
+          market: "BINANCE",
+          summary: "",
+          status: "open",
+          events: [],
+          images: [],
+          tags: [],
+        },
+      ],
+      config: { timerEnabled: false, timerInterval: 300 },
+      pairPresets: [],
+      defaultPresetSymbol: undefined,
+      panelPinned: true,
+    });
+    service.finishTradeJournal.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useTradingJournalState({ service }));
+    await waitFor(() => expect(service.loadTradingPanelState).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      await result.current.actions.finishJournal("journal-1", "  wrapped up  ", ["breakout", "FOMO"]);
+    });
+
+    expect(service.finishTradeJournal).toHaveBeenCalledWith("journal-1", "  wrapped up  ", ["breakout", "FOMO"]);
+    expect(result.current.state.journals[0]).toEqual(
+      expect.objectContaining({
+        summary: "wrapped up",
+        status: "done",
+        tags: ["breakout", "FOMO"],
+      }),
+    );
   });
 });

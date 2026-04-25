@@ -13,6 +13,9 @@ type AppThemeStyles = {
   inputRoot: string;
   inputElement: string;
   inputError: string;
+  inputNumberRoot: string;
+  inputNumberInput: string;
+  inputNumberError: string;
   selectRoot: string;
   selectPopup: string;
 };
@@ -101,6 +104,38 @@ const useStyles = createStyles(({ css, prefixCls }) => ({
 
       &:hover,
       &:focus,
+      &:focus-within {
+        border-color: #dc2626;
+      }
+    }
+  `,
+  inputNumberRoot: css`
+    &.${prefixCls}-input-number {
+      width: 100%;
+      border-color: #e4e4e7;
+      color: #18181b;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+      &:hover {
+        border-color: #a1a1aa;
+      }
+
+      &.${prefixCls}-input-number-focused,
+      &:focus-within {
+        border-color: #18181b;
+        box-shadow: none;
+      }
+    }
+  `,
+  inputNumberInput: css`
+    color: #18181b;
+  `,
+  inputNumberError: css`
+    &.${prefixCls}-input-number {
+      border-color: #dc2626;
+
+      &:hover,
+      &.${prefixCls}-input-number-focused,
       &:focus-within {
         border-color: #dc2626;
       }
@@ -235,6 +270,13 @@ export function createAppThemeConfig(styles: AppThemeStyles): ConfigProviderProp
             activeBorderColor: "#18181b",
             borderRadius: 6,
           },
+          InputNumber: {
+            activeShadow: "none",
+            handleVisible: true,
+            hoverBorderColor: "#a1a1aa",
+            activeBorderColor: "#18181b",
+            borderRadius: 6,
+          },
           Select: {
             optionSelectedBg: "#f4f4f5",
             optionActiveBg: "#fafafa",
@@ -288,6 +330,12 @@ export function createAppThemeConfig(styles: AppThemeStyles): ConfigProviderProp
         classNames: ({ props }) => ({
           root: clsx(styles.inputRoot, props.status === "error" && styles.inputError),
           input: styles.inputElement,
+        }),
+      },
+      inputNumber: {
+        classNames: ({ props }) => ({
+          root: clsx(styles.inputNumberRoot, props.status === "error" && styles.inputNumberError),
+          input: styles.inputNumberInput,
         }),
       },
       select: {

@@ -14,12 +14,12 @@
     "fs:write-all",
     {
       "identifier": "fs:scope",
-      "allow": [
-        { "path": "$HOME/.trajon" },
-        { "path": "$HOME/.trajon/**" },
-        { "path": "$APPDATA/databases" },
-        { "path": "$APPDATA/databases/**" }
-      ]
+        "allow": [
+          { "path": "$HOME/trajon" },
+          { "path": "$HOME/trajon/**" },
+          { "path": "$APPDATA/databases" },
+          { "path": "$APPDATA/databases/**" }
+        ]
     },
     "sql:default",
     "sql:allow-execute",

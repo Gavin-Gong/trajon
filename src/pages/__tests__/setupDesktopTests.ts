@@ -91,7 +91,7 @@ vi.mock("../../stores/useTradingJournalState", async () => {
             }));
             return journal;
           },
-          finishJournal(journalId: string, summary: string) {
+          finishJournal(journalId: string, summary: string, tags: string[] = []) {
             setState((currentState) => ({
               ...currentState,
               journals: currentState.journals.map((journal) =>
@@ -99,6 +99,7 @@ vi.mock("../../stores/useTradingJournalState", async () => {
                   ? {
                       ...journal,
                       summary: summary.trim(),
+                      tags,
                       status: "done",
                       updatedAt: new Date().toISOString(),
                     }
@@ -135,6 +136,67 @@ vi.mock("../../stores/useTradingJournalState", async () => {
               ),
             }));
             return result;
+          },
+          addJournalImages(journalId: string, files: File[]) {
+            setState((currentState) => ({
+              ...currentState,
+              journals: currentState.journals.map((journal) =>
+                journal.id === journalId
+                  ? {
+                      ...journal,
+                      images: [
+                        ...journal.images,
+                        ...files.map((file, index) => ({
+                          id: `${journalId}-image-${journal.images.length + index + 1}`,
+                          journalId,
+                          createdAt: new Date().toISOString(),
+                          updatedAt: new Date().toISOString(),
+                          fileName: file.name,
+                          relativePath: `trajon/images/${file.name}`,
+                          sortOrder: journal.images.length + index,
+                        })),
+                      ],
+                    }
+                  : journal,
+              ),
+            }));
+            return Promise.resolve([]);
+          },
+          removeJournalImage(journalId: string, imageId: string) {
+            setState((currentState) => ({
+              ...currentState,
+              journals: currentState.journals.map((journal) =>
+                journal.id === journalId
+                  ? {
+                      ...journal,
+                      images: journal.images.filter((image) => image.id !== imageId),
+                    }
+                  : journal,
+              ),
+            }));
+            return Promise.resolve();
+          },
+          deleteJournal(journalId: string) {
+            setState((currentState) => ({
+              ...currentState,
+              journals: currentState.journals.filter((journal) => journal.id !== journalId),
+            }));
+            return Promise.resolve();
+          },
+          updateJournalSymbol(journalId: string, symbol: string) {
+            setState((currentState) => ({
+              ...currentState,
+              journals: currentState.journals.map((journal) =>
+                journal.id === journalId
+                  ? {
+                      ...journal,
+                      symbol: symbol.trim(),
+                      updatedAt: new Date().toISOString(),
+                    }
+                  : journal,
+              ),
+            }));
+            return Promise.resolve();
           },
           updateConfig(nextConfig: Partial<TradingPanelState["config"]>) {
             setState((currentState) => ({
@@ -209,6 +271,10 @@ vi.mock("../../platform/panelWindow", async (importOriginal) => {
     openPanelWindow: vi.fn(() => Promise.resolve()),
   };
 });
+
+vi.mock("../../platform/panelLifecycle", () => ({
+  closePanelWindow: vi.fn(() => Promise.resolve()),
+}));
 
 export function getMockedStoreState() {
   return mockedStoreState;

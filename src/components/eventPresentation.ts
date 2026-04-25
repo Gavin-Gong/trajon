@@ -8,6 +8,7 @@ export const EVENT_LABELS: Record<TradeEventType, string> = {
   reduce: "减仓",
   exit: "平仓",
   log: "笔记",
+  plan: "计划",
 };
 
 export const EVENT_SYMBOLS: Record<TradeEventType, string> = {
@@ -16,6 +17,7 @@ export const EVENT_SYMBOLS: Record<TradeEventType, string> = {
   reduce: "−",
   exit: "×",
   log: "☰",
+  plan: "◌",
 };
 
 export function tagColorForVariant(variant: AppTagVariant) {
@@ -44,6 +46,8 @@ export function eventVariant(type: TradeEventType): AppTagVariant {
       return "danger";
     case "log":
       return "accent";
+    case "plan":
+      return "neutral";
   }
 
   return "neutral";

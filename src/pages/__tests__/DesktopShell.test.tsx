@@ -77,15 +77,30 @@ describe("Desktop shell", () => {
     render(<Desktop view={{ view: "main" }} />);
 
     expect(screen.getByText("Trajon")).toBeInTheDocument();
-    expect(screen.getByText("总览当前记录入口与常用操作。")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "开始交易" })).toBeInTheDocument();
+    expect(screen.getByText("查看累计已实现盈亏与每日盈亏分布。")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "开始记录" })).toBeInTheDocument();
+    expect(screen.getByLabelText("进行中的 Journal")).toBeInTheDocument();
     const menus = screen.getAllByRole("menu");
     expect(menus.length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByRole("menuitem").length).toBeGreaterThanOrEqual(3);
-    expectTextPresent("Dashboard");
+    expectTextPresent("面板");
     expectTextPresent("日历");
     expectTextPresent("设置");
+    expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
+    expect(screen.queryByText("分析")).not.toBeInTheDocument();
     expect(screen.queryByRole("menuitem", { name: /Chart/ })).not.toBeInTheDocument();
+  });
+
+  it("places the in-progress badge trigger to the right of the start button", () => {
+    render(<Desktop view={{ view: "main" }} />);
+
+    const startButton = screen.getByRole("button", { name: "开始记录" });
+    const journalTrigger = screen.getByLabelText("进行中的 Journal");
+    const headerActions = startButton.parentElement;
+
+    expect(headerActions).not.toBeNull();
+    expect(headerActions?.children[0]).toBe(startButton);
+    expect(headerActions?.children[1]).toBe(journalTrigger.closest(".ant-badge"));
   });
 
   it("uses Ant Design layout and card composition for the desktop workspace", () => {
@@ -112,27 +127,27 @@ describe("Desktop shell", () => {
 
   it("opens the panel from the fixed header action", () => {
     render(<Desktop view={{ view: "main" }} />);
-    fireEvent.click(screen.getByRole("button", { name: "开始交易" }));
+    fireEvent.click(screen.getByRole("button", { name: "开始记录" }));
     expect(openPanelWindow).toHaveBeenCalledWith();
   });
 
-  it("opens the panel with the selected preset from header dropdown", async () => {
-    seedState({
-      journals: [],
-      config: { timerEnabled: false, timerInterval: 300 },
-      pairPresets: [
-        { symbol: "XAUUSD", timeframe: "5m" },
-        { symbol: "BTCUSDT", timeframe: "15m" },
-      ],
-      defaultPresetSymbol: undefined,
-      panelPinned: false,
-    });
-
+  it("opens a drawer with in-progress journals from the header badge action", () => {
     render(<Desktop view={{ view: "main" }} />);
-    fireEvent.click(screen.getByRole("button", { name: "更多交易对" }));
-    fireEvent.click(await screen.findByRole("menuitem", { name: "开始交易 XAUUSD" }));
 
-    expect(openPanelWindow).toHaveBeenCalledWith({ presetSymbol: "XAUUSD" });
+    fireEvent.click(screen.getByLabelText("进行中的 Journal"));
+
+    expect(screen.getByText("进行中的 Journal")).toBeInTheDocument();
+    expect(screen.getByText("NQ")).toBeInTheDocument();
+    expect(screen.queryByText("ES")).not.toBeInTheDocument();
+  });
+
+  it("opens the panel window for a selected in-progress journal", () => {
+    render(<Desktop view={{ view: "main" }} />);
+
+    fireEvent.click(screen.getByLabelText("进行中的 Journal"));
+    fireEvent.click(screen.getByRole("button", { name: "继续记录-journal-open-journal" }));
+
+    expect(openPanelWindow).toHaveBeenCalledWith({ journalId: "open-journal" });
   });
 
   it("hides the brand mark when the sider is collapsed", () => {

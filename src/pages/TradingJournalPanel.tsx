@@ -1,11 +1,8 @@
 import { Flex } from "antd";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import {  FinishJournalModal } from "../components/FinishJournalModal";
+import { JournalWorkspace } from "../components/JournalWorkspace";
 import { PanelHeader } from "../components/PanelHeader";
-import { PanelJournalSummary } from "../components/PanelJournalSummary";
-import { QuickCaptureCard } from "../components/QuickCaptureCard";
-import { TimelineSection } from "../components/TimelineSection";
 import type { TradingJournalStore } from "../components/JournalStoreTypes";
 import { usePanelAutoCreateJournal } from "../hooks/usePanelAutoCreateJournal";
 import { usePanelNavigationTarget } from "../hooks/usePanelNavigationTarget";
@@ -28,10 +25,20 @@ export function TradingJournalPanel({
   presetSymbol?: string;
   journalId?: string;
 }) {
-  const { state, actions } = store;
-  const { journal, targetPresetSymbol } = usePanelNavigationTarget(store, presetSymbol, journalId);
-  const [showFinishJournal, setShowFinishJournal] = useState(false);
+  const { state } = store;
+  const [focusedJournalId, setFocusedJournalId] = useState<string | undefined>(journalId);
+  const { journal, targetPresetSymbol } = usePanelNavigationTarget(store, presetSymbol, focusedJournalId);
   const { isPinned, togglePinned } = usePanelPinnedState(store);
+
+  useEffect(() => {
+    setFocusedJournalId(journalId);
+  }, [journalId]);
+
+  useEffect(() => {
+    if (journal?.id) {
+      setFocusedJournalId(journal.id);
+    }
+  }, [journal?.id]);
 
   usePersistPanelBounds();
   usePanelAutoCreateJournal(store, journal, targetPresetSymbol);
@@ -46,34 +53,14 @@ export function TradingJournalPanel({
           timerInterval={state.config.timerInterval}
         />
 
-        <PanelJournalSummary journal={journal} onFinish={() => setShowFinishJournal(true)} />
-
-        <TimelineSection journal={journal} title="最近记录" />
-
-        <QuickCaptureCard
+        <JournalWorkspace
+          store={store}
           journal={journal}
-          onRecord={(draft) =>
-            journal
-              ? store.actions.recordEvent(journal.id, draft)
-              : Promise.resolve({ ok: false, error: "missingContent" } as const)
-          }
+          onAfterFinish={async () => {
+            await closePanelWindow();
+          }}
         />
       </Flex>
-
-      <FinishJournalModal
-        open={showFinishJournal && journal !== undefined}
-        initialSummary={journal?.summary ?? ""}
-        onClose={() => setShowFinishJournal(false)}
-        onConfirm={(summary) => {
-          if (!journal) {
-            return;
-          }
-
-          actions.finishJournal(journal.id, summary);
-          setShowFinishJournal(false);
-          void closePanelWindow();
-        }}
-      />
     </main>
   );
 }

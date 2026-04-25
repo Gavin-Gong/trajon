@@ -1,29 +1,21 @@
 import {
   BarChartOutlined,
   CalendarOutlined,
-  DashboardOutlined,
-  EllipsisOutlined,
+  FileTextOutlined,
+  InboxOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   SettingOutlined,
 } from "@ant-design/icons";
-import {
-  Button,
-  Dropdown,
-  Flex,
-  Layout,
-  Menu,
-  Space,
-  Typography,
-} from "antd";
-import type { MenuProps } from "antd";
+import { Badge, Button, Flex, Layout, Menu, Space, Typography } from "antd";
 import "dayjs/locale/zh-cn";
 import dayjs from "dayjs";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { AnalysisSection } from "../components/AnalysisSection";
 import { CalendarHistorySection } from "../components/CalendarHistorySection";
-import { DashboardSection } from "../components/DashboardSection";
+import { JournalListSection } from "../components/JournalListSection";
+import { OpenJournalDrawer } from "../components/OpenJournalDrawer";
 import { SettingsSection } from "../components/SettingsSection";
 import { TrajonBrandMark } from "../components/TrajonBrandMark";
 import type { AppSection } from "../components/AppTypes";
@@ -39,17 +31,17 @@ const SIDER_COLLAPSED_WIDTH = 80;
 const HEADER_HEIGHT = 60;
 
 const SECTION_META: Record<AppSection, { title: string; description: string }> = {
-  dashboard: {
-    title: "Dashboard",
-    description: "总览当前记录入口与常用操作。",
-  },
   analysis: {
-    title: "分析",
+    title: "面板",
     description: "查看累计已实现盈亏与每日盈亏分布。",
   },
   calendar: {
     title: "日历回看",
     description: "按日期查看 journal 记录与时间线。",
+  },
+  journal: {
+    title: "日记",
+    description: "用表格查看全部 journal，并在抽屉中展开详情。",
   },
   settings: {
     title: "设置",
@@ -58,24 +50,32 @@ const SECTION_META: Record<AppSection, { title: string; description: string }> =
 };
 
 export function Main({ store }: { store: TradingJournalStore }) {
-  const [section, setSection] = useState<AppSection>("dashboard");
+  const [section, setSection] = useState<AppSection>("analysis");
   const [collapsed, setCollapsed] = useState(false);
+  const [openJournalDrawerVisible, setOpenJournalDrawerVisible] = useState(false);
   const isFullscreen = useWindowFullscreenOnResize();
+  const openJournals = useMemo(
+    () =>
+      [...store.state.journals]
+        .filter((journal) => journal.status === "open")
+        .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()),
+    [store.state.journals],
+  );
   const menuItems = [
-    {
-      key: "dashboard",
-      icon: <DashboardOutlined />,
-      label: "Dashboard",
-    },
     {
       key: "analysis",
       icon: <BarChartOutlined />,
-      label: "分析",
+      label: "面板",
     },
     {
       key: "calendar",
       icon: <CalendarOutlined />,
       label: "日历",
+    },
+    {
+      key: "journal",
+      icon: <FileTextOutlined />,
+      label: "日记",
     },
     {
       key: "settings",
@@ -84,10 +84,6 @@ export function Main({ store }: { store: TradingJournalStore }) {
     },
   ];
   const activeSection = SECTION_META[section];
-  const presetMenuItems: MenuProps["items"] = store.state.pairPresets.map((preset) => ({
-    key: preset.symbol,
-    label: `开始交易 ${preset.symbol}`,
-  }));
   const siderOffset = collapsed ? SIDER_COLLAPSED_WIDTH : SIDER_WIDTH;
 
   return (
@@ -151,6 +147,7 @@ export function Main({ store }: { store: TradingJournalStore }) {
           }}
         >
           <Flex
+            data-tauri-drag-region
             align="center"
             justify="space-between"
             gap={16}
@@ -168,7 +165,7 @@ export function Main({ store }: { store: TradingJournalStore }) {
               transition: "left 0.2s ease",
             }}
           >
-            <Flex align="center" gap={12} style={{ minWidth: 0 }}>
+            <Flex align="center" gap={12} style={{ minWidth: 0 }} >
               <Button
                 type="text"
                 aria-label={collapsed ? "展开导航" : "收起导航"}
@@ -194,35 +191,42 @@ export function Main({ store }: { store: TradingJournalStore }) {
               </Space>
             </Flex>
 
-            <Space.Compact>
+            <Flex align="center" gap={12}>
               <Button
                 type="primary"
                 onClick={() => {
                   void openPanelWindow();
                 }}
               >
-                开始交易
+                开始记录
               </Button>
-              <Dropdown
-                trigger={["click"]}
-                menu={{
-                  items:
-                    presetMenuItems.length > 0
-                      ? presetMenuItems
-                      : [{ key: "empty", label: "暂无预设", disabled: true }],
-                  onClick: ({ key }) => {
-                    if (key === "empty") {
-                      return;
+              <Badge count={openJournals.length} size="small">
+                <span
+                  role="button"
+                  tabIndex={0}
+                  aria-label="进行中的 Journal"
+                  onClick={() => setOpenJournalDrawerVisible(true)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setOpenJournalDrawerVisible(true);
                     }
-
-                    void openPanelWindow({ presetSymbol: String(key) });
-                  },
-                }}
-                placement="bottomRight"
-              >
-                <Button aria-label="更多交易对" disabled={presetMenuItems.length === 0} icon={<EllipsisOutlined />} />
-              </Dropdown>
-            </Space.Compact>
+                  }}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 32,
+                    height: 32,
+                    fontSize: 18,
+                    color: "rgba(0, 0, 0, 0.72)",
+                    cursor: "pointer",
+                  }}
+                >
+                  <InboxOutlined style={{fontSize: 22}}/>
+                </span>
+              </Badge>
+            </Flex>
           </Flex>
 
           <div
@@ -230,11 +234,17 @@ export function Main({ store }: { store: TradingJournalStore }) {
               padding: `${HEADER_HEIGHT + 16}px 20px 20px`,
             }}
           >
-            {section === "dashboard" ? <DashboardSection store={store} /> : null}
             {section === "analysis" ? <AnalysisSection store={store} /> : null}
             {section === "calendar" ? <CalendarHistorySection store={store} /> : null}
+            {section === "journal" ? <JournalListSection store={store} /> : null}
             {section === "settings" ? <SettingsSection store={store} /> : null}
           </div>
+
+          <OpenJournalDrawer
+            open={openJournalDrawerVisible}
+            journals={openJournals}
+            onClose={() => setOpenJournalDrawerVisible(false)}
+          />
         </Layout.Content>
       </Layout>
     </main>

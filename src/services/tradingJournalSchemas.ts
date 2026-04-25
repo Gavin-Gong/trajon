@@ -6,9 +6,10 @@ const isoDateTimeSchema = z.iso.datetime();
 const trimmedStringSchema = z.string().trim();
 const optionalTrimmedStringSchema = z.string().trim().optional();
 const normalizedSymbolSchema = z.string().trim().min(1).transform((value) => value.toUpperCase());
+const journalTagSchema = z.string().trim().min(1);
 
 export const tradeJournalStatusSchema = z.enum(["open", "done"]);
-export const tradeEventTypeSchema = z.enum(["entry", "add", "reduce", "exit", "log"]);
+export const tradeEventTypeSchema = z.enum(["entry", "add", "reduce", "exit", "log", "plan"]);
 
 export const tradeEventSchema = z.object({
   id: z.string().min(1),
@@ -21,6 +22,16 @@ export const tradeEventSchema = z.object({
   quantity: z.number().finite().optional(),
 });
 
+export const journalImageSchema = z.object({
+  id: z.string().min(1),
+  journalId: z.string().min(1),
+  createdAt: isoDateTimeSchema,
+  updatedAt: isoDateTimeSchema,
+  fileName: z.string().min(1),
+  relativePath: z.string().min(1),
+  sortOrder: z.number().int().min(0),
+});
+
 export const tradeJournalSchema = z.object({
   id: z.string().min(1),
   createdAt: isoDateTimeSchema,
@@ -28,8 +39,10 @@ export const tradeJournalSchema = z.object({
   symbol: normalizedSymbolSchema,
   market: trimmedStringSchema,
   summary: z.string(),
+  tags: z.array(journalTagSchema),
   status: tradeJournalStatusSchema,
   events: z.array(tradeEventSchema),
+  images: z.array(journalImageSchema),
 });
 
 export const tradeJournalRowSchema = z.object({
@@ -39,6 +52,7 @@ export const tradeJournalRowSchema = z.object({
   symbol: normalizedSymbolSchema,
   market: trimmedStringSchema,
   summary: z.string(),
+  tags: z.string().min(2),
   status: tradeJournalStatusSchema,
 });
 
@@ -52,6 +66,16 @@ export const tradeEventRowSchema = z.object({
   content: trimmedStringSchema,
   price: z.number().finite().nullable().optional(),
   quantity: z.number().finite().nullable().optional(),
+});
+
+export const journalImageRowSchema = z.object({
+  id: z.string().min(1),
+  journal_id: z.string().min(1),
+  created_at: isoDateTimeSchema,
+  updated_at: isoDateTimeSchema,
+  file_name: z.string().min(1),
+  relative_path: z.string().min(1),
+  sort_order: z.number().int().min(0),
 });
 
 export const globalConfigSchema = z.object({

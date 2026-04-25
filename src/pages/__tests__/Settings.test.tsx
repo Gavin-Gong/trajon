@@ -85,7 +85,7 @@ describe("Settings", () => {
 
     render(<Desktop view={{ view: "panel" }} />);
     expect(screen.getByText("BTCUSDT")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "开始记录今天的交易" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "开始记录" })).not.toBeInTheDocument();
   });
 
   it("lets the user set a saved preset as default from settings", async () => {
@@ -114,6 +114,6 @@ describe("Settings", () => {
     render(<Desktop view={{ view: "panel" }} />);
 
     await expect(screen.findByText("ETHUSDT")).resolves.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "开始记录今天的交易" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "开始记录" })).not.toBeInTheDocument();
   });
 });

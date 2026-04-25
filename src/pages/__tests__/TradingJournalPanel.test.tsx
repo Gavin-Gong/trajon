@@ -1,199 +1,244 @@
 import "./setupDesktopTests";
 
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { message } from "antd";
+import { describe, expect, it, vi } from "vitest";
 
-import { createJournal } from "../../domain/journal";
-import * as PanelLifecycleModule from "../../platform/panelLifecycle";
-import { parseAppView } from "../../platform/panelWindow";
 import { Desktop } from "../Desktop";
-import { buildState, expectTextPresent, resetSeedState, seedState } from "./desktopTestHelpers";
+import { openAntdSelect, seedState } from "./desktopTestHelpers";
+import { closePanelWindow } from "../../platform/panelLifecycle";
 
-describe("TradingJournal panel", () => {
-  beforeEach(() => {
-    resetSeedState();
-  });
+vi.mock("../../platform/journalImages", () => ({
+  isJournalImageManagementAvailable: () => false,
+  pickJournalImageFiles: vi.fn(),
+  resolveJournalImageSrc: vi.fn(async (relativePath: string) => `asset://${relativePath}`),
+}));
 
-  it("renders the panel surface with clock and Antd pin button", () => {
-    render(<Desktop view={{ view: "panel" }} />);
-    expect(screen.getByText("Quick Capture Panel")).toBeInTheDocument();
-    expect(screen.getByTitle("当前保持置顶")).toBeInTheDocument();
-    expect(document.querySelectorAll(".anticon-pushpin").length).toBeGreaterThanOrEqual(1);
-  });
+describe("TradingJournalPanel", () => {
+  it("requires a symbol before opening the review modal", () => {
+    const warningSpy = vi.spyOn(message, "warning").mockImplementation(() => message);
 
-  it("shows the active journal summary in panel view", () => {
-    render(<Desktop view={{ view: "panel" }} />);
-    const panelMain = screen.getAllByRole("main")[0];
-    expect(within(panelMain).getAllByText("NQ").length).toBeGreaterThanOrEqual(1);
-    expect(within(panelMain).getAllByText("进行中").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByRole("button", { name: "结束 Journal" }).length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("renders the requested journal when panel view receives journalId", () => {
-    render(<Desktop view={{ view: "panel", journalId: "done-journal" }} />);
-    const panelMain = screen.getAllByRole("main")[0];
-    expect(within(panelMain).getAllByText("ES").length).toBeGreaterThanOrEqual(1);
-    expect(within(panelMain).getByText("纪律不错，但出场可以更果断。")).toBeInTheDocument();
-    expect(within(panelMain).getAllByText("已完成").length).toBeGreaterThanOrEqual(1);
-    expect(screen.queryByRole("button", { name: "结束 Journal" })).not.toBeInTheDocument();
-  });
-
-  it("prefers journalId over presetSymbol when both are provided", () => {
     seedState({
-      ...buildState(),
-      pairPresets: [{ symbol: "BTCUSDT", timeframe: "5m" }],
-      defaultPresetSymbol: "BTCUSDT",
+      journals: [
+        {
+          id: "open-journal",
+          createdAt: "2026-04-25T09:30:00.000Z",
+          updatedAt: "2026-04-25T09:30:00.000Z",
+          symbol: "",
+          market: "",
+          summary: "",
+          tags: ["纪律", "减仓偏早"],
+          status: "open",
+          events: [],
+          images: [],
+        },
+      ],
+      config: { timerEnabled: false, timerInterval: 300 },
+      pairPresets: [],
+      defaultPresetSymbol: undefined,
+      panelPinned: true,
     });
 
-    render(<Desktop view={{ view: "panel", journalId: "done-journal", presetSymbol: "BTCUSDT" }} />);
-    const panelMain = screen.getAllByRole("main")[0];
-    expect(within(panelMain).getAllByText("ES").length).toBeGreaterThanOrEqual(1);
-    expect(screen.queryByText("BTCUSDT")).not.toBeInTheDocument();
+    const { unmount } = render(<Desktop view={{ view: "panel", journalId: "open-journal" }} />);
+
+    expect(screen.getByTitle("当前保持置顶")).toBeInTheDocument();
+    expect(screen.getByText("快速记录")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "复 盘" }));
+
+    expect(warningSpy).toHaveBeenCalledWith("请先选择或填写交易标的");
+    expect(screen.queryByRole("dialog", { name: "复盘" })).not.toBeInTheDocument();
+
+    warningSpy.mockRestore();
   });
 
-  it("falls back to the current open journal when journalId is missing", () => {
-    render(<Desktop view={{ view: "panel", journalId: "missing-journal" }} />);
-    const panelMain = screen.getAllByRole("main")[0];
-    expect(within(panelMain).getAllByText("NQ").length).toBeGreaterThanOrEqual(1);
-    expect(screen.queryByText("纪律不错，但出场可以更果断。")).not.toBeInTheDocument();
-  });
+  it("shows the journal as done after finishing review", async () => {
+    const successSpy = vi.spyOn(message, "success").mockImplementation(() => message);
+    const closePanelWindowMock = vi.mocked(closePanelWindow);
 
-  it("renders the quick capture section with event type chips", () => {
-    render(<Desktop view={{ view: "panel" }} />);
-    expectTextPresent("快速记录");
-    expect(screen.getAllByRole("radio", { name: "笔记" }).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByRole("radio", { name: "加仓" }).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByRole("radio", { name: "减仓" }).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByRole("radio", { name: "平仓" }).length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("uses segmented controls without card composition in panel view", () => {
-    render(<Desktop view={{ view: "panel" }} />);
-    expect(document.querySelectorAll(".ant-card")).toHaveLength(0);
-    expect(document.querySelectorAll(".ant-segmented").length).toBeGreaterThanOrEqual(1);
-    expect(document.querySelectorAll(".ant-empty").length).toBeGreaterThanOrEqual(0);
-  });
-
-  it("renders the panel without Ant Design cards", () => {
-    render(<Desktop view={{ view: "panel" }} />);
-    expect(document.querySelectorAll(".ant-card")).toHaveLength(0);
-  });
-
-  it("shows the timeline section with event count", () => {
-    render(<Desktop view={{ view: "panel" }} />);
-    expectTextPresent("最近记录");
-  });
-
-  it("shows reminder status in the panel header", () => {
-    render(<Desktop view={{ view: "panel" }} />);
-    expectTextPresent(/开启 · 5m/);
-  });
-
-  it("keeps panel descriptive copy behind tooltip icons", () => {
     seedState({
-      ...buildState(),
       journals: [
-        createJournal({
-          id: "open-without-summary",
+        {
+          id: "open-journal",
+          createdAt: "2026-04-25T09:30:00.000Z",
+          updatedAt: "2026-04-25T09:30:00.000Z",
           symbol: "NQ",
           market: "CME",
-          createdAt: "2026-04-04T09:30:00.000Z",
-          status: "open",
           summary: "",
-        }),
+          tags: ["纪律", "减仓偏早"],
+          status: "open",
+          events: [],
+          images: [],
+        },
       ],
+      config: { timerEnabled: false, timerInterval: 300 },
+      pairPresets: [],
+      defaultPresetSymbol: undefined,
+      panelPinned: true,
     });
 
-    render(<Desktop view={{ view: "panel" }} />);
-    expect(screen.getByText("暂无总结")).toBeInTheDocument();
-    expect(screen.queryByText("建议在收盘后补上执行结论与改进点。")).not.toBeInTheDocument();
-    expect(screen.queryByText("把关键事件先记下来，复杂 dashboard 留到主界面复盘。")).not.toBeInTheDocument();
-    expect(document.querySelectorAll(".ant-tooltip-open").length).toBe(0);
-    expect(document.querySelectorAll(".anticon-info-circle").length).toBeGreaterThanOrEqual(2);
-  });
+    const { unmount } = render(<Desktop view={{ view: "panel", journalId: "open-journal" }} />);
 
-  it("closes the panel after finishing the current journal", async () => {
-    const closeSpy = vi.spyOn(PanelLifecycleModule, "closePanelWindow").mockResolvedValue(undefined);
-    render(<Desktop view={{ view: "panel" }} />);
-    fireEvent.click(screen.getByRole("button", { name: "结束 Journal" }));
-    fireEvent.change(screen.getByPlaceholderText("可选：这笔交易哪里做得好，哪里需要改进？"), {
-      target: { value: "Finished and closed." },
+    fireEvent.click(screen.getByRole("button", { name: "复 盘" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "复盘" }), {
+      target: { value: "纪律执行到位" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "确认结束" }));
+    fireEvent.click(screen.getByRole("button", { name: /完\s*成/ }));
 
     await waitFor(() => {
-      expect(closeSpy).toHaveBeenCalledTimes(1);
+      expect(screen.getByText("已完成")).toBeInTheDocument();
     });
-    closeSpy.mockRestore();
+    expect(successSpy).toHaveBeenCalledWith("复盘已完成");
+    expect(closePanelWindowMock).toHaveBeenCalledTimes(1);
+    expect(screen.getAllByText("纪律执行到位").length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByRole("button", { name: "复 盘" })).not.toBeInTheDocument();
+
+    unmount();
+
+    successSpy.mockRestore();
+    closePanelWindowMock.mockClear();
   });
 
-  it("creates a new journal immediately when the latest journal is already done", () => {
+  it("shows review tags and image count in the panel after finishing", async () => {
+    const successSpy = vi.spyOn(message, "success").mockImplementation(() => message);
+
     seedState({
       journals: [
-        createJournal({
-          id: "done-only",
-          symbol: "BTCUSDT",
-          market: "Binance",
-          createdAt: "2026-04-10T09:30:00.000Z",
+        {
+          id: "open-journal",
+          createdAt: "2026-04-25T09:30:00.000Z",
+          updatedAt: "2026-04-25T09:30:00.000Z",
+          symbol: "NQ",
+          market: "CME",
+          summary: "",
+          tags: ["纪律", "减仓偏早"],
+          status: "open",
+          events: [],
+          images: [
+            {
+              id: "image-1",
+              journalId: "open-journal",
+              createdAt: "2026-04-25T10:00:00.000Z",
+              updatedAt: "2026-04-25T10:00:00.000Z",
+              fileName: "setup-1.png",
+              relativePath: "trajon/images/setup-1.png",
+              sortOrder: 0,
+            },
+            {
+              id: "image-2",
+              journalId: "open-journal",
+              createdAt: "2026-04-25T10:01:00.000Z",
+              updatedAt: "2026-04-25T10:01:00.000Z",
+              fileName: "setup-2.png",
+              relativePath: "trajon/images/setup-2.png",
+              sortOrder: 1,
+            },
+            {
+              id: "image-3",
+              journalId: "open-journal",
+              createdAt: "2026-04-25T10:02:00.000Z",
+              updatedAt: "2026-04-25T10:02:00.000Z",
+              fileName: "setup-3.png",
+              relativePath: "trajon/images/setup-3.png",
+              sortOrder: 2,
+            },
+            {
+              id: "image-4",
+              journalId: "open-journal",
+              createdAt: "2026-04-25T10:03:00.000Z",
+              updatedAt: "2026-04-25T10:03:00.000Z",
+              fileName: "setup-4.png",
+              relativePath: "trajon/images/setup-4.png",
+              sortOrder: 3,
+            },
+          ],
+        },
+      ],
+      config: { timerEnabled: false, timerInterval: 300 },
+      pairPresets: [],
+      defaultPresetSymbol: undefined,
+      panelPinned: true,
+    });
+
+    const { unmount } = render(<Desktop view={{ view: "panel", journalId: "open-journal" }} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "复 盘" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "复盘" }), {
+      target: { value: "按计划执行，止盈太保守。" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /完\s*成/ }));
+
+    await waitFor(() => {
+      expect(screen.getAllByText("标签").length).toBeGreaterThanOrEqual(1);
+    });
+
+    expect(screen.getAllByText("纪律").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("减仓偏早").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("复盘图片").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("+1")).toBeInTheDocument();
+    expect(screen.getByAltText("setup-1.png")).toBeInTheDocument();
+    expect(screen.getAllByText("按计划执行，止盈太保守。").length).toBeGreaterThanOrEqual(1);
+
+    unmount();
+    successSpy.mockRestore();
+  });
+
+  it("shows historical tags from done journals in the review modal", async () => {
+    seedState({
+      journals: [
+        {
+          id: "done-journal",
+          createdAt: "2026-04-24T09:30:00.000Z",
+          updatedAt: "2026-04-24T10:15:00.000Z",
+          symbol: "ES",
+          market: "CME",
+          summary: "有执行力，但止盈偏早。",
+          tags: ["纪律", "趋势跟随"],
           status: "done",
-          summary: "Closed the session.",
-        }),
+          events: [],
+          images: [],
+        },
+        {
+          id: "open-journal",
+          createdAt: "2026-04-25T09:30:00.000Z",
+          updatedAt: "2026-04-25T09:30:00.000Z",
+          symbol: "NQ",
+          market: "CME",
+          summary: "",
+          tags: [],
+          status: "open",
+          events: [],
+          images: [],
+        },
+        {
+          id: "open-journal-2",
+          createdAt: "2026-04-25T11:00:00.000Z",
+          updatedAt: "2026-04-25T11:10:00.000Z",
+          symbol: "YM",
+          market: "CBOT",
+          summary: "",
+          tags: ["不要出现"],
+          status: "open",
+          events: [],
+          images: [],
+        },
       ],
       config: { timerEnabled: false, timerInterval: 300 },
-      pairPresets: [{ symbol: "BTCUSDT", timeframe: "5m" }],
-      defaultPresetSymbol: "BTCUSDT",
-      panelPinned: false,
+      pairPresets: [],
+      defaultPresetSymbol: undefined,
+      panelPinned: true,
     });
 
-    render(<Desktop view={{ view: "panel" }} />);
-    expect(screen.getByText("BTCUSDT")).toBeInTheDocument();
-    expect(screen.queryByText("Closed the session.")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "开始记录今天的交易" })).not.toBeInTheDocument();
-    expect(screen.getByText(/未标记市场/)).toBeInTheDocument();
-  });
+    render(<Desktop view={{ view: "panel", journalId: "open-journal" }} />);
 
-  it("creates a new journal immediately when no journals exist", () => {
-    seedState({
-      journals: [],
-      config: { timerEnabled: false, timerInterval: 300 },
-      pairPresets: [{ symbol: "BTCUSDT", timeframe: "5m" }],
-      defaultPresetSymbol: "BTCUSDT",
-      panelPinned: false,
-    });
-    render(<Desktop view={{ view: "panel" }} />);
-    expect(screen.getByText("BTCUSDT")).toBeInTheDocument();
-    expect(screen.queryByText("没有活跃 Journal")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "开始记录今天的交易" })).not.toBeInTheDocument();
-  });
+    fireEvent.click(screen.getByRole("button", { name: "复 盘" }));
+    openAntdSelect("review-tags-select");
 
-  it("unlocks quick capture immediately when no journals exist", () => {
-    seedState({
-      journals: [],
-      config: { timerEnabled: false, timerInterval: 300 },
-      pairPresets: [{ symbol: "BTCUSDT", timeframe: "5m" }],
-      defaultPresetSymbol: "BTCUSDT",
-      panelPinned: false,
-    });
-    render(<Desktop view={{ view: "panel" }} />);
-    expect(screen.queryByText(/先创建今天的 journal，快速记录区才会解锁/)).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "记录事件" })).toBeInTheDocument();
-  });
-
-  it("prefers presetSymbol from panel URL when auto-creating a journal", () => {
-    seedState({
-      journals: [],
-      config: { timerEnabled: false, timerInterval: 300 },
-      pairPresets: [
-        { symbol: "BTCUSDT", timeframe: "5m" },
-        { symbol: "ETHUSDT", timeframe: "15m" },
-      ],
-      defaultPresetSymbol: "BTCUSDT",
-      panelPinned: false,
+    await waitFor(() => {
+      expect(screen.getByRole("option", { name: "纪律" })).toBeInTheDocument();
     });
 
-    const view = parseAppView("?view=panel&presetSymbol=ETHUSDT");
-    render(<Desktop view={view} />);
-    expect(screen.getByText("ETHUSDT")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "开始记录今天的交易" })).not.toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "趋势跟随" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "不要出现" })).not.toBeInTheDocument();
   });
 });

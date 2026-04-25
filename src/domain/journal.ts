@@ -1,13 +1,9 @@
-import type {
-  TradeEvent,
-  TradeEventType,
-  TradeJournal,
-  TradeJournalStatus,
-} from "../model/model";
+import type { TradeEvent, TradeEventType, TradeJournal, TradeJournalStatus } from "../model/model";
 
 import { isZero } from "./shared";
 
 export type {
+  JournalImage,
   TradeEvent,
   TradeEventType,
   TradeJournal,
@@ -25,6 +21,7 @@ export type TradeEventComposerError =
   | "missingContent"
   | "missingQuantity"
   | "invalidPrecision"
+  | "negativePrice"
   | "zeroQuantity"
   | "wrongDirection"
   | "exceedsPosition"
@@ -52,9 +49,33 @@ export function createJournal(
     symbol: overrides.symbol ?? "",
     market: overrides.market ?? "",
     summary: overrides.summary ?? "",
+    tags: overrides.tags ?? [],
     status: overrides.status ?? "open",
     events: overrides.events ?? [],
+    images: overrides.images ?? [],
   };
+}
+
+export function normalizeJournalTags(tags: string[]): string[] {
+  const seen = new Set<string>();
+  const normalized: string[] = [];
+
+  for (const tag of tags) {
+    const trimmed = tag.trim();
+    if (!trimmed) {
+      continue;
+    }
+
+    const lowerCased = trimmed.toLowerCase();
+    if (seen.has(lowerCased)) {
+      continue;
+    }
+
+    seen.add(lowerCased);
+    normalized.push(trimmed);
+  }
+
+  return normalized;
 }
 
 export function netPosition(events: TradeEvent[]): number {
@@ -70,7 +91,7 @@ export function availableEventTypes(
   }
 
   return isZero(currentNetPosition)
-    ? ["log", "entry"]
+    ? ["plan", "log", "entry"]
     : ["log", "add", "reduce", "exit"];
 }
 
@@ -89,12 +110,15 @@ export function composeTradeEvent(
 ): TradeEventComposerResult {
   const trimmedContent = draft.content.trim();
   const price = parseOptionalDecimal(draft.priceInput);
+  if (price !== undefined && price < 0) {
+    return { ok: false, error: "negativePrice" };
+  }
 
   if (status === "done" && draft.type !== "log") {
     return { ok: false, error: "doneOnlyLogs" };
   }
 
-  if (draft.type === "log") {
+  if (draft.type === "log" || draft.type === "plan") {
     if (!trimmedContent) {
       return { ok: false, error: "missingContent" };
     }
@@ -102,7 +126,7 @@ export function composeTradeEvent(
     return {
       ok: true,
       event: buildEvent({
-        type: "log",
+        type: draft.type,
         content: trimmedContent,
         price,
       }),
@@ -176,7 +200,7 @@ function buildEvent(
 
 function validateQuantity(
   quantityInput: string,
-  type: Exclude<TradeEventType, "log" | "exit">,
+  type: Exclude<TradeEventType, "log" | "plan" | "exit">,
   currentNetPosition: number,
 ): QuantityValidationResult {
   const trimmed = quantityInput.trim();

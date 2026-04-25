@@ -12,14 +12,19 @@
   "app": {
     "windows": [
       {
-        "title": " ",
-        "width": 800,
-        "height": 600,
-        "titleBarStyle": "Overlay"
+        "title": "Trajon",
+        "width": 1200,
+        "height": 800,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["$HOME/trajon/**"]
+      }
     }
   },
   "bundle": {

@@ -10,6 +10,9 @@ describe("createAppThemeConfig", () => {
       inputRoot: "input-root",
       inputElement: "input-element",
       inputError: "input-error",
+      inputNumberRoot: "input-number-root",
+      inputNumberInput: "input-number-input",
+      inputNumberError: "input-number-error",
       selectRoot: "select-root",
       selectPopup: "select-popup",
     });
@@ -28,11 +31,15 @@ describe("createAppThemeConfig", () => {
         Input: {
           activeBorderColor: "#18181b",
         },
+        InputNumber: {
+          activeBorderColor: "#18181b",
+        },
       },
     });
 
     expect(config.button?.classNames).toBeDefined();
     expect(config.input?.classNames).toBeDefined();
+    expect(config.inputNumber?.classNames).toBeDefined();
     expect(config.select?.classNames).toBeDefined();
   });
 });

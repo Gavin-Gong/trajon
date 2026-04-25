@@ -44,6 +44,27 @@ const migrations: Migration[] = [
       "CREATE INDEX IF NOT EXISTS idx_trade_events_timestamp ON trade_events(timestamp)",
     ],
   },
+  {
+    version: 2,
+    statements: [
+      `CREATE TABLE IF NOT EXISTS journal_images (
+        id TEXT PRIMARY KEY,
+        journal_id TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        file_name TEXT NOT NULL,
+        relative_path TEXT NOT NULL,
+        sort_order INTEGER NOT NULL,
+        FOREIGN KEY (journal_id) REFERENCES trade_journals(id) ON DELETE CASCADE
+      )`,
+      "CREATE INDEX IF NOT EXISTS idx_journal_images_journal_id ON journal_images(journal_id)",
+      "CREATE INDEX IF NOT EXISTS idx_journal_images_sort_order ON journal_images(sort_order)",
+    ],
+  },
+  {
+    version: 3,
+    statements: ["ALTER TABLE trade_journals ADD COLUMN tags TEXT NOT NULL DEFAULT '[]'"],
+  },
 ];
 
 export async function runTradingJournalMigrations(db: SqlExecutor): Promise<void> {

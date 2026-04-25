@@ -1,12 +1,13 @@
 import { openTrajonDatabase } from "../database/sqliteStorage";
-import type { TradeEvent, TradeJournal } from "../domain/journal";
+import type { JournalImage, TradeEvent, TradeJournal } from "../domain/journal";
 import type { TradingPanelState } from "../model/storage";
 import { runTradingJournalMigrations } from "./tradingJournalMigrations";
 import {
   appConfigValueSchema,
-  tradeEventRowSchema,
-  tradeJournalRowSchema,
-  tradingJournalStateSchema,
+    tradeEventRowSchema,
+    journalImageRowSchema,
+    tradeJournalRowSchema,
+    tradingJournalStateSchema,
 } from "./tradingJournalSchemas";
 
 type SqlDatabase = {
@@ -42,10 +43,13 @@ export function createTradingJournalRepository() {
     async loadState(): Promise<TradingPanelState> {
       const db = await getDatabase();
       const journalRows = await db.select<Record<string, unknown>>(
-        "SELECT id, created_at, updated_at, symbol, market, summary, status FROM trade_journals ORDER BY created_at DESC",
+        "SELECT id, created_at, updated_at, symbol, market, summary, tags, status FROM trade_journals ORDER BY created_at DESC",
       );
       const eventRows = await db.select<Record<string, unknown>>(
         "SELECT id, journal_id, created_at, updated_at, timestamp, type, content, price, quantity FROM trade_events ORDER BY timestamp DESC",
+      );
+      const imageRows = await db.select<Record<string, unknown>>(
+        "SELECT id, journal_id, created_at, updated_at, file_name, relative_path, sort_order FROM journal_images ORDER BY sort_order ASC, created_at ASC",
       );
       const appConfigRows = await db.select<{ key: string; value: string }>(
         "SELECT key, value FROM app_config",
@@ -58,12 +62,16 @@ export function createTradingJournalRepository() {
         symbol: row.symbol,
         market: row.market,
         summary: row.summary,
+        tags: JSON.parse(row.tags),
         status: row.status,
         events: [],
+        images: [],
       }));
 
       const parsedEvents = tradeEventRowSchema.array().parse(eventRows);
       const eventsByJournalId = new Map<string, TradeEvent[]>();
+      const parsedImages = journalImageRowSchema.array().parse(imageRows);
+      const imagesByJournalId = new Map<string, JournalImage[]>();
 
       for (const row of parsedEvents) {
         const event: TradeEvent = {
@@ -81,6 +89,22 @@ export function createTradingJournalRepository() {
         eventsByJournalId.set(row.journal_id, existing);
       }
 
+      for (const row of parsedImages) {
+        const image: JournalImage = {
+          id: row.id,
+          journalId: row.journal_id,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+          fileName: row.file_name,
+          relativePath: row.relative_path,
+          sortOrder: row.sort_order,
+        };
+        const existing = imagesByJournalId.get(row.journal_id) ?? [];
+        existing.push(image);
+        existing.sort((left, right) => left.sortOrder - right.sortOrder);
+        imagesByJournalId.set(row.journal_id, existing);
+      }
+
       const configPatch = parseAppConfigRows(appConfigRows);
       return tradingJournalStateSchema.parse({
         ...DEFAULT_STATE,
@@ -88,6 +112,7 @@ export function createTradingJournalRepository() {
         journals: journals.map((journal) => ({
           ...journal,
           events: eventsByJournalId.get(journal.id) ?? [],
+          images: imagesByJournalId.get(journal.id) ?? [],
         })),
       });
     },
@@ -95,7 +120,7 @@ export function createTradingJournalRepository() {
     async insertTradeJournal(journal: TradeJournal): Promise<void> {
       const db = await getDatabase();
       await db.execute(
-        "INSERT INTO trade_journals (id, created_at, updated_at, symbol, market, summary, status) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+        "INSERT INTO trade_journals (id, created_at, updated_at, symbol, market, summary, tags, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
         [
           journal.id,
           journal.createdAt,
@@ -103,6 +128,7 @@ export function createTradingJournalRepository() {
           journal.symbol,
           journal.market,
           journal.summary,
+          JSON.stringify(journal.tags),
           journal.status,
         ],
       );
@@ -130,11 +156,48 @@ export function createTradingJournalRepository() {
       );
     },
 
+    async insertJournalImages(journalId: string, images: JournalImage[]): Promise<void> {
+      const db = await getDatabase();
+
+      for (const image of images) {
+        await db.execute(
+          "INSERT INTO journal_images (id, journal_id, created_at, updated_at, file_name, relative_path, sort_order) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+          [
+            image.id,
+            journalId,
+            image.createdAt,
+            image.updatedAt,
+            image.fileName,
+            image.relativePath,
+            image.sortOrder,
+          ],
+        );
+      }
+    },
+
+    async deleteJournalImage(imageId: string): Promise<void> {
+      const db = await getDatabase();
+      await db.execute("DELETE FROM journal_images WHERE id = $1", [imageId]);
+    },
+
+    async deleteTradeJournal(journalId: string): Promise<void> {
+      const db = await getDatabase();
+      await db.execute("DELETE FROM trade_journals WHERE id = $1", [journalId]);
+    },
+
     async updateTradeJournal(journal: TradeJournal): Promise<void> {
       const db = await getDatabase();
       await db.execute(
-        "UPDATE trade_journals SET updated_at = $2, summary = $3, status = $4, symbol = $5, market = $6 WHERE id = $1",
-        [journal.id, journal.updatedAt, journal.summary, journal.status, journal.symbol, journal.market],
+        "UPDATE trade_journals SET updated_at = $2, summary = $3, tags = $4, status = $5, symbol = $6, market = $7 WHERE id = $1",
+        [
+          journal.id,
+          journal.updatedAt,
+          journal.summary,
+          JSON.stringify(journal.tags),
+          journal.status,
+          journal.symbol,
+          journal.market,
+        ],
       );
     },
 

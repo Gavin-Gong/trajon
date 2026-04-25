@@ -9,6 +9,7 @@ export function usePanelAutoCreateJournal(
   presetSymbol?: string,
 ) {
   const { state, actions } = store;
+  const hasMatchingJournal = !presetSymbol || journal?.symbol === presetSymbol;
 
   const defaultPreset = useMemo(() => {
     const incomingPreset = presetSymbol
@@ -22,10 +23,10 @@ export function usePanelAutoCreateJournal(
   }, [presetSymbol, state.defaultPresetSymbol, state.pairPresets]);
 
   useEffect(() => {
-    if (journal || !defaultPreset?.symbol) {
+    if ((journal && hasMatchingJournal) || !defaultPreset?.symbol) {
       return;
     }
 
     void actions.createJournal(defaultPreset.symbol, "");
-  }, [actions, defaultPreset?.symbol, journal]);
+  }, [actions, defaultPreset?.symbol, hasMatchingJournal, journal]);
 }

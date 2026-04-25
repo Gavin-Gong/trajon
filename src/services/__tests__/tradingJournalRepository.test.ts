@@ -43,6 +43,7 @@ describe("createTradingJournalRepository", () => {
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
         .mockResolvedValueOnce([]),
     };
     openTrajonDatabaseMock.mockResolvedValue(db);
@@ -59,11 +60,82 @@ describe("createTradingJournalRepository", () => {
     });
   });
 
+  it("loads journal images and groups them under each journal", async () => {
+    const db = {
+      execute: vi.fn().mockResolvedValue(undefined),
+      select: vi
+        .fn()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([
+          {
+            id: "journal-1",
+            created_at: "2026-04-18T00:00:00.000Z",
+            updated_at: "2026-04-18T00:00:00.000Z",
+            symbol: "BTCUSDT",
+            market: "BINANCE",
+            summary: "",
+            tags: '["breakout","trend"]',
+            status: "open",
+          },
+        ])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([
+          {
+            id: "image-2",
+            journal_id: "journal-1",
+            created_at: "2026-04-18T00:02:00.000Z",
+            updated_at: "2026-04-18T00:02:00.000Z",
+            file_name: "journal-1-1713398520000-btcusdt.png",
+            relative_path: "images/journal-1-1713398520000-btcusdt.png",
+            sort_order: 1,
+          },
+          {
+            id: "image-1",
+            journal_id: "journal-1",
+            created_at: "2026-04-18T00:01:00.000Z",
+            updated_at: "2026-04-18T00:01:00.000Z",
+            file_name: "journal-1-1713398460000-btcusdt.png",
+            relative_path: "images/journal-1-1713398460000-btcusdt.png",
+            sort_order: 0,
+          },
+        ])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]),
+    };
+    openTrajonDatabaseMock.mockResolvedValue(db);
+
+    const repository = createTradingJournalRepository();
+    const state = await repository.loadState();
+
+    expect(state.journals[0]?.images).toEqual([
+      {
+        id: "image-1",
+        journalId: "journal-1",
+        createdAt: "2026-04-18T00:01:00.000Z",
+        updatedAt: "2026-04-18T00:01:00.000Z",
+        fileName: "journal-1-1713398460000-btcusdt.png",
+        relativePath: "images/journal-1-1713398460000-btcusdt.png",
+        sortOrder: 0,
+      },
+      {
+        id: "image-2",
+        journalId: "journal-1",
+        createdAt: "2026-04-18T00:02:00.000Z",
+        updatedAt: "2026-04-18T00:02:00.000Z",
+        fileName: "journal-1-1713398520000-btcusdt.png",
+        relativePath: "images/journal-1-1713398520000-btcusdt.png",
+        sortOrder: 1,
+      },
+    ]);
+    expect(state.journals[0]?.tags).toEqual(["breakout", "trend"]);
+  });
+
   it("persists journal, event, and app state writes", async () => {
     const db = {
       execute: vi.fn().mockResolvedValue(undefined),
       select: vi
         .fn()
+        .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
@@ -79,8 +151,10 @@ describe("createTradingJournalRepository", () => {
       symbol: "BTCUSDT",
       market: "BINANCE",
       summary: "",
+      tags: ["breakout"],
       status: "open",
       events: [],
+      images: [],
     };
     const event: TradeEvent = {
       id: "event-1",
@@ -118,6 +192,44 @@ describe("createTradingJournalRepository", () => {
     );
   });
 
+  it("persists and removes journal images", async () => {
+    const db = {
+      execute: vi.fn().mockResolvedValue(undefined),
+      select: vi
+        .fn()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]),
+    };
+    openTrajonDatabaseMock.mockResolvedValue(db);
+
+    const repository = createTradingJournalRepository();
+
+    await repository.insertJournalImages("journal-1", [
+      {
+        id: "image-1",
+        journalId: "journal-1",
+        createdAt: "2026-04-18T00:01:00.000Z",
+        updatedAt: "2026-04-18T00:01:00.000Z",
+        fileName: "journal-1-1713398460000-btcusdt.png",
+        relativePath: "images/journal-1-1713398460000-btcusdt.png",
+        sortOrder: 0,
+      },
+    ]);
+    await repository.deleteJournalImage("image-1");
+
+    expect(db.execute).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO journal_images"),
+      expect.any(Array),
+    );
+    expect(db.execute).toHaveBeenCalledWith(
+      expect.stringContaining("DELETE FROM journal_images WHERE id = $1"),
+      ["image-1"],
+    );
+  });
+
   it("rejects invalid journal rows from sql", async () => {
     const db = {
       execute: vi.fn().mockResolvedValue(undefined),
@@ -135,6 +247,7 @@ describe("createTradingJournalRepository", () => {
             status: "broken",
           },
         ])
+        .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([]),
     };

@@ -13,6 +13,10 @@ const plainTimelineEventStyle = {
   paddingBottom: 12,
 };
 
+const timelineMetricTagStyle = {
+  fontFamily: "monospace",
+};
+
 export function TimelineSection({
   journal,
   title,
@@ -50,10 +54,7 @@ export function TimelineSection({
             description={
               <Space orientation="vertical" size={4}>
                 <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>
-                  准备记录下一条观察
-                </Text>
-                <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>
-                  你的最新进场、加减仓和笔记会按时间顺序出现在这里。
+                  暂无记录
                 </Text>
               </Space>
             }
@@ -79,11 +80,20 @@ export function TimelineSection({
                       {journal?.market ? (
                         <Text style={{ color: "rgba(0, 0, 0, 0.45)", fontSize: 12 }}>{journal.market}</Text>
                       ) : null}
-                      {event.quantity !== undefined ? (
-                        <Tag color={tagColorForVariant("neutral")}>Qty {formatNumber(event.quantity)}</Tag>
+                      {event.quantity !== undefined && event.price !== undefined ? (
+                        <Tag color={tagColorForVariant("neutral")} style={timelineMetricTagStyle}>
+                          Qty {formatNumber(event.quantity)} @ {formatNumber(event.price)}
+                        </Tag>
                       ) : null}
-                      {event.price !== undefined ? (
-                        <Tag color={tagColorForVariant("neutral")}>@ {formatNumber(event.price)}</Tag>
+                      {event.quantity !== undefined && event.price === undefined ? (
+                        <Tag color={tagColorForVariant("neutral")} style={timelineMetricTagStyle}>
+                          Qty {formatNumber(event.quantity)}
+                        </Tag>
+                      ) : null}
+                      {event.price !== undefined && event.quantity === undefined ? (
+                        <Tag color={tagColorForVariant("neutral")} style={timelineMetricTagStyle}>
+                          @ {formatNumber(event.price)}
+                        </Tag>
                       ) : null}
                     </Flex>
                   </Space>

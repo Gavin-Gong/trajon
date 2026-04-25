@@ -1,5 +1,5 @@
 import { InfoCircleOutlined } from "@ant-design/icons";
-import { Button, Flex, Form, Input, Segmented, Space, Tooltip, Typography } from "antd";
+import { Button, Flex, Form, Input, InputNumber, Segmented, Space, Tooltip, Typography } from "antd";
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -36,8 +36,8 @@ export function QuickCaptureCard({
   const types = availableEventTypes(status, currentNetPosition);
 
   const [selectedType, setSelectedType] = useState<TradeEventType>(types[0] ?? "log");
-  const [quantityInput, setQuantityInput] = useState("");
-  const [priceInput, setPriceInput] = useState("");
+  const [quantityInput, setQuantityInput] = useState<number | null>(null);
+  const [priceInput, setPriceInput] = useState<number | null>(null);
   const [content, setContent] = useState("");
   const [didSubmit, setDidSubmit] = useState(false);
 
@@ -48,12 +48,12 @@ export function QuickCaptureCard({
   }, [selectedType, types]);
 
   const draft = useMemo<TradeEventDraft>(
-    () => ({
-      type: selectedType,
-      quantityInput,
-      priceInput,
-      content,
-    }),
+      () => ({
+        type: selectedType,
+        quantityInput: quantityInput == null ? "" : String(quantityInput),
+        priceInput: priceInput == null ? "" : String(priceInput),
+        content,
+      }),
     [content, priceInput, quantityInput, selectedType],
   );
 
@@ -76,7 +76,7 @@ export function QuickCaptureCard({
                 title={journal
                   ? journal.status === "done"
                     ? "这条 journal 已完成，现在只允许补充笔记。"
-                    : "把关键事件先记下来，复杂 dashboard 留到主界面复盘。"
+                    : "把关键事件先记下来，复杂面板内容留到主界面复盘。"
                   : "开始一条 journal 后，这里会切换成盘中快速记录模式。"}
               >
                 <InfoCircleOutlined aria-label="快速记录说明" style={infoIconStyle} />
@@ -97,7 +97,7 @@ export function QuickCaptureCard({
               onChange={(value) => setSelectedType(value as TradeEventType)}
             />
 
-            {selectedType !== "log" ? (
+            {selectedType !== "log" && selectedType !== "plan" ? (
               <div
                 style={{
                   display: "grid",
@@ -112,10 +112,14 @@ export function QuickCaptureCard({
                         <Text style={{ color: "rgba(0, 0, 0, 0.88)" }}>{formatNumber(-currentNetPosition)}</Text>
                       </div>
                     ) : (
-                      <Input
+                      <InputNumber
                         value={quantityInput}
                         placeholder="例如 1.25 或 -1.25"
-                        onChange={(event) => setQuantityInput(event.currentTarget.value)}
+                        controls
+                        changeOnWheel
+                        precision={2}
+                        style={{ width: "100%" }}
+                        onChange={(value) => setQuantityInput(typeof value === "number" ? value : null)}
                       />
                     )}
                   </Form.Item>
@@ -123,28 +127,39 @@ export function QuickCaptureCard({
 
                 <Form layout="vertical">
                   <Form.Item label="价格" style={{ marginBottom: 0 }}>
-                    <Input
+                    <InputNumber
                       value={priceInput}
                       placeholder="可选"
-                      onChange={(event) => setPriceInput(event.currentTarget.value)}
+                      controls
+                      changeOnWheel
+                      precision={2}
+                      min={0}
+                      parser={(value) => value?.replace(/-/g, "") ?? ""}
+                      style={{ width: "100%" }}
+                      onChange={(value) => setPriceInput(typeof value === "number" ? value : null)}
                     />
                   </Form.Item>
                 </Form>
               </div>
             ) : null}
 
-            {selectedType !== "log" ? (
+            {selectedType !== "log" && selectedType !== "plan" ? (
               <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>{quantityHint(selectedType, status, currentNetPosition)}</Text>
             ) : null}
 
             <Form layout="vertical">
-              <Form.Item label={selectedType === "log" ? "观察记录" : "补充说明"} style={{ marginBottom: 0 }}>
+              <Form.Item
+                label={selectedType === "log" ? "观察记录" : selectedType === "plan" ? "计划记录" : "补充说明"}
+                style={{ marginBottom: 0 }}
+              >
                 <Input.TextArea
                   rows={5}
                   value={content}
                   placeholder={
                     selectedType === "log"
                       ? "例如：回踩 VWAP 后承接变强，第二次确认才进场。"
+                      : selectedType === "plan"
+                        ? "例如：等待回踩确认后再开仓，若失守关键位则放弃。"
                       : "可选补充"
                   }
                   onChange={(event) => setContent(event.currentTarget.value)}
@@ -168,8 +183,8 @@ export function QuickCaptureCard({
 
                     setDidSubmit(true);
                     setSelectedType("log");
-                    setQuantityInput("");
-                    setPriceInput("");
+                    setQuantityInput(null);
+                    setPriceInput(null);
                     setContent("");
 
                     window.setTimeout(() => {
@@ -178,7 +193,7 @@ export function QuickCaptureCard({
                   });
                 }}
               >
-                {didSubmit ? "已记录" : "记录事件"}
+                {didSubmit ? "已记录" : "记录"}
               </Button>
             </Flex>
           </>

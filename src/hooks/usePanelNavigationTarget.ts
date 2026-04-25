@@ -56,8 +56,12 @@ export function usePanelNavigationTarget(
     () =>
       (target.journalId
         ? state.journals.find((item) => item.id === target.journalId)
-        : undefined) ?? selectCurrentJournal(state.journals),
-    [state.journals, target.journalId],
+        : undefined) ??
+      (target.presetSymbol
+        ? state.journals.find((item) => item.status === "open" && item.symbol === target.presetSymbol)
+        : undefined) ??
+      selectCurrentJournal(state.journals),
+    [state.journals, target.journalId, target.presetSymbol],
   );
 
   return {

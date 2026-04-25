@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import type { TradeEventComposerResult, TradeEventDraft, TradeJournal } from "../domain/journal";
+import {
+  normalizeJournalTags,
+  type TradeEventComposerResult,
+  type TradeEventDraft,
+  type TradeJournal,
+} from "../domain/journal";
+import type { JournalImage } from "../domain/journal";
+import type { JournalImageInput } from "../platform/journalImages";
 import type { GlobalConfig } from "../model/globalConfig";
 import type { TimeframePreset } from "../model/tradingPairPreset";
 import type { TradingPanelState } from "../model/storage";
@@ -57,8 +64,9 @@ export function useTradingJournalState(
       return journal;
     },
 
-    async finishJournal(journalId: string, summary: string) {
-      await serviceRef.current.finishTradeJournal(journalId, summary);
+    async finishJournal(journalId: string, summary: string, tags: string[] = []) {
+      const normalizedTags = normalizeJournalTags(tags);
+      await serviceRef.current.finishTradeJournal(journalId, summary, normalizedTags);
       setState((currentState) => ({
         ...currentState,
         journals: currentState.journals.map((journal) =>
@@ -66,7 +74,64 @@ export function useTradingJournalState(
             ? {
                 ...journal,
                 summary: summary.trim(),
+                tags: normalizedTags,
                 status: "done",
+                updatedAt: new Date().toISOString(),
+              }
+            : journal,
+        ),
+      }));
+    },
+
+    async addJournalImages(journalId: string, filePaths: JournalImageInput[]) {
+      const images = await serviceRef.current.addJournalImages(journalId, filePaths);
+      setState((currentState) => ({
+        ...currentState,
+        journals: currentState.journals.map((journal) =>
+          journal.id === journalId
+            ? {
+                ...journal,
+                images: [...journal.images, ...images].sort((left, right) => left.sortOrder - right.sortOrder),
+                updatedAt: images.length > 0 ? images[images.length - 1]?.updatedAt ?? journal.updatedAt : journal.updatedAt,
+              }
+            : journal,
+        ),
+      }));
+      return images;
+    },
+
+    async removeJournalImage(journalId: string, imageId: string) {
+      await serviceRef.current.removeJournalImage(journalId, imageId);
+      setState((currentState) => ({
+        ...currentState,
+        journals: currentState.journals.map((journal) =>
+          journal.id === journalId
+            ? {
+                ...journal,
+                images: journal.images.filter((image) => image.id !== imageId),
+              }
+            : journal,
+        ),
+      }));
+    },
+
+    async deleteJournal(journalId: string) {
+      await serviceRef.current.deleteTradeJournal(journalId);
+      setState((currentState) => ({
+        ...currentState,
+        journals: currentState.journals.filter((journal) => journal.id !== journalId),
+      }));
+    },
+
+    async updateJournalSymbol(journalId: string, symbol: string) {
+      await serviceRef.current.updateTradeJournalSymbol(journalId, symbol);
+      setState((currentState) => ({
+        ...currentState,
+        journals: currentState.journals.map((journal) =>
+          journal.id === journalId
+            ? {
+                ...journal,
+                symbol: symbol.trim(),
                 updatedAt: new Date().toISOString(),
               }
             : journal,
@@ -174,7 +239,11 @@ export function useTradingJournalState(
     state,
     actions: actions as {
       createJournal: (symbol: string, market: string) => Promise<TradeJournal>;
-      finishJournal: (journalId: string, summary: string) => Promise<void>;
+      finishJournal: (journalId: string, summary: string, tags?: string[]) => Promise<void>;
+      addJournalImages: (journalId: string, filePaths: JournalImageInput[]) => Promise<JournalImage[]>;
+      removeJournalImage: (journalId: string, imageId: string) => Promise<void>;
+      deleteJournal: (journalId: string) => Promise<void>;
+      updateJournalSymbol: (journalId: string, symbol: string) => Promise<void>;
       recordEvent: (journalId: string, draft: TradeEventDraft) => Promise<TradeEventComposerResult>;
       updateConfig: (nextConfig: Partial<GlobalConfig>) => Promise<void>;
       upsertPairPreset: (symbol: string, timeframe: TimeframePreset) => Promise<void>;
