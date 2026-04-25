@@ -1,6 +1,6 @@
 import "./setupDesktopTests";
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { openPanelWindow } from "../../platform/panelWindow";
@@ -148,6 +148,28 @@ describe("Desktop shell", () => {
     fireEvent.click(screen.getByRole("button", { name: "继续记录-journal-open-journal" }));
 
     expect(openPanelWindow).toHaveBeenCalledWith({ journalId: "open-journal" });
+  });
+
+  it("updates the main badge when a panel finishes the open journal", async () => {
+    render(
+      <>
+        <Desktop view={{ view: "main" }} />
+        <Desktop view={{ view: "panel", journalId: "open-journal" }} />
+      </>,
+    );
+
+    fireEvent.click(screen.getAllByLabelText("进行中的 Journal")[0]!);
+    expect(screen.getByRole("button", { name: "继续记录-journal-open-journal" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "复 盘" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "复盘" }), {
+      target: { value: "按计划结束" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /完\s*成/ }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "继续记录-journal-open-journal" })).not.toBeInTheDocument();
+    });
   });
 
   it("hides the brand mark when the sider is collapsed", () => {

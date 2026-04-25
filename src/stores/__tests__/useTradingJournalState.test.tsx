@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { resetTradingJournalStateStore } from "../tradingJournalStateStore";
 import { useTradingJournalState } from "../useTradingJournalState";
 
 const service = {
@@ -22,6 +23,7 @@ const service = {
 describe("useTradingJournalState", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetTradingJournalStateStore(service as never);
     service.loadTradingPanelState.mockResolvedValue({
       journals: [],
       config: { timerEnabled: false, timerInterval: 300 },
@@ -292,5 +294,99 @@ describe("useTradingJournalState", () => {
         tags: ["breakout", "FOMO"],
       }),
     );
+  });
+
+  it("shares finished journal updates across hook instances", async () => {
+    service.loadTradingPanelState.mockResolvedValue({
+      journals: [
+        {
+          id: "journal-1",
+          createdAt: "2026-04-18T00:00:00.000Z",
+          updatedAt: "2026-04-18T00:00:00.000Z",
+          symbol: "ETHUSDT",
+          market: "BINANCE",
+          summary: "",
+          status: "open",
+          events: [],
+          images: [],
+          tags: [],
+        },
+      ],
+      config: { timerEnabled: false, timerInterval: 300 },
+      pairPresets: [],
+      defaultPresetSymbol: undefined,
+      panelPinned: true,
+    });
+
+    const left = renderHook(() => useTradingJournalState({ service }));
+    const right = renderHook(() => useTradingJournalState({ service }));
+
+    await waitFor(() => expect(service.loadTradingPanelState).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      await left.result.current.actions.finishJournal("journal-1", "done now", ["discipline"]);
+    });
+
+    await waitFor(() => {
+      expect(right.result.current.state.journals[0]).toEqual(
+        expect.objectContaining({
+          status: "done",
+          summary: "done now",
+          tags: ["discipline"],
+        }),
+      );
+    });
+  });
+
+  it("shares recorded events across hook instances", async () => {
+    service.loadTradingPanelState.mockResolvedValue({
+      journals: [
+        {
+          id: "journal-1",
+          createdAt: "2026-04-18T00:00:00.000Z",
+          updatedAt: "2026-04-18T00:00:00.000Z",
+          symbol: "ETHUSDT",
+          market: "BINANCE",
+          summary: "",
+          status: "open",
+          events: [],
+          images: [],
+          tags: [],
+        },
+      ],
+      config: { timerEnabled: false, timerInterval: 300 },
+      pairPresets: [],
+      defaultPresetSymbol: undefined,
+      panelPinned: true,
+    });
+    service.createTradeEvent.mockResolvedValue({
+      ok: true,
+      event: {
+        id: "event-1",
+        createdAt: "2026-04-18T00:01:00.000Z",
+        updatedAt: "2026-04-18T00:01:00.000Z",
+        timestamp: "2026-04-18T00:01:00.000Z",
+        type: "log",
+        content: "noted",
+      },
+    });
+
+    const left = renderHook(() => useTradingJournalState({ service }));
+    const right = renderHook(() => useTradingJournalState({ service }));
+
+    await waitFor(() => expect(service.loadTradingPanelState).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      await left.result.current.actions.recordEvent("journal-1", {
+        type: "log",
+        content: "noted",
+        priceInput: "",
+        quantityInput: "",
+      });
+    });
+
+    await waitFor(() => {
+      expect(right.result.current.state.journals[0]?.events).toHaveLength(1);
+    });
   });
 });

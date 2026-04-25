@@ -88,8 +88,10 @@ describe("TradingJournalPanel", () => {
     await waitFor(() => {
       expect(screen.getByText("已完成")).toBeInTheDocument();
     });
-    expect(successSpy).toHaveBeenCalledWith("复盘已完成");
-    expect(closePanelWindowMock).toHaveBeenCalledTimes(1);
+    expect(successSpy).toHaveBeenCalledWith("保存成功", 2);
+    await waitFor(() => {
+      expect(closePanelWindowMock).toHaveBeenCalledTimes(1);
+    });
     expect(screen.getAllByText("纪律执行到位").length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByRole("button", { name: "复 盘" })).not.toBeInTheDocument();
 
@@ -176,7 +178,7 @@ describe("TradingJournalPanel", () => {
     expect(screen.getAllByText("减仓偏早").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("复盘图片").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("+1")).toBeInTheDocument();
-    expect(screen.getByAltText("setup-1.png")).toBeInTheDocument();
+    expect(screen.getAllByAltText("setup-1.png").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("按计划执行，止盈太保守。").length).toBeGreaterThanOrEqual(1);
 
     unmount();

@@ -69,30 +69,53 @@ vi.mock("../../stores/useTradingJournalState", async () => {
     };
   }
 
+  const listeners = new Set<() => void>();
+
+  function ensureState(): TradingPanelState {
+    if (!mockedStoreState.value) {
+      mockedStoreState.value = cloneState(buildState());
+    }
+
+    return mockedStoreState.value;
+  }
+
+  function readState(): TradingPanelState {
+    return ensureState();
+  }
+
+  function writeState(nextState: TradingPanelState) {
+    mockedStoreState.value = cloneState(nextState);
+    listeners.forEach((listener) => listener());
+  }
+
+  function updateState(updater: (currentState: TradingPanelState) => TradingPanelState) {
+    writeState(updater(readState()));
+  }
+
   return {
     useTradingJournalState() {
-      const [state, setState] = React.useState<TradingPanelState>(() =>
-        mockedStoreState.value ? cloneState(mockedStoreState.value) : cloneState(buildState()),
+      const state = React.useSyncExternalStore(
+        (listener) => {
+          listeners.add(listener);
+          return () => listeners.delete(listener);
+        },
+        readState,
+        readState,
       );
-      const stateRef = React.useRef(state);
-
-      React.useEffect(() => {
-        stateRef.current = state;
-      }, [state]);
 
       return {
         state,
         actions: {
           createJournal(symbol: string, market: string) {
             const journal = domain.createJournal({ symbol: symbol.trim(), market: market.trim() });
-            setState((currentState) => ({
+            updateState((currentState) => ({
               ...currentState,
               journals: [...currentState.journals, journal],
             }));
-            return journal;
+            return Promise.resolve(journal);
           },
           finishJournal(journalId: string, summary: string, tags: string[] = []) {
-            setState((currentState) => ({
+            updateState((currentState) => ({
               ...currentState,
               journals: currentState.journals.map((journal) =>
                 journal.id === journalId
@@ -109,9 +132,9 @@ vi.mock("../../stores/useTradingJournalState", async () => {
             return Promise.resolve();
           },
           recordEvent(journalId: string, draft: Parameters<typeof domain.composeTradeEvent>[0]) {
-            const journal = stateRef.current.journals.find((item) => item.id === journalId);
+            const journal = readState().journals.find((item) => item.id === journalId);
             if (!journal) {
-              return { ok: false, error: "missingContent" } as const;
+              return Promise.resolve({ ok: false, error: "missingContent" } as const);
             }
 
             const result = domain.composeTradeEvent(
@@ -120,10 +143,10 @@ vi.mock("../../stores/useTradingJournalState", async () => {
               journal.status,
             );
             if (!result.ok) {
-              return result;
+              return Promise.resolve(result);
             }
 
-            setState((currentState) => ({
+            updateState((currentState) => ({
               ...currentState,
               journals: currentState.journals.map((item) =>
                 item.id === journalId
@@ -133,12 +156,12 @@ vi.mock("../../stores/useTradingJournalState", async () => {
                       events: [result.event, ...item.events],
                     }
                   : item,
-              ),
+                ),
             }));
-            return result;
+            return Promise.resolve(result);
           },
           addJournalImages(journalId: string, files: File[]) {
-            setState((currentState) => ({
+            updateState((currentState) => ({
               ...currentState,
               journals: currentState.journals.map((journal) =>
                 journal.id === journalId
@@ -163,7 +186,7 @@ vi.mock("../../stores/useTradingJournalState", async () => {
             return Promise.resolve([]);
           },
           removeJournalImage(journalId: string, imageId: string) {
-            setState((currentState) => ({
+            updateState((currentState) => ({
               ...currentState,
               journals: currentState.journals.map((journal) =>
                 journal.id === journalId
@@ -177,14 +200,14 @@ vi.mock("../../stores/useTradingJournalState", async () => {
             return Promise.resolve();
           },
           deleteJournal(journalId: string) {
-            setState((currentState) => ({
+            updateState((currentState) => ({
               ...currentState,
               journals: currentState.journals.filter((journal) => journal.id !== journalId),
             }));
             return Promise.resolve();
           },
           updateJournalSymbol(journalId: string, symbol: string) {
-            setState((currentState) => ({
+            updateState((currentState) => ({
               ...currentState,
               journals: currentState.journals.map((journal) =>
                 journal.id === journalId
@@ -199,7 +222,7 @@ vi.mock("../../stores/useTradingJournalState", async () => {
             return Promise.resolve();
           },
           updateConfig(nextConfig: Partial<TradingPanelState["config"]>) {
-            setState((currentState) => ({
+            updateState((currentState) => ({
               ...currentState,
               config: { ...currentState.config, ...nextConfig },
             }));
@@ -211,7 +234,7 @@ vi.mock("../../stores/useTradingJournalState", async () => {
               return Promise.resolve();
             }
 
-            setState((currentState) => {
+            updateState((currentState) => {
               const nextPreset = { symbol: normalizedSymbol, timeframe };
               const hasExisting = currentState.pairPresets.some((preset) => preset.symbol === normalizedSymbol);
               return {
@@ -227,7 +250,7 @@ vi.mock("../../stores/useTradingJournalState", async () => {
           },
           removePairPreset(symbol: string) {
             const normalizedSymbol = symbol.trim().toUpperCase();
-            setState((currentState) => ({
+            updateState((currentState) => ({
               ...currentState,
               pairPresets: currentState.pairPresets.filter((preset) => preset.symbol !== normalizedSymbol),
               defaultPresetSymbol:
@@ -239,7 +262,7 @@ vi.mock("../../stores/useTradingJournalState", async () => {
           },
           setDefaultPresetSymbol(symbol?: string) {
             const normalizedSymbol = symbol?.trim().toUpperCase();
-            setState((currentState) => ({
+            updateState((currentState) => ({
               ...currentState,
               defaultPresetSymbol:
                 normalizedSymbol && currentState.pairPresets.some((preset) => preset.symbol === normalizedSymbol)
@@ -249,13 +272,14 @@ vi.mock("../../stores/useTradingJournalState", async () => {
             return Promise.resolve();
           },
           setPanelPinned(panelPinned: boolean) {
-            setState((currentState) => ({
+            updateState((currentState) => ({
               ...currentState,
               panelPinned,
             }));
             return Promise.resolve();
           },
           refreshState() {
+            listeners.forEach((listener) => listener());
             return Promise.resolve();
           },
         },
