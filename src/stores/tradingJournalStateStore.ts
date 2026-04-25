@@ -1,4 +1,4 @@
-import type { TradeEventComposerResult, TradeEventDraft, TradeJournal } from "../domain/journal";
+import type { TradeEventComposerResult, TradeEventDraft } from "../domain/journal";
 import { normalizeJournalTags } from "../domain/journal";
 import type { GlobalConfig } from "../model/globalConfig";
 import type { TimeframePreset } from "../model/tradingPairPreset";

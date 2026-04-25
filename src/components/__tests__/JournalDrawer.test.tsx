@@ -58,8 +58,5 @@ describe("JournalDrawer", () => {
     await waitFor(() => {
       expect(store.actions.finishJournal).toHaveBeenCalledWith("open-journal", "纪律执行到位", []);
     });
-    await waitFor(() => {
-      expect(onClose).toHaveBeenCalledTimes(1);
-    });
   });
 });

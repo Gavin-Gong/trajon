@@ -1,20 +1,14 @@
-import { EditOutlined, InfoCircleOutlined } from "@ant-design/icons";
-import { Button, Flex, Image, Modal, Select, Space, Tag, Tooltip, Typography } from "antd";
+import { EditOutlined } from "@ant-design/icons";
+import { Button, Flex, Image, Modal, Select, Space, Tag, Typography } from "antd";
 import { useEffect, useMemo, useState } from "react";
 
 import { netPosition, type JournalImage, type TradeJournal } from "../domain/journal";
 import { resolveJournalImageSrc } from "../platform/journalImages";
 import { formatNumber } from "./JournalFormatters";
 import { tagColorForVariant } from "./EventPresentation";
-import { plainDashedBlockStyle, plainMutedBlockStyle, plainPanelSectionStyle } from "./PanelStyles";
+import { plainMutedBlockStyle, plainPanelSectionStyle } from "./PanelStyles";
 
 const { Paragraph, Text, Title } = Typography;
-
-const infoIconStyle = {
-  color: "rgba(0, 0, 0, 0.45)",
-  cursor: "help",
-  fontSize: 14,
-};
 
 export function PanelJournalSummary({
   journal,

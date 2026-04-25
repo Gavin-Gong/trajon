@@ -8,7 +8,6 @@ import {
   groupJournalsByDay,
 } from "../domain/calendar";
 import type { TradeJournal } from "../domain/journal";
-import { tagColorForVariant } from "./EventPresentation";
 import { JournalDrawer } from "./JournalDrawer";
 import { shellCardStyle } from "./PanelStyles";
 import type { TradingJournalStore } from "./JournalStoreTypes";

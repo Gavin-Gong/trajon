@@ -134,7 +134,10 @@ export function QuickCaptureCard({
                       changeOnWheel
                       precision={2}
                       min={0}
-                      parser={(value) => value?.replace(/-/g, "") ?? ""}
+                      parser={(value) => {
+                        const normalized = Number(value?.replace(/-/g, "") ?? "");
+                        return Number.isFinite(normalized) ? normalized : 0;
+                      }}
                       style={{ width: "100%" }}
                       onChange={(value) => setPriceInput(typeof value === "number" ? value : null)}
                     />

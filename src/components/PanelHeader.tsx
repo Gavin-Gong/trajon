@@ -3,7 +3,6 @@ import { Button, Flex, Statistic } from "antd";
 
 import { useReminderClock } from "../hooks/useReminderClock";
 import { formatClock } from "./JournalFormatters";
-import { plainPanelSectionStyle } from "./PanelStyles";
 
 const clockShellStyle = {
   minWidth: 108,

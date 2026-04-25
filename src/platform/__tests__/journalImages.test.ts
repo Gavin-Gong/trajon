@@ -55,6 +55,7 @@ describe("journalImages", () => {
         symbol: "BTCUSDT",
         market: "BINANCE",
         summary: "",
+        tags: [],
         status: "open",
         events: [],
         images: [],

@@ -29,6 +29,7 @@ describe("journal model exports", () => {
       symbol: "BTCUSDT",
       market: "BINANCE",
       summary: "Breakout setup",
+      tags: [],
       status,
       events: [event],
       images: [
