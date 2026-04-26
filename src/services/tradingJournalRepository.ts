@@ -26,17 +26,10 @@ const DEFAULT_STATE: TradingPanelState = {
 };
 
 export function createTradingJournalRepository() {
-  let databasePromise: Promise<SqlDatabase> | undefined;
-
   async function getDatabase(): Promise<SqlDatabase> {
-    if (!databasePromise) {
-        databasePromise = openTrajonDatabase().then(async (db) => {
-        await runTradingJournalMigrations(db as SqlDatabase);
-        return db as SqlDatabase;
-      });
-    }
-
-    return databasePromise;
+    const db = await openTrajonDatabase();
+    await runTradingJournalMigrations(db as SqlDatabase);
+    return db as SqlDatabase;
   }
 
   return {

@@ -6,6 +6,8 @@ const mockedStoreState = vi.hoisted(() => ({
   value: undefined as TradingPanelState | undefined,
 }));
 
+const mockedRefreshState = vi.hoisted(() => vi.fn(() => Promise.resolve()));
+
 vi.mock("../../stores/useTradingJournalState", async () => {
   const React = await import("react");
   const domain = await import("../../domain/journal");
@@ -278,7 +280,7 @@ vi.mock("../../stores/useTradingJournalState", async () => {
           },
           refreshState() {
             listeners.forEach((listener) => listener());
-            return Promise.resolve();
+            return mockedRefreshState();
           },
         },
       };
@@ -300,4 +302,8 @@ vi.mock("../../platform/panelLifecycle", () => ({
 
 export function getMockedStoreState() {
   return mockedStoreState;
+}
+
+export function getMockedRefreshState() {
+  return mockedRefreshState;
 }

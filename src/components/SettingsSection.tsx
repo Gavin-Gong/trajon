@@ -1,10 +1,19 @@
-import { AutoComplete, Button, Card, Descriptions, Flex, Select, Space, Switch, Tag, Typography } from "antd";
-import { useState } from "react";
+import { AutoComplete, Button, Card, Descriptions, Flex, Modal, Select, Space, Switch, Tag, Typography, message } from "antd";
+import { useEffect, useState } from "react";
 
 import { TIMEFRAME_PRESET_VALUES, type TimeframePreset } from "../model/tradingPairPreset";
+import {
+  buildDatabaseBackupFileName,
+  createDatabaseBackup,
+  isDatabaseBackupAvailable,
+  listDatabaseBackups,
+  normalizeDatabaseBackupFileName,
+  restoreDatabaseBackup,
+  type DatabaseBackupFile,
+} from "../platform/dataBackup";
 import { tagColorForVariant } from "./EventPresentation";
 import { REMINDER_INTERVALS } from "./JournalFormatters";
-import { dashedShellCardStyle, mutedShellCardStyle, panelCardStyle, shellCardStyle } from "./PanelStyles";
+import { mutedShellCardStyle, panelCardStyle, shellCardStyle } from "./PanelStyles";
 import type { TradingJournalStore } from "./JournalStoreTypes";
 
 const { Paragraph, Text, Title } = Typography;
@@ -13,6 +22,15 @@ export function SettingsSection({ store }: { store: TradingJournalStore }) {
   const { config } = store.state;
   const [presetSymbolInput, setPresetSymbolInput] = useState("");
   const [presetTimeframe, setPresetTimeframe] = useState<TimeframePreset>("5m");
+  const [backupFiles, setBackupFiles] = useState<DatabaseBackupFile[]>([]);
+  const [createBackupModalOpen, setCreateBackupModalOpen] = useState(false);
+  const [backupFileNameInput, setBackupFileNameInput] = useState(buildDatabaseBackupFileName());
+  const [backupModalOpen, setBackupModalOpen] = useState(false);
+  const [selectedBackupFileName, setSelectedBackupFileName] = useState<string>();
+  const [backupPending, setBackupPending] = useState(false);
+  const [restorePending, setRestorePending] = useState(false);
+
+  const databaseBackupAvailable = isDatabaseBackupAvailable();
 
   const presetOptions = store.state.pairPresets.map((preset) => ({
     value: preset.symbol,
@@ -20,6 +38,92 @@ export function SettingsSection({ store }: { store: TradingJournalStore }) {
   }));
 
   const canSavePreset = presetSymbolInput.trim().length > 0;
+
+  useEffect(() => {
+    if (!databaseBackupAvailable) {
+      setBackupFiles([]);
+      return;
+    }
+
+    void listDatabaseBackups()
+      .then((nextBackups) => {
+        setBackupFiles(nextBackups);
+      })
+      .catch(() => {
+        setBackupFiles([]);
+      });
+  }, [databaseBackupAvailable]);
+
+  function handleOpenCreateBackupModal() {
+    setBackupFileNameInput(buildDatabaseBackupFileName());
+    setCreateBackupModalOpen(true);
+  }
+
+  async function handleCreateBackup() {
+    const fileName = normalizeDatabaseBackupFileName(backupFileNameInput);
+    if (!fileName) {
+      message.error("请输入备份文件名");
+      return;
+    }
+
+    setBackupPending(true);
+
+    try {
+      const backup = await createDatabaseBackup(fileName);
+      message.success(`已创建备份：${backup.fileName}`);
+      const nextBackups = await listDatabaseBackups();
+      setBackupFiles(nextBackups);
+      setCreateBackupModalOpen(false);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "创建备份失败");
+    } finally {
+      setBackupPending(false);
+    }
+  }
+
+  async function handleOpenRestoreModal() {
+    setRestorePending(true);
+    setBackupModalOpen(true);
+
+    try {
+      const nextBackups = await listDatabaseBackups();
+      setBackupFiles(nextBackups);
+      setSelectedBackupFileName(nextBackups[0]?.fileName);
+    } catch (error) {
+      setBackupModalOpen(false);
+      message.error(error instanceof Error ? error.message : "读取备份列表失败");
+    } finally {
+      setRestorePending(false);
+    }
+  }
+
+  async function handleConfirmRestore() {
+    if (!selectedBackupFileName) {
+      return;
+    }
+
+    Modal.confirm({
+      title: "确认恢复数据库备份",
+      content: "恢复会整库覆盖当前数据，当前 journal、预设和设置将被替换。",
+      okText: "确认覆盖并恢复",
+      cancelText: "取消",
+      okButtonProps: { danger: true },
+      async onOk() {
+        setRestorePending(true);
+
+        try {
+          await restoreDatabaseBackup(selectedBackupFileName);
+          await store.actions.refreshState();
+          setBackupModalOpen(false);
+          message.success(`已恢复备份：${selectedBackupFileName}`);
+        } catch (error) {
+          message.error(error instanceof Error ? error.message : "恢复备份失败");
+        } finally {
+          setRestorePending(false);
+        }
+      },
+    });
+  }
 
   return (
     <div
@@ -170,10 +274,10 @@ export function SettingsSection({ store }: { store: TradingJournalStore }) {
         <Space orientation="vertical" size={16} style={{ width: "100%" }}>
           <div>
             <Title level={5} style={{ margin: 0, color: "rgba(0, 0, 0, 0.88)", letterSpacing: "-0.02em" }}>
-              数据与导出
+              数据库备份与恢复
             </Title>
             <Paragraph style={{ margin: "4px 0 0", color: "rgba(0, 0, 0, 0.45)" }}>
-              目前数据保存在本地。导出入口保留在这里，便于后续接入 CSV。
+              当前版本支持桌面端 SQLite 数据库备份与整库恢复，恢复会直接覆盖当前数据。
             </Paragraph>
           </div>
 
@@ -181,20 +285,99 @@ export function SettingsSection({ store }: { store: TradingJournalStore }) {
             size="small"
             column={1}
             items={[
-              { key: "storage", label: "数据位置", children: "本地存储" },
-              { key: "export", label: "导出状态", children: "即将支持" },
+              { key: "storage", label: "数据位置", children: "本地 SQLite" },
+              { key: "backup", label: "备份位置", children: "~/trajon/backups" },
+              { key: "restore", label: "恢复策略", children: "整库覆盖" },
             ]}
           />
 
-          <Card style={dashedShellCardStyle}>
-            <Text style={{ color: "rgba(0, 0, 0, 0.45)", lineHeight: 1.8 }}>
-              当前版本优先把记录链路和复盘体验打磨稳定，导出能力后续接入。
-            </Text>
-          </Card>
+          <Space orientation="vertical" size={12} style={{ width: "100%" }}>
+            <Button block type="primary" loading={backupPending} disabled={!databaseBackupAvailable} onClick={handleOpenCreateBackupModal}>
+              创建备份
+            </Button>
+            <Button
+              block
+              disabled={!databaseBackupAvailable || backupFiles.length === 0}
+              loading={restorePending}
+              onClick={() => void handleOpenRestoreModal()}
+            >
+              恢复备份
+            </Button>
+          </Space>
 
-          <Button block onClick={() => undefined}>
-            导出 CSV（即将支持）
-          </Button>
+          <Modal
+            title="创建数据库备份"
+            open={createBackupModalOpen}
+            okText="创建备份"
+            cancelText="取消"
+            confirmLoading={backupPending}
+            onOk={() => void handleCreateBackup()}
+            onCancel={() => {
+              if (backupPending) {
+                return;
+              }
+
+              setCreateBackupModalOpen(false);
+            }}
+          >
+            <Space orientation="vertical" size={12} style={{ width: "100%" }}>
+              <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>输入备份文件名，未填写 `.db` 时会自动补齐。</Text>
+              <Space orientation="vertical" size={8} style={{ width: "100%" }}>
+                <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>备份文件名</Text>
+                <AutoComplete
+                  value={backupFileNameInput}
+                  options={[]}
+                  onChange={(value: string) => setBackupFileNameInput(value)}
+                  placeholder="例如 trajon-backup-20260426-090807.db"
+                  style={{ width: "100%" }}
+                />
+              </Space>
+            </Space>
+          </Modal>
+
+          {backupModalOpen ? (
+            <Card style={panelCardStyle}>
+              <Space orientation="vertical" size={12} style={{ width: "100%" }}>
+                <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>恢复数据库备份</Text>
+                <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>选择一个内部备份文件恢复当前数据库。</Text>
+                <Space orientation="vertical" size={8} style={{ width: "100%" }}>
+                  <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>备份文件</Text>
+                  <Select
+                    aria-label="选择备份文件"
+                    value={selectedBackupFileName}
+                    placeholder="选择一个备份文件"
+                    options={backupFiles.map((backup) => ({ value: backup.fileName, label: backup.fileName }))}
+                    onChange={(value) => setSelectedBackupFileName(value)}
+                    style={{width: "100%"}}
+                    popupMatchSelectWidth={270}
+                  />
+                </Space>
+                <Text style={{ color: "#b91c1c" }}>恢复会整库覆盖当前数据，请谨慎操作。</Text>
+                <Flex justify="end" gap={8}>
+                  <Button
+                    onClick={() => {
+                      if (restorePending) {
+                        return;
+                      }
+
+                      setBackupModalOpen(false);
+                    }}
+                  >
+                    取消
+                  </Button>
+                  <Button
+                    type="primary"
+                    danger
+                    loading={restorePending}
+                    disabled={!selectedBackupFileName}
+                    onClick={() => void handleConfirmRestore()}
+                  >
+                    确认恢复
+                  </Button>
+                </Flex>
+              </Space>
+            </Card>
+          ) : null}
         </Space>
       </Card>
     </div>

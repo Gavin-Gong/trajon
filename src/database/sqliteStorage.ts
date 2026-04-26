@@ -1,8 +1,10 @@
+import { homeDir, join } from "@tauri-apps/api/path";
 import { BaseDirectory, copyFile, exists, mkdir, remove } from "@tauri-apps/plugin-fs";
 import Database from "@tauri-apps/plugin-sql";
 
 export const DATABASE_DIRECTORY = "databases";
-export const BACKUP_DIRECTORY = `${DATABASE_DIRECTORY}/backups`;
+export const BACKUP_ROOT_DIRECTORY = "trajon";
+export const BACKUP_DIRECTORY = `${BACKUP_ROOT_DIRECTORY}/backups`;
 export const DATABASE_FILE_NAME = "trajon.db";
 export const DATABASE_PATH = `sqlite:${DATABASE_DIRECTORY}/${DATABASE_FILE_NAME}`;
 
@@ -28,14 +30,15 @@ async function ensureDatabaseDirectory(): Promise<void> {
 }
 
 async function ensureBackupDirectory(): Promise<void> {
-  await mkdir(BACKUP_DIRECTORY, {
-    baseDir: BaseDirectory.AppData,
-    recursive: true,
-  });
+  await mkdir(await getBackupDirectoryPath(), { recursive: true });
 }
 
 function getDatabaseFilePath(): string {
   return `${DATABASE_DIRECTORY}/${DATABASE_FILE_NAME}`;
+}
+
+async function getBackupDirectoryPath(): Promise<string> {
+  return join(await homeDir(), BACKUP_DIRECTORY);
 }
 
 export async function openTrajonDatabase(): Promise<Database> {
@@ -64,7 +67,8 @@ export async function backupTrajonDatabase(fileName: string): Promise<string> {
   assertTauriSqlAvailable();
 
   const databaseFilePath = getDatabaseFilePath();
-  const backupPath = `${BACKUP_DIRECTORY}/${fileName.trim()}`;
+  const backupDirectoryPath = await getBackupDirectoryPath();
+  const backupPath = await join(backupDirectoryPath, fileName.trim());
 
   if (!(await exists(databaseFilePath, { baseDir: BaseDirectory.AppData }))) {
     throw new Error("SQLite database file does not exist yet");
@@ -72,9 +76,13 @@ export async function backupTrajonDatabase(fileName: string): Promise<string> {
 
   await closeTrajonDatabase();
   await ensureBackupDirectory();
+
+  if (await exists(backupPath)) {
+    await remove(backupPath);
+  }
+
   await copyFile(databaseFilePath, backupPath, {
     fromPathBaseDir: BaseDirectory.AppData,
-    toPathBaseDir: BaseDirectory.AppData,
   });
   return backupPath;
 }
@@ -82,8 +90,9 @@ export async function backupTrajonDatabase(fileName: string): Promise<string> {
 export async function restoreTrajonDatabase(fileName: string): Promise<void> {
   assertTauriSqlAvailable();
 
-  const backupPath = `${BACKUP_DIRECTORY}/${fileName.trim()}`;
-  if (!(await exists(backupPath, { baseDir: BaseDirectory.AppData }))) {
+  const backupDirectoryPath = await getBackupDirectoryPath();
+  const backupPath = await join(backupDirectoryPath, fileName.trim());
+  if (!(await exists(backupPath))) {
     throw new Error("SQLite backup file does not exist");
   }
 
@@ -96,7 +105,6 @@ export async function restoreTrajonDatabase(fileName: string): Promise<void> {
   }
 
   await copyFile(backupPath, databaseFilePath, {
-    fromPathBaseDir: BaseDirectory.AppData,
     toPathBaseDir: BaseDirectory.AppData,
   });
 }

@@ -121,9 +121,6 @@ export function Main({ store }: { store: TradingJournalStore }) {
                   <Text strong style={{ color: "rgba(0, 0, 0, 0.88)", fontSize: 16 }}>
                     Trajon
                   </Text>
-                  <Text style={{ color: "rgba(0, 0, 0, 0.45)", fontSize: 12 }}>
-                    Trading Flow
-                  </Text>
                 </Space>
               </Flex>
             )}
