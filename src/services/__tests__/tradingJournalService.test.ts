@@ -42,10 +42,9 @@ describe("createTradingJournalService", () => {
   it("creates a journal and persists it", async () => {
     const service = createTradingJournalService({ repository, imagePlatform });
 
-    const journal = await service.createTradeJournal(" btcusdt ", " binance ");
+    const journal = await service.createTradeJournal(" btcusdt ");
 
     expect(journal.symbol).toBe("BTCUSDT");
-    expect(journal.market).toBe("binance");
     expect(repository.insertTradeJournal).toHaveBeenCalledWith(expect.objectContaining({ symbol: "BTCUSDT" }));
   });
 
@@ -57,7 +56,6 @@ describe("createTradingJournalService", () => {
           createdAt: "2026-04-18T00:00:00.000Z",
           updatedAt: "2026-04-18T00:00:00.000Z",
           symbol: "BTCUSDT",
-          market: "BINANCE",
           summary: "",
           status: "done",
           events: [],
@@ -88,7 +86,6 @@ describe("createTradingJournalService", () => {
           createdAt: "2026-04-18T00:00:00.000Z",
           updatedAt: "2026-04-18T00:00:00.000Z",
           symbol: "BTCUSDT",
-          market: "BINANCE",
           summary: "",
           status: "open",
           events: [],
@@ -120,7 +117,6 @@ describe("createTradingJournalService", () => {
           createdAt: "2026-04-18T00:00:00.000Z",
           updatedAt: "2026-04-18T00:00:00.000Z",
           symbol: "BTCUSDT",
-          market: "BINANCE",
           summary: "",
           status: "open",
           events: [],
@@ -153,7 +149,6 @@ describe("createTradingJournalService", () => {
           createdAt: "2026-04-18T00:00:00.000Z",
           updatedAt: "2026-04-18T00:00:00.000Z",
           symbol: "BTCUSDT",
-          market: "BINANCE",
           summary: "",
           status: "open",
           events: [],
@@ -188,7 +183,6 @@ describe("createTradingJournalService", () => {
           createdAt: "2026-04-18T00:00:00.000Z",
           updatedAt: "2026-04-18T00:00:00.000Z",
           symbol: "",
-          market: "BINANCE",
           summary: "",
           status: "open",
           events: [],
@@ -222,7 +216,6 @@ describe("createTradingJournalService", () => {
           createdAt: "2026-04-18T00:00:00.000Z",
           updatedAt: "2026-04-18T00:00:00.000Z",
           symbol: "BTCUSDT",
-          market: "BINANCE",
           summary: "",
           status: "open",
           events: [],
@@ -268,7 +261,6 @@ describe("createTradingJournalService", () => {
           createdAt: "2026-04-18T00:00:00.000Z",
           updatedAt: "2026-04-18T00:00:00.000Z",
           symbol: "BTCUSDT",
-          market: "BINANCE",
           summary: "",
           status: "open",
           events: [],

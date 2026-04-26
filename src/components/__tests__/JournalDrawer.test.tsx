@@ -15,7 +15,6 @@ describe("JournalDrawer", () => {
     const openJournal = createJournal({
       id: "open-journal",
       symbol: "NQ",
-      market: "CME",
       status: "open",
       events: [],
       images: [],

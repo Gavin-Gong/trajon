@@ -53,7 +53,6 @@ describe("journalImages", () => {
         createdAt: "2026-04-18T00:00:00.000Z",
         updatedAt: "2026-04-18T00:00:00.000Z",
         symbol: "BTCUSDT",
-        market: "BINANCE",
         summary: "",
         tags: [],
         status: "open",

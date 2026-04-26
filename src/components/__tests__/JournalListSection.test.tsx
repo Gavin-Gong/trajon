@@ -19,7 +19,6 @@ describe("JournalListSection", () => {
     const breakoutJournal = createJournal({
       id: "journal-breakout",
       symbol: "BTCUSDT",
-      market: "BINANCE",
       status: "done",
       summary: "Breakout trade.",
       tags: ["breakout", "trend"],
@@ -27,7 +26,6 @@ describe("JournalListSection", () => {
     const fomoJournal = createJournal({
       id: "journal-fomo",
       symbol: "ETHUSDT",
-      market: "BINANCE",
       status: "done",
       summary: "Fomo chase.",
       tags: ["FOMO"],
@@ -35,7 +33,6 @@ describe("JournalListSection", () => {
     const calmJournal = createJournal({
       id: "journal-calm",
       symbol: "SOLUSDT",
-      market: "BINANCE",
       status: "done",
       summary: "No tags here.",
       tags: [],
@@ -88,7 +85,6 @@ describe("JournalListSection", () => {
     const openJournal = createJournal({
       id: "open-journal",
       symbol: "BTCUSDT",
-      market: "BINANCE",
       status: "open",
       summary: "Breakout setup.",
     });

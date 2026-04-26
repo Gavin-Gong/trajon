@@ -28,7 +28,6 @@ describe("JournalDetailPanel", () => {
     const journal = createJournal({
       id: "journal-1",
       symbol: "BTCUSDT",
-      market: "BINANCE",
       images: [
         {
           id: "image-1",
@@ -95,7 +94,6 @@ describe("JournalDetailPanel", () => {
     const journal = createJournal({
       id: "journal-1",
       symbol: "BTCUSDT",
-      market: "BINANCE",
       images: [
         {
           id: "image-1",

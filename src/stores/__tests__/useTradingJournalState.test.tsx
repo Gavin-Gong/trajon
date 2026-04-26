@@ -41,7 +41,6 @@ describe("useTradingJournalState", () => {
           createdAt: "2026-04-18T00:00:00.000Z",
           updatedAt: "2026-04-18T00:00:00.000Z",
           symbol: "ETHUSDT",
-          market: "BINANCE",
           summary: "",
           status: "open",
           events: [],
@@ -84,7 +83,6 @@ describe("useTradingJournalState", () => {
           createdAt: "2026-04-18T00:00:00.000Z",
           updatedAt: "2026-04-18T00:00:00.000Z",
           symbol: "ETHUSDT",
-          market: "BINANCE",
           summary: "",
           status: "open",
           events: [],
@@ -135,7 +133,6 @@ describe("useTradingJournalState", () => {
       createdAt: "2026-04-18T00:00:00.000Z",
       updatedAt: "2026-04-18T00:00:00.000Z",
       symbol: "ETHUSDT",
-      market: "BINANCE",
       summary: "",
       status: "open",
       events: [],
@@ -148,10 +145,9 @@ describe("useTradingJournalState", () => {
     await waitFor(() => expect(service.loadTradingPanelState).toHaveBeenCalledTimes(1));
 
     await act(async () => {
-      await result.current.actions.createJournal("ETHUSDT", "BINANCE");
+      await result.current.actions.createJournal("ETHUSDT");
     });
 
-    expect(service.createTradeJournal).toHaveBeenCalledWith("ETHUSDT", "BINANCE");
     expect(result.current.state.journals).toEqual([createdJournal]);
   });
 
@@ -163,7 +159,6 @@ describe("useTradingJournalState", () => {
           createdAt: "2026-04-18T00:00:00.000Z",
           updatedAt: "2026-04-18T00:00:00.000Z",
           symbol: "ETHUSDT",
-          market: "BINANCE",
           summary: "",
           status: "open",
           events: [],
@@ -226,7 +221,6 @@ describe("useTradingJournalState", () => {
           createdAt: "2026-04-18T00:00:00.000Z",
           updatedAt: "2026-04-18T00:00:00.000Z",
           symbol: "",
-          market: "BINANCE",
           summary: "",
           status: "open",
           events: [],
@@ -264,7 +258,6 @@ describe("useTradingJournalState", () => {
           createdAt: "2026-04-18T00:00:00.000Z",
           updatedAt: "2026-04-18T00:00:00.000Z",
           symbol: "ETHUSDT",
-          market: "BINANCE",
           summary: "",
           status: "open",
           events: [],
@@ -304,7 +297,6 @@ describe("useTradingJournalState", () => {
           createdAt: "2026-04-18T00:00:00.000Z",
           updatedAt: "2026-04-18T00:00:00.000Z",
           symbol: "ETHUSDT",
-          market: "BINANCE",
           summary: "",
           status: "open",
           events: [],
@@ -346,7 +338,6 @@ describe("useTradingJournalState", () => {
           createdAt: "2026-04-18T00:00:00.000Z",
           updatedAt: "2026-04-18T00:00:00.000Z",
           symbol: "ETHUSDT",
-          market: "BINANCE",
           summary: "",
           status: "open",
           events: [],

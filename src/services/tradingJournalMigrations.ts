@@ -17,7 +17,6 @@ const migrations: Migration[] = [
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         symbol TEXT NOT NULL,
-        market TEXT NOT NULL,
         summary TEXT NOT NULL,
         status TEXT NOT NULL
       )`,
@@ -64,6 +63,26 @@ const migrations: Migration[] = [
   {
     version: 3,
     statements: ["ALTER TABLE trade_journals ADD COLUMN tags TEXT NOT NULL DEFAULT '[]'"],
+  },
+  {
+    version: 4,
+    statements: [
+      `CREATE TABLE trade_journals_v4 (
+        id TEXT PRIMARY KEY,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        symbol TEXT NOT NULL,
+        summary TEXT NOT NULL,
+        status TEXT NOT NULL,
+        tags TEXT NOT NULL DEFAULT '[]'
+      )`,
+      `INSERT INTO trade_journals_v4 (id, created_at, updated_at, symbol, summary, status, tags)
+       SELECT id, created_at, updated_at, symbol, summary, status, tags FROM trade_journals`,
+      "DROP TABLE trade_journals",
+      "ALTER TABLE trade_journals_v4 RENAME TO trade_journals",
+      "CREATE INDEX IF NOT EXISTS idx_trade_journals_status ON trade_journals(status)",
+      "CREATE INDEX IF NOT EXISTS idx_trade_journals_created_at ON trade_journals(created_at)",
+    ],
   },
 ];
 

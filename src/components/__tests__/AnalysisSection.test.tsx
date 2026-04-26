@@ -14,7 +14,6 @@ describe("AnalysisSection", () => {
     const journal = createJournal({
       id: "journal-analysis",
       symbol: "BTCUSDT",
-      market: "BINANCE",
       status: "done",
       events: [
         {

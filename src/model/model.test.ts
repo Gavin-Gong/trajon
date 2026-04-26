@@ -27,7 +27,6 @@ describe("journal model exports", () => {
       createdAt: "2026-04-18T00:00:00.000Z",
       updatedAt: "2026-04-18T01:00:00.000Z",
       symbol: "BTCUSDT",
-      market: "BINANCE",
       summary: "Breakout setup",
       tags: [],
       status,

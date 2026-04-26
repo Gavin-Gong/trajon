@@ -23,7 +23,6 @@ describe("QuickCaptureCard", () => {
         journal={createJournal({
           id: "journal-1",
           symbol: "BTCUSDT",
-          market: "BINANCE",
           status: "open",
           events: [],
         })}

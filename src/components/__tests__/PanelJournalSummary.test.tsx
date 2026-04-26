@@ -9,7 +9,6 @@ describe("PanelJournalSummary", () => {
     const currentJournal = createJournal({
       id: "journal-current",
       symbol: "NQ",
-      market: "CME",
       createdAt: "2026-04-20T09:30:00.000Z",
       updatedAt: "2026-04-20T09:30:00.000Z",
       status: "open",
@@ -59,7 +58,6 @@ describe("PanelJournalSummary", () => {
     const currentJournal = createJournal({
       id: "journal-current",
       symbol: "",
-      market: "",
       createdAt: "2026-04-20T09:30:00.000Z",
       updatedAt: "2026-04-20T09:30:00.000Z",
       status: "open",

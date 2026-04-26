@@ -47,7 +47,6 @@ export function createJournal(
     createdAt,
     updatedAt: overrides.updatedAt ?? createdAt,
     symbol: overrides.symbol ?? "",
-    market: overrides.market ?? "",
     summary: overrides.summary ?? "",
     tags: overrides.tags ?? [],
     status: overrides.status ?? "open",

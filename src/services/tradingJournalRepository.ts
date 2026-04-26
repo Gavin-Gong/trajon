@@ -43,7 +43,7 @@ export function createTradingJournalRepository() {
     async loadState(): Promise<TradingPanelState> {
       const db = await getDatabase();
       const journalRows = await db.select<Record<string, unknown>>(
-        "SELECT id, created_at, updated_at, symbol, market, summary, tags, status FROM trade_journals ORDER BY created_at DESC",
+        "SELECT id, created_at, updated_at, symbol, summary, tags, status FROM trade_journals ORDER BY created_at DESC",
       );
       const eventRows = await db.select<Record<string, unknown>>(
         "SELECT id, journal_id, created_at, updated_at, timestamp, type, content, price, quantity FROM trade_events ORDER BY timestamp DESC",
@@ -60,7 +60,6 @@ export function createTradingJournalRepository() {
         createdAt: row.created_at,
         updatedAt: row.updated_at,
         symbol: row.symbol,
-        market: row.market,
         summary: row.summary,
         tags: JSON.parse(row.tags),
         status: row.status,
@@ -120,13 +119,12 @@ export function createTradingJournalRepository() {
     async insertTradeJournal(journal: TradeJournal): Promise<void> {
       const db = await getDatabase();
       await db.execute(
-        "INSERT INTO trade_journals (id, created_at, updated_at, symbol, market, summary, tags, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+        "INSERT INTO trade_journals (id, created_at, updated_at, symbol, summary, tags, status) VALUES ($1, $2, $3, $4, $5, $6, $7)",
         [
           journal.id,
           journal.createdAt,
           journal.updatedAt,
           journal.symbol,
-          journal.market,
           journal.summary,
           JSON.stringify(journal.tags),
           journal.status,
@@ -188,7 +186,7 @@ export function createTradingJournalRepository() {
     async updateTradeJournal(journal: TradeJournal): Promise<void> {
       const db = await getDatabase();
       await db.execute(
-        "UPDATE trade_journals SET updated_at = $2, summary = $3, tags = $4, status = $5, symbol = $6, market = $7 WHERE id = $1",
+        "UPDATE trade_journals SET updated_at = $2, summary = $3, tags = $4, status = $5, symbol = $6 WHERE id = $1",
         [
           journal.id,
           journal.updatedAt,
@@ -196,7 +194,6 @@ export function createTradingJournalRepository() {
           JSON.stringify(journal.tags),
           journal.status,
           journal.symbol,
-          journal.market,
         ],
       );
     },

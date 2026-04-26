@@ -28,7 +28,7 @@ export function useTradingJournalState(
   return {
     state,
     actions: store.actions as {
-      createJournal: (symbol: string, market: string) => Promise<TradeJournal>;
+      createJournal: (symbol: string) => Promise<TradeJournal>;
       finishJournal: (journalId: string, summary: string, tags?: string[]) => Promise<void>;
       addJournalImages: (journalId: string, filePaths: JournalImageInput[]) => Promise<JournalImage[]>;
       removeJournalImage: (journalId: string, imageId: string) => Promise<void>;

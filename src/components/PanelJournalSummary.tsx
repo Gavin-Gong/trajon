@@ -162,7 +162,7 @@ export function PanelJournalSummary({
                   </Tag>
                 </Flex>
                 <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>
-                  {journal.market || "未标记市场"} · 净仓 {formatNumber(netPosition(journal.events))}
+                  净仓 {formatNumber(netPosition(journal.events))}
                 </Text>
               </Space>
 

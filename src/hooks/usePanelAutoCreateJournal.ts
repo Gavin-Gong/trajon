@@ -27,6 +27,6 @@ export function usePanelAutoCreateJournal(
       return;
     }
 
-    void actions.createJournal(defaultPreset.symbol, "");
+    void actions.createJournal(defaultPreset.symbol);
   }, [actions, defaultPreset?.symbol, hasMatchingJournal, journal]);
 }

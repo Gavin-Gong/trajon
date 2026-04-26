@@ -39,10 +39,9 @@ export function createTradingJournalService(
       return repository.loadState();
     },
 
-    async createTradeJournal(symbol: string, market: string): Promise<TradeJournal> {
+    async createTradeJournal(symbol: string): Promise<TradeJournal> {
       const journal = createJournal({
         symbol: symbol.trim().toUpperCase(),
-        market: market.trim(),
       });
       await repository.insertTradeJournal(journal);
       return journal;

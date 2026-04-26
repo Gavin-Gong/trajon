@@ -28,7 +28,6 @@ export type TradeJournal = {
   createdAt: string;
   updatedAt: string;
   symbol: string;
-  market: string;
   summary: string;
   tags: string[];
   status: TradeJournalStatus;

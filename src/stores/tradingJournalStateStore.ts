@@ -141,9 +141,9 @@ function createTradingJournalStateStore(service: TradingJournalService) {
     },
 
     actions: {
-      createJournal(symbol: string, market: string) {
+      createJournal(symbol: string) {
         return mutate(
-          () => service.createTradeJournal(symbol, market),
+          () => service.createTradeJournal(symbol),
           (currentState, journal) => ({
             ...currentState,
             journals: [...currentState.journals, journal],

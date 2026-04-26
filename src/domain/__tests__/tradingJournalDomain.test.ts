@@ -200,7 +200,6 @@ describe("realizedPnlAnalytics", () => {
     const journal = createJournal({
       id: "journal-1",
       symbol: "BTCUSDT",
-      market: "BINANCE",
       status: "done",
       events: [
         {
@@ -264,7 +263,6 @@ describe("realizedPnlAnalytics", () => {
     const journal = createJournal({
       id: "journal-heatmap",
       symbol: "ETHUSDT",
-      market: "BINANCE",
       status: "done",
       events: [
         {

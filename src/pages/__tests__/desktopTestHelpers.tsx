@@ -11,7 +11,6 @@ export function buildState(): TradingPanelState {
   const openJournal = createJournal({
     id: "open-journal",
     symbol: "NQ",
-    market: "CME",
     createdAt: "2026-04-04T09:30:00.000Z",
     status: "open",
     summary: "等待二次确认后继续执行。",
@@ -19,7 +18,6 @@ export function buildState(): TradingPanelState {
   const doneJournal = createJournal({
     id: "done-journal",
     symbol: "ES",
-    market: "CME",
     createdAt: "2026-04-02T09:30:00.000Z",
     status: "done",
     summary: "纪律不错，但出场可以更果断。",

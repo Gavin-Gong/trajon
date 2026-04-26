@@ -77,9 +77,6 @@ export function TimelineSection({
                       <Text style={{ color: "rgba(0, 0, 0, 0.45)", fontSize: 12 }}>
                         {formatClock(new Date(event.timestamp))}
                       </Text>
-                      {journal?.market ? (
-                        <Text style={{ color: "rgba(0, 0, 0, 0.45)", fontSize: 12 }}>{journal.market}</Text>
-                      ) : null}
                       {event.quantity !== undefined && event.price !== undefined ? (
                         <Tag color={tagColorForVariant("neutral")} style={timelineMetricTagStyle}>
                           Qty {formatNumber(event.quantity)} @ {formatNumber(event.price)}

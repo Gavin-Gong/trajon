@@ -26,7 +26,7 @@ import { openPanelWindow } from "../platform/panelWindow";
 dayjs.locale("zh-cn");
 
 const { Text } = Typography;
-const SIDER_WIDTH = 200;
+const SIDER_WIDTH = 160;
 const SIDER_COLLAPSED_WIDTH = 80;
 const HEADER_HEIGHT = 60;
 

@@ -55,12 +55,7 @@ export function JournalListSection({ store }: { store: TradingJournalStore }) {
       title: "交易对",
       dataIndex: "symbol",
       key: "symbol",
-        render: (_, journal) => (
-        <Space orientation="vertical" size={2}>
-          <Text strong>{journal.symbol || "未命名"}</Text>
-          <Text type="secondary">{journal.market || "未标记市场"}</Text>
-        </Space>
-      ),
+      render: (_, journal) => <Text strong>{journal.symbol || "未命名"}</Text>,
     },
     {
       title: "状态",

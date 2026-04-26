@@ -70,7 +70,7 @@ export function JournalDetailPanel({
               </Tag>
             </Flex>
             <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>
-              {journal.market || "未标记市场"} · {formatJournalDate(journal.createdAt)}
+              {formatJournalDate(journal.createdAt)}
             </Text>
           </Space>
           <Tag color={tagColorForVariant("neutral")}>净仓 {formatNumber(netPosition(journal.events))}</Tag>

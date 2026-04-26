@@ -15,7 +15,6 @@ describe("CalendarHistorySection", () => {
     const journal = createJournal({
       id: "calendar-journal",
       symbol: "BTCUSDT",
-      market: "BINANCE",
       createdAt: "2026-04-10T09:30:00.000Z",
       updatedAt: "2026-04-10T09:30:00.000Z",
       status: "open",
