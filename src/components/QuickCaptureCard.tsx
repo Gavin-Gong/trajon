@@ -12,7 +12,7 @@ import {
   type TradeJournal,
 } from "../domain/journal";
 import { EVENT_ICONS, EVENT_LABELS } from "./EventPresentation";
-import { feedbackMessage, quantityHint } from "./EventFeedback";
+import { feedbackMessage } from "./EventFeedback";
 import { formatNumber } from "./JournalFormatters";
 import { plainDashedBlockStyle, plainMutedBlockStyle, plainPanelSectionStyle } from "./PanelStyles";
 
@@ -71,7 +71,7 @@ export function QuickCaptureCard({
 
   return (
     <div style={plainPanelSectionStyle}>
-      <Space orientation="vertical" size={16} style={{ width: "100%" }}>
+      <Space orientation="vertical" size={12} style={{ width: "100%" }}>
         <Flex justify="space-between" align="start" gap={12}>
           <Space orientation="vertical" size={4}>
             <Flex align="center" gap={6} wrap="wrap">
@@ -160,17 +160,13 @@ export function QuickCaptureCard({
               </div>
             ) : null}
 
-            {selectedType !== "log" && selectedType !== "plan" ? (
-              <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>{quantityHint(selectedType, status, currentNetPosition)}</Text>
-            ) : null}
-
             <Form layout="vertical">
               <Form.Item
                 label={selectedType === "log" ? "观察记录" : selectedType === "plan" ? "计划记录" : "补充说明"}
                 style={{ marginBottom: 0 }}
               >
                 <Input.TextArea
-                  rows={5}
+                  rows={4}
                   value={content}
                   placeholder={
                     selectedType === "log"

@@ -86,9 +86,21 @@ describe("Desktop shell", () => {
     expectTextPresent("面板");
     expectTextPresent("日历");
     expectTextPresent("设置");
+    expectTextPresent("Dev Tool");
     expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
     expect(screen.queryByText("分析")).not.toBeInTheDocument();
     expect(screen.queryByRole("menuitem", { name: /Chart/ })).not.toBeInTheDocument();
+  });
+
+  it("renders the dev tool section in development builds", () => {
+    render(<Desktop view={{ view: "main" }} />);
+
+    fireEvent.click(screen.getByRole("menuitem", { name: /Dev Tool/ }));
+
+    expect(screen.getByText("执行 SQLite SQL" )).toBeInTheDocument();
+    expect(screen.getByText(/直接操作本地 SQLite 数据/)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("输入要执行的 SQL")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /清/ })).toBeInTheDocument();
   });
 
   it("places the in-progress badge trigger to the right of the start button", () => {

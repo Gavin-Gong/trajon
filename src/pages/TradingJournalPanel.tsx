@@ -45,7 +45,7 @@ export function TradingJournalPanel({
 
   return (
     <main style={{ minHeight: "100vh" }}>
-      <Flex vertical gap={16} style={panelShellStyle}>
+      <Flex vertical gap={12} style={panelShellStyle}>
         <PanelHeader
           timerEnabled={state.config.timerEnabled}
           timerInterval={state.config.timerInterval}

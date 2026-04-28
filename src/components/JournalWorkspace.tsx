@@ -68,8 +68,8 @@ export function JournalWorkspace({
   };
 
   return (
-    <Space orientation="vertical" size={16} style={{ width: "100%" }}>
-      <div style={{ padding: "0 16px" }}>
+    <Space orientation="vertical" size={12} style={{ width: "100%" }}>
+      <div style={{ padding: "0 12px" }}>
         <Flex align="center" justify="space-between" gap={12}>
           <div
             style={{
@@ -131,7 +131,7 @@ export function JournalWorkspace({
           />
         </>
       ) : (
-        <div style={{ padding: "0 16px 16px" }}>
+        <div style={{ padding: "0 12px 12px" }}>
           <ReviewTradingStep
             journal={journal}
             store={store}

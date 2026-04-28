@@ -18,11 +18,11 @@ export const panelCardStyle: CSSProperties = {
 };
 
 export const plainPanelSectionStyle: CSSProperties = {
-  padding: 16,
+  padding: 12,
 };
 
 export const plainMutedBlockStyle: CSSProperties = {
-  padding: 12,
+  padding: 10,
 };
 
 export const plainDashedBlockStyle: CSSProperties = {

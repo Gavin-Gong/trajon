@@ -1,6 +1,7 @@
 import {
   BarChartOutlined,
   CalendarOutlined,
+  CodeOutlined,
   FileTextOutlined,
   InboxOutlined,
   MenuFoldOutlined,
@@ -14,6 +15,7 @@ import { useMemo, useState } from "react";
 
 import { AnalysisSection } from "../components/AnalysisSection";
 import { CalendarHistorySection } from "../components/CalendarHistorySection";
+import { DevToolSection } from "../components/DevToolSection";
 import { JournalListSection } from "../components/JournalListSection";
 import { OpenJournalDrawer } from "../components/OpenJournalDrawer";
 import { SettingsSection } from "../components/SettingsSection";
@@ -29,8 +31,9 @@ const { Text } = Typography;
 const SIDER_WIDTH = 160;
 const SIDER_COLLAPSED_WIDTH = 80;
 const HEADER_HEIGHT = 60;
+const isDevEnvironment = import.meta.env.DEV;
 
-const SECTION_META: Record<AppSection, { title: string; description: string }> = {
+const BASE_SECTION_META: Record<Exclude<AppSection, "devtools">, { title: string; description: string }> = {
   analysis: {
     title: "面板",
     description: "查看累计已实现盈亏与每日盈亏分布。",
@@ -46,6 +49,14 @@ const SECTION_META: Record<AppSection, { title: string; description: string }> =
   settings: {
     title: "设置",
     description: "管理预设、提醒与本地数据。",
+  },
+};
+
+const SECTION_META: Record<AppSection, { title: string; description: string }> = {
+  ...BASE_SECTION_META,
+  devtools: {
+    title: "Dev Tool",
+    description: "开发环境下直接执行 SQLite SQL。",
   },
 };
 
@@ -82,6 +93,15 @@ export function Main({ store }: { store: TradingJournalStore }) {
       icon: <SettingOutlined />,
       label: "设置",
     },
+    ...(isDevEnvironment
+      ? [
+          {
+            key: "devtools",
+            icon: <CodeOutlined />,
+            label: "Dev Tool",
+          },
+        ]
+      : []),
   ];
   const activeSection = SECTION_META[section];
   const siderOffset = collapsed ? SIDER_COLLAPSED_WIDTH : SIDER_WIDTH;
@@ -235,6 +255,7 @@ export function Main({ store }: { store: TradingJournalStore }) {
             {section === "calendar" ? <CalendarHistorySection store={store} /> : null}
             {section === "journal" ? <JournalListSection store={store} /> : null}
             {section === "settings" ? <SettingsSection store={store} /> : null}
+            {isDevEnvironment && section === "devtools" ? <DevToolSection /> : null}
           </div>
 
           <OpenJournalDrawer
