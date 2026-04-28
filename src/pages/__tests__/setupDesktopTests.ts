@@ -53,8 +53,19 @@ vi.mock("../../stores/useTradingJournalState", async () => {
       "open",
     );
 
-    if (entry.ok && log.ok) {
-      openJournal.events = [entry.event, log.event];
+    const exit = domain.composeTradeEvent(
+      {
+        type: "exit",
+        content: "按计划平仓。",
+        quantityInput: "",
+        priceInput: "18280",
+      },
+      2,
+      "open",
+    );
+
+    if (entry.ok && log.ok && exit.ok) {
+      openJournal.events = [entry.event, log.event, exit.event];
     }
 
     return {

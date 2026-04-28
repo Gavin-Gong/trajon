@@ -1,3 +1,12 @@
+import {
+  BadgePlus,
+  DiamondMinus,
+  LogOut,
+  Orbit,
+  SquareChartGantt,
+  Target,
+  type LucideIcon,
+} from "lucide-react";
 import type { TradeEventType } from "../domain/journal";
 
 import type { AppTagVariant } from "./AppTypes";
@@ -11,13 +20,13 @@ export const EVENT_LABELS: Record<TradeEventType, string> = {
   plan: "计划",
 };
 
-export const EVENT_SYMBOLS: Record<TradeEventType, string> = {
-  entry: "↗",
-  add: "+",
-  reduce: "−",
-  exit: "×",
-  log: "☰",
-  plan: "◌",
+export const EVENT_ICONS: Record<TradeEventType, LucideIcon> = {
+  entry: Target,
+  add: BadgePlus,
+  reduce: DiamondMinus,
+  exit: LogOut,
+  log: SquareChartGantt,
+  plan: Orbit,
 };
 
 export function tagColorForVariant(variant: AppTagVariant) {

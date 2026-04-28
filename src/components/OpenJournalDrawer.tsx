@@ -1,20 +1,23 @@
-import { ClockCircleOutlined, EditOutlined } from "@ant-design/icons";
-import { Button, Drawer, Empty, Flex, Space, Tag, Typography } from "antd";
+import { ClockCircleOutlined, DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import { Button, Drawer, Empty, Flex, Popconfirm, Space, Tag, Typography, message } from "antd";
 
 import type { TradeJournal } from "../domain/journal";
 import { openPanelWindow } from "../platform/panelWindow";
 import { tagColorForVariant } from "./EventPresentation";
 import { formatJournalDate } from "./JournalFormatters";
+import type { TradingJournalStore } from "./JournalStoreTypes";
 
 const { Text } = Typography;
 
 export function OpenJournalDrawer({
   open,
   journals,
+  store,
   onClose,
 }: {
   open: boolean;
   journals: TradeJournal[];
+  store: TradingJournalStore;
   onClose: () => void;
 }) {
   return (
@@ -54,16 +57,35 @@ export function OpenJournalDrawer({
                 </Flex>
               </Space>
 
-              <Button
-                type="text"
-                size="small"
-                icon={<EditOutlined />}
-                aria-label={`继续记录-journal-${journal.id}`}
-                onClick={() => {
-                  void openPanelWindow({ journalId: journal.id });
-                  onClose();
-                }}
-              />
+              <Flex align="center" gap={4}>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<EditOutlined />}
+                  aria-label={`继续记录-journal-${journal.id}`}
+                  onClick={() => {
+                    void openPanelWindow({ journalId: journal.id });
+                    onClose();
+                  }}
+                />
+                <Popconfirm
+                  title="删除这条 Journal？"
+                  okText="删除"
+                  cancelText="取消"
+                  okButtonProps={{ danger: true }}
+                  onConfirm={async () => {
+                    await store.actions.deleteJournal(journal.id);
+                    void message.success("已删除 Journal");
+                  }}
+                >
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<DeleteOutlined />}
+                    aria-label={`删除进行中的 journal-${journal.id}`}
+                  />
+                </Popconfirm>
+              </Flex>
             </Flex>
           ))}
         </Space>

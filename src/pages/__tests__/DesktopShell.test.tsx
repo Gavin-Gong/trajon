@@ -161,11 +161,11 @@ describe("Desktop shell", () => {
     fireEvent.click(screen.getAllByLabelText("进行中的 Journal")[0]!);
     expect(screen.getByRole("button", { name: "继续记录-journal-open-journal" })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "复 盘" }));
-    fireEvent.change(screen.getByRole("textbox", { name: "复盘" }), {
+    fireEvent.click(screen.getByRole("radio", { name: "复盘总结" }));
+    fireEvent.change(await screen.findByRole("textbox", { name: "复盘" }), {
       target: { value: "按计划结束" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /完\s*成/ }));
+    fireEvent.click(screen.getByRole("button", { name: "完成复盘" }));
 
     await waitFor(() => {
       expect(screen.queryByRole("button", { name: "继续记录-journal-open-journal" })).not.toBeInTheDocument();

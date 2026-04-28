@@ -48,11 +48,11 @@ describe("JournalDrawer", () => {
     render(<JournalDrawer open journalId="open-journal" store={store as never} onClose={onClose} />);
 
     expect(screen.getByText("快速记录")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "复 盘" }));
-    fireEvent.change(screen.getByRole("textbox", { name: "复盘" }), {
+    fireEvent.click(screen.getByRole("button", { name: "去复盘" }));
+    fireEvent.change(await screen.findByRole("textbox", { name: "复盘" }), {
       target: { value: "纪律执行到位" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /完\s*成/ }));
+    fireEvent.click(screen.getByRole("button", { name: "完成复盘" }));
 
     await waitFor(() => {
       expect(store.actions.finishJournal).toHaveBeenCalledWith("open-journal", "纪律执行到位", []);

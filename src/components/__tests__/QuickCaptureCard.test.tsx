@@ -5,6 +5,53 @@ import { createJournal } from "../../domain/journal";
 import { QuickCaptureCard } from "../QuickCaptureCard";
 
 describe("QuickCaptureCard", () => {
+  it("renders event options with icon-backed accessible labels", () => {
+    render(
+      <QuickCaptureCard
+        journal={createJournal({
+          id: "journal-1",
+          symbol: "BTCUSDT",
+          status: "open",
+          events: [],
+        })}
+        onRecord={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("radio", { name: "开仓" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "计划" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "笔记" })).toBeInTheDocument();
+  });
+
+  it("shows add and reduce options after an entry exists", () => {
+    render(
+      <QuickCaptureCard
+        journal={createJournal({
+          id: "journal-1",
+          symbol: "BTCUSDT",
+          status: "open",
+          events: [
+            {
+              id: "event-1",
+              createdAt: "2026-04-25T09:30:00.000Z",
+              updatedAt: "2026-04-25T09:30:00.000Z",
+              timestamp: "2026-04-25T09:30:00.000Z",
+              type: "entry",
+              quantity: 1,
+              price: 12.34,
+              content: "首次进场",
+            },
+          ],
+        })}
+        onRecord={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("radio", { name: "加仓" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "减仓" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "平仓" })).toBeInTheDocument();
+  });
+
   it("renders numeric fields as spinbuttons and submits numeric values", async () => {
     const onRecord = vi.fn().mockResolvedValue({
       ok: true,

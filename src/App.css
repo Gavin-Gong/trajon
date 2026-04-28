@@ -43,3 +43,15 @@
 *:active::-webkit-scrollbar-thumb {
   background: rgba(15, 23, 42, 0.22);
 }
+
+
+/* segmented */
+.ant-segmented {
+  padding: 2px;
+}
+.ant-segmented .ant-segmented-item {
+  border-radius: 99px;
+}
+.ant-segmented .ant-segmented-thumb {
+  border-radius: 99px;
+}

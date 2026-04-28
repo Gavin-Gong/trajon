@@ -47,8 +47,6 @@ export function TradingJournalPanel({
     <main style={{ minHeight: "100vh" }}>
       <Flex vertical gap={16} style={panelShellStyle}>
         <PanelHeader
-          isPinned={isPinned}
-          onTogglePinned={togglePinned}
           timerEnabled={state.config.timerEnabled}
           timerInterval={state.config.timerInterval}
         />
@@ -56,6 +54,8 @@ export function TradingJournalPanel({
         <JournalWorkspace
           store={store}
           journal={journal}
+          isPinned={isPinned}
+          onTogglePinned={togglePinned}
           onAfterFinish={async () => {
             await closePanelWindow();
           }}

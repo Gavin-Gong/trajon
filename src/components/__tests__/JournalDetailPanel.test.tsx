@@ -120,4 +120,28 @@ describe("JournalDetailPanel", () => {
 
     infoSpy.mockRestore();
   });
+
+  it("shows event labels in the journal timeline", () => {
+    const journal = createJournal({
+      id: "journal-1",
+      symbol: "BTCUSDT",
+      events: [
+        {
+          id: "event-1",
+          createdAt: "2026-04-18T00:10:00.000Z",
+          updatedAt: "2026-04-18T00:10:00.000Z",
+          timestamp: "2026-04-18T00:10:00.000Z",
+          type: "entry",
+          content: "首次试仓",
+          quantity: 1,
+          price: 65000,
+        },
+      ],
+    });
+
+    render(<JournalDetailPanel journal={journal} />);
+
+    expect(screen.getByText((content, element) => content.includes("开仓") && element?.tagName === "SPAN")).toBeInTheDocument();
+    expect(screen.getByText("首次试仓")).toBeInTheDocument();
+  });
 });

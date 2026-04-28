@@ -315,6 +315,10 @@ export function createAppThemeConfig(styles: AppThemeStyles): ConfigProviderProp
           ColorPicker: {
             borderRadius: 6,
           },
+          Segmented: {
+            borderRadius: 99,
+            padding: 2
+          }
         },
       },
       button: {

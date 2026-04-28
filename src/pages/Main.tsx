@@ -240,6 +240,7 @@ export function Main({ store }: { store: TradingJournalStore }) {
           <OpenJournalDrawer
             open={openJournalDrawerVisible}
             journals={openJournals}
+            store={store}
             onClose={() => setOpenJournalDrawerVisible(false)}
           />
         </Layout.Content>

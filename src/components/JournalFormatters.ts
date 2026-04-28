@@ -17,6 +17,16 @@ export function formatClock(date: Date) {
   });
 }
 
+export function formatCalendarDate(date: Date) {
+  const weekday = date.toLocaleDateString("zh-CN", { weekday: "short" });
+  const monthDay = date.toLocaleDateString("en-CA", {
+    month: "2-digit",
+    day: "2-digit",
+  });
+
+  return `${weekday} ${monthDay}`;
+}
+
 export function formatReminderStatus(enabled: boolean, interval: number) {
   return enabled ? `开启 · ${formatReminderInterval(interval)}` : "关闭";
 }

@@ -33,7 +33,6 @@ describe("PanelJournalSummary", () => {
       <PanelJournalSummary
         journal={currentJournal}
         journals={[currentJournal, olderJournal, recentJournal]}
-        onFinish={vi.fn()}
         onUpdateSymbol={onUpdateSymbol}
       />,
     );
@@ -81,7 +80,6 @@ describe("PanelJournalSummary", () => {
       <PanelJournalSummary
         journal={currentJournal}
         journals={[olderJournal, currentJournal, recentJournal]}
-        onFinish={vi.fn()}
         onUpdateSymbol={vi.fn().mockResolvedValue(undefined)}
       />,
     );

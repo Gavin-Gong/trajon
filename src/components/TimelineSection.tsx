@@ -1,9 +1,10 @@
-import { Empty, Flex, Space, Tag, Typography } from "antd";
+import { ArrowDownAZ, ArrowUpAZ } from "lucide-react";
+import { Button, Empty, Flex, Space, Tag, Tooltip, Typography } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { TradeEvent, TradeJournal } from "../domain/journal";
 import { formatClock, formatNumber } from "./JournalFormatters";
-import { EVENT_LABELS, EVENT_SYMBOLS, eventVariant, tagColorForVariant } from "./EventPresentation";
+import { EVENT_ICONS, EVENT_LABELS, eventVariant, tagColorForVariant } from "./EventPresentation";
 import { plainPanelSectionStyle } from "./PanelStyles";
 
 const { Paragraph, Text, Title } = Typography;
@@ -17,6 +18,28 @@ const timelineMetricTagStyle = {
   fontFamily: "monospace",
 };
 
+const eventTagContentStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 4,
+  verticalAlign: "middle",
+};
+
+const eventTagIconWrapStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  lineHeight: 0,
+};
+
+const eventContentQuoteStyle = {
+  margin: 0,
+  paddingLeft: 12,
+  borderLeft: "3px solid rgba(15, 23, 42, 0.14)",
+  color: "rgba(0, 0, 0, 0.88)",
+  lineHeight: 1.8,
+};
+
 export function TimelineSection({
   journal,
   title,
@@ -24,17 +47,22 @@ export function TimelineSection({
   journal: TradeJournal | undefined;
   title: string;
 }) {
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const events = useMemo(
     () =>
       journal
         ? [...journal.events].sort(
             (left, right) =>
-              new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime(),
+              sortDirection === "asc"
+                ? new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime()
+                : new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime(),
           )
         : [],
-    [journal],
+    [journal, sortDirection],
   );
   useHighlightedTopEvent(events);
+
+  const SortIcon = sortDirection === "asc" ? ArrowUpAZ : ArrowDownAZ;
 
   return (
     <div style={plainPanelSectionStyle}>
@@ -44,7 +72,14 @@ export function TimelineSection({
             {title}
           </Title>
         </Space>
-        <Tag color={tagColorForVariant("neutral")}>{events.length}</Tag>
+        <Tooltip title={sortDirection === "asc" ? "当前按时间正序，点击切换倒序" : "当前按时间倒序，点击切换正序"}>
+          <Button
+            type="text"
+            aria-label="切换最近记录排序"
+            icon={<SortIcon size={16} strokeWidth={2} />}
+            onClick={() => setSortDirection((current) => (current === "asc" ? "desc" : "asc"))}
+          />
+        </Tooltip>
       </Flex>
 
       <Space orientation="vertical" size={12} style={{ width: "100%" }}>
@@ -60,49 +95,58 @@ export function TimelineSection({
             }
           />
         ) : (
-          events.map((event) => (
-            <div key={event.id} style={{ ...plainTimelineEventStyle, width: "100%" }}>
-              <Space orientation="vertical" size={12} style={{ width: "100%" }}>
-                <Flex align="start" justify="space-between" gap={12}>
-                  <Space orientation="vertical" size={8}>
-                    <Flex align="center" gap={8} wrap="wrap">
-                      <Tag color={tagColorForVariant(eventVariant(event.type))}>
-                        {EVENT_SYMBOLS[event.type]} {EVENT_LABELS[event.type]}
-                      </Tag>
-                      <Text strong style={{ color: "rgba(0, 0, 0, 0.88)" }}>
-                        {journal?.symbol || "Unknown"}
-                      </Text>
-                    </Flex>
-                    <Flex wrap="wrap" gap={8}>
-                      <Text style={{ color: "rgba(0, 0, 0, 0.45)", fontSize: 12 }}>
-                        {formatClock(new Date(event.timestamp))}
-                      </Text>
-                      {event.quantity !== undefined && event.price !== undefined ? (
-                        <Tag color={tagColorForVariant("neutral")} style={timelineMetricTagStyle}>
-                          Qty {formatNumber(event.quantity)} @ {formatNumber(event.price)}
+          events.map((event) => {
+            const EventIcon = EVENT_ICONS[event.type];
+
+            return (
+              <div key={event.id} style={{ ...plainTimelineEventStyle, width: "100%" }}>
+                <Space orientation="vertical" size={12} style={{ width: "100%" }}>
+                  <Flex align="start" justify="space-between" gap={12}>
+                    <Space orientation="vertical" size={8} style={{ width: "100%" }}>
+                      <Flex align="center" gap={8} style={{ width: "100%" }}>
+                        <Flex align="center" gap={8} wrap="wrap" style={{ flex: 1, minWidth: 0 }}>
+                        <Tag color={tagColorForVariant(eventVariant(event.type))}>
+                          <span style={eventTagContentStyle}>
+                            <span style={eventTagIconWrapStyle}>
+                              <EventIcon aria-hidden size={14} strokeWidth={2} />
+                            </span>
+                            <span>{EVENT_LABELS[event.type]}</span>
+                          </span>
                         </Tag>
-                      ) : null}
-                      {event.quantity !== undefined && event.price === undefined ? (
-                        <Tag color={tagColorForVariant("neutral")} style={timelineMetricTagStyle}>
-                          Qty {formatNumber(event.quantity)}
-                        </Tag>
-                      ) : null}
-                      {event.price !== undefined && event.quantity === undefined ? (
-                        <Tag color={tagColorForVariant("neutral")} style={timelineMetricTagStyle}>
-                          @ {formatNumber(event.price)}
-                        </Tag>
-                      ) : null}
-                    </Flex>
-                  </Space>
-                </Flex>
-                {event.content ? (
-                  <Paragraph style={{ margin: 0, color: "rgba(0, 0, 0, 0.45)", lineHeight: 1.8 }}>
-                    {event.content}
-                  </Paragraph>
-                ) : null}
-              </Space>
-            </div>
-          ))
+                        {event.quantity !== undefined && event.price !== undefined ? (
+                          <Tag color={tagColorForVariant("neutral")} style={timelineMetricTagStyle}>
+                            Qty {formatNumber(event.quantity)} @ {formatNumber(event.price)}
+                          </Tag>
+                        ) : null}
+                        {event.quantity !== undefined && event.price === undefined ? (
+                          <Tag color={tagColorForVariant("neutral")} style={timelineMetricTagStyle}>
+                            Qty {formatNumber(event.quantity)}
+                          </Tag>
+                        ) : null}
+                        {event.price !== undefined && event.quantity === undefined ? (
+                          <Tag color={tagColorForVariant("neutral")} style={timelineMetricTagStyle}>
+                            @ {formatNumber(event.price)}
+                          </Tag>
+                        ) : null}
+                        </Flex>
+                        <Text
+                          style={{
+                            color: "rgba(0, 0, 0, 0.45)",
+                            fontSize: 12,
+                            marginInlineStart: "auto",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {formatClock(new Date(event.timestamp))}
+                        </Text>
+                      </Flex>
+                    </Space>
+                  </Flex>
+                  {event.content ? <Paragraph style={eventContentQuoteStyle}>{event.content}</Paragraph> : null}
+                </Space>
+              </div>
+            );
+          })
         )}
       </Space>
     </div>

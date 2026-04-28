@@ -13,12 +13,10 @@ const { Paragraph, Text, Title } = Typography;
 export function PanelJournalSummary({
   journal,
   journals,
-  onFinish,
   onUpdateSymbol,
 }: {
   journal: TradeJournal | undefined;
   journals: TradeJournal[];
-  onFinish: () => void;
   onUpdateSymbol: (journalId: string, symbol: string) => Promise<void>;
 }) {
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
@@ -166,11 +164,6 @@ export function PanelJournalSummary({
                 </Text>
               </Space>
 
-              {journal.status === "open" ? (
-                <Button size="small" onClick={onFinish}>
-                  复盘
-                </Button>
-              ) : null}
             </Flex>
 
             {journal.summary ? (

@@ -11,7 +11,7 @@ import {
   type TradeEventType,
   type TradeJournal,
 } from "../domain/journal";
-import { EVENT_LABELS } from "./EventPresentation";
+import { EVENT_ICONS, EVENT_LABELS } from "./EventPresentation";
 import { feedbackMessage, quantityHint } from "./EventFeedback";
 import { formatNumber } from "./JournalFormatters";
 import { plainDashedBlockStyle, plainMutedBlockStyle, plainPanelSectionStyle } from "./PanelStyles";
@@ -22,6 +22,12 @@ const infoIconStyle = {
   color: "rgba(0, 0, 0, 0.45)",
   cursor: "help",
   fontSize: 14,
+};
+
+const segmentedOptionLabelStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
 };
 
 export function QuickCaptureCard({
@@ -92,7 +98,15 @@ export function QuickCaptureCard({
               value={selectedType}
               options={types.map((type) => ({
                 value: type,
-                label: EVENT_LABELS[type],
+                label: (
+                  <span style={segmentedOptionLabelStyle}>
+                    {(() => {
+                      const EventIcon = EVENT_ICONS[type];
+                      return <EventIcon aria-hidden size={14} strokeWidth={2} />;
+                    })()}
+                    <span>{EVENT_LABELS[type]}</span>
+                  </span>
+                ),
               }))}
               onChange={(value) => setSelectedType(value as TradeEventType)}
             />
