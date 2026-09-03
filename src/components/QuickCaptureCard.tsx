@@ -11,6 +11,7 @@ import {
   type TradeEventType,
   type TradeJournal,
 } from "../domain/journal";
+import { monoFontFamily } from "../theme/useAppTheme";
 import { EVENT_ICONS, EVENT_LABELS } from "./EventPresentation";
 import { feedbackMessage } from "./EventFeedback";
 import { formatNumber } from "./JournalFormatters";
@@ -69,6 +70,24 @@ export function QuickCaptureCard({
 
   const canSubmit = journal !== undefined && validation.ok;
 
+  const handleSubmit = () => {
+    void onRecord(draft).then((result) => {
+      if (!result.ok) {
+        return;
+      }
+
+      setDidSubmit(true);
+      setSelectedType("log");
+      setQuantityInput(null);
+      setPriceInput(null);
+      setContent("");
+
+      window.setTimeout(() => {
+        setDidSubmit(false);
+      }, 1200);
+    });
+  };
+
   return (
     <div style={plainPanelSectionStyle}>
       <Space orientation="vertical" size={12} style={{ width: "100%" }}>
@@ -123,7 +142,7 @@ export function QuickCaptureCard({
                   <Form.Item label="数量" style={{ marginBottom: 0 }}>
                     {selectedType === "exit" ? (
                       <div style={plainMutedBlockStyle}>
-                        <Text style={{ color: "rgba(0, 0, 0, 0.88)" }}>{formatNumber(-currentNetPosition)}</Text>
+                        <Text style={{ color: "rgba(0, 0, 0, 0.88)", fontFamily: monoFontFamily }}>{formatNumber(-currentNetPosition)}</Text>
                       </div>
                     ) : (
                       <InputNumber
@@ -176,6 +195,14 @@ export function QuickCaptureCard({
                       : "可选补充"
                   }
                   onChange={(event) => setContent(event.currentTarget.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && !event.shiftKey) {
+                      event.preventDefault();
+                      if (canSubmit) {
+                        handleSubmit();
+                      }
+                    }
+                  }}
                 />
               </Form.Item>
             </Form>
@@ -188,23 +215,7 @@ export function QuickCaptureCard({
               <Button
                 type="primary"
                 disabled={!canSubmit}
-                onClick={() => {
-                  void onRecord(draft).then((result) => {
-                    if (!result.ok) {
-                      return;
-                    }
-
-                    setDidSubmit(true);
-                    setSelectedType("log");
-                    setQuantityInput(null);
-                    setPriceInput(null);
-                    setContent("");
-
-                    window.setTimeout(() => {
-                      setDidSubmit(false);
-                    }, 1200);
-                  });
-                }}
+                onClick={handleSubmit}
               >
                 {didSubmit ? "已记录" : "记录"}
               </Button>

@@ -15,6 +15,7 @@ export function JournalDrawer({
   onClose: () => void;
 }) {
   const journal = store.state.journals.find((item) => item.id === journalId);
+  const isPinned = store.state.panelPinned;
 
   return (
     <Drawer
@@ -27,7 +28,13 @@ export function JournalDrawer({
       destroyOnHidden
       styles={{ body: { padding: 0 } }}
     >
-      <JournalWorkspace store={store} journal={journal} onAfterFinish={onClose} />
+      <JournalWorkspace
+        store={store}
+        journal={journal}
+        isPinned={isPinned}
+        onTogglePinned={() => store.actions.setPanelPinned(!isPinned)}
+        onAfterFinish={onClose}
+      />
     </Drawer>
   );
 }

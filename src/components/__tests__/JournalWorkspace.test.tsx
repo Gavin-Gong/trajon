@@ -23,7 +23,7 @@ describe("JournalWorkspace", () => {
       events: [],
     });
 
-    render(<JournalWorkspace journal={journal} store={createStore(journal)} />);
+    render(<JournalWorkspace journal={journal} store={createStore(journal)} isPinned={false} onTogglePinned={vi.fn()} />);
 
     expect(screen.getByText("快速记录")).toBeInTheDocument();
     expect(screen.getByText("已经做过首轮复盘")).toBeInTheDocument();
@@ -40,7 +40,7 @@ describe("JournalWorkspace", () => {
       images: [],
     });
 
-    render(<JournalWorkspace journal={journal} store={createStore(journal)} />);
+    render(<JournalWorkspace journal={journal} store={createStore(journal)} isPinned={false} onTogglePinned={vi.fn()} />);
 
     expect(screen.getByRole("radio", { name: "记录交易" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "复盘总结" })).toBeInTheDocument();
@@ -56,7 +56,7 @@ describe("JournalWorkspace", () => {
       images: [],
     });
 
-    render(<JournalWorkspace journal={journal} store={createStore(journal)} />);
+    render(<JournalWorkspace journal={journal} store={createStore(journal)} isPinned={false} onTogglePinned={vi.fn()} />);
 
     fireEvent.click(screen.getByRole("radio", { name: "复盘总结" }));
 
@@ -81,7 +81,7 @@ describe("JournalWorkspace", () => {
       images: [],
     });
 
-    render(<JournalWorkspace journal={journal} store={createStore(journal)} />);
+    render(<JournalWorkspace journal={journal} store={createStore(journal)} isPinned={false} onTogglePinned={vi.fn()} />);
 
     fireEvent.click(screen.getByRole("radio", { name: "复盘总结" }));
 
@@ -111,7 +111,7 @@ describe("JournalWorkspace", () => {
     });
     const store = createStore(journal);
 
-    render(<JournalWorkspace journal={journal} store={store} />);
+    render(<JournalWorkspace journal={journal} store={store} isPinned={false} onTogglePinned={vi.fn()} />);
 
     fireEvent.click(screen.getByRole("radio", { name: "复盘总结" }));
     fireEvent.change(await screen.findByRole("textbox", { name: "复盘" }), {

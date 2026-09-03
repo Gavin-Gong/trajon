@@ -3,6 +3,7 @@ import { Button, Empty, Flex, Space, Tag, Tooltip, Typography } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { TradeEvent, TradeJournal } from "../domain/journal";
+import { monoFontFamily } from "../theme/useAppTheme";
 import { formatClock, formatNumber } from "./JournalFormatters";
 import { EVENT_ICONS, EVENT_LABELS, eventVariant, tagColorForVariant } from "./EventPresentation";
 import { plainPanelSectionStyle } from "./PanelStyles";
@@ -15,7 +16,7 @@ const plainTimelineEventStyle = {
 };
 
 const timelineMetricTagStyle = {
-  fontFamily: "monospace",
+  fontFamily: monoFontFamily,
 };
 
 const eventTagContentStyle = {
@@ -105,7 +106,7 @@ export function TimelineSection({
                     <Space orientation="vertical" size={8} style={{ width: "100%" }}>
                       <Flex align="center" gap={8} style={{ width: "100%" }}>
                         <Flex align="center" gap={8} wrap="wrap" style={{ flex: 1, minWidth: 0 }}>
-                        <Tag color={tagColorForVariant(eventVariant(event.type))}>
+                        <Tag color={tagColorForVariant(eventVariant(event.type))} style={{ fontFamily: monoFontFamily }}>
                           <span style={eventTagContentStyle}>
                             <span style={eventTagIconWrapStyle}>
                               <EventIcon aria-hidden size={14} strokeWidth={2} />
@@ -135,6 +136,7 @@ export function TimelineSection({
                             fontSize: 12,
                             marginInlineStart: "auto",
                             whiteSpace: "nowrap",
+                            fontFamily: monoFontFamily,
                           }}
                         >
                           {formatClock(new Date(event.timestamp))}

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { netPosition, type JournalImage, type TradeJournal } from "../domain/journal";
 import { resolveJournalImageSrc } from "../platform/journalImages";
+import { monoFontFamily } from "../theme/useAppTheme";
 import { formatNumber } from "./JournalFormatters";
 import { tagColorForVariant } from "./EventPresentation";
 import { plainMutedBlockStyle, plainPanelSectionStyle } from "./PanelStyles";
@@ -140,7 +141,7 @@ export function PanelJournalSummary({
                     />
                   ) : (
                     <>
-                      <Title level={5} style={{ margin: 0, color: "rgba(0, 0, 0, 0.88)" }}>
+                      <Title level={5} style={{ margin: 0, color: "rgba(0, 0, 0, 0.88)", fontFamily: monoFontFamily }}>
                         {journal.symbol || "待填写标的"}
                       </Title>
                       <Button
@@ -155,11 +156,11 @@ export function PanelJournalSummary({
                       />
                     </>
                   )}
-                  <Tag color={tagColorForVariant(journal.status === "open" ? "accent" : "neutral")}>
+                  <Tag color={tagColorForVariant(journal.status === "open" ? "accent" : "neutral")} style={{ fontFamily: monoFontFamily }}>
                     {journal.status === "open" ? "进行中" : "已完成"}
                   </Tag>
                 </Flex>
-                <Text style={{ color: "rgba(0, 0, 0, 0.45)" }}>
+                <Text style={{ color: "rgba(0, 0, 0, 0.45)", fontFamily: monoFontFamily }}>
                   净仓 {formatNumber(netPosition(journal.events))}
                 </Text>
               </Space>

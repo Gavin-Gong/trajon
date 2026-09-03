@@ -5,6 +5,7 @@ import { createStyles } from "antd-style";
 import clsx from "clsx";
 
 const fontFamily = '"SF Pro Text", "SF Pro Display", "Helvetica Neue", "Segoe UI", sans-serif';
+const monoFontFamily = '"JetBrains Mono", monospace';
 
 type AppThemeStyles = {
   buttonPrimary: string;
@@ -359,4 +360,4 @@ export function useAppTheme(): ConfigProviderProps {
   return useMemo(() => createAppThemeConfig(styles), [styles]);
 }
 
-export { fontFamily };
+export { fontFamily, monoFontFamily };

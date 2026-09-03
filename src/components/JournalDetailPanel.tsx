@@ -9,6 +9,7 @@ import {
   resolveJournalImageSrc,
 } from "../platform/journalImages";
 import { openPanelWindow } from "../platform/panelWindow";
+import { monoFontFamily } from "../theme/useAppTheme";
 import { TimelineSection } from "./TimelineSection";
 import { tagColorForVariant } from "./EventPresentation";
 import { formatJournalDate, formatNumber } from "./JournalFormatters";
@@ -62,10 +63,10 @@ export function JournalDetailPanel({
         <Flex justify="space-between" align="start" gap={12}>
           <Space orientation="vertical" size={8}>
             <Flex align="center" gap={8} wrap="wrap">
-              <Title level={5} style={{ margin: 0, color: "rgba(0, 0, 0, 0.88)" }}>
+              <Title level={5} style={{ margin: 0, color: "rgba(0, 0, 0, 0.88)", fontFamily: monoFontFamily }}>
                 {journal.symbol || "未命名"}
               </Title>
-              <Tag color={tagColorForVariant(journal.status === "open" ? "accent" : "neutral")}>
+              <Tag color={tagColorForVariant(journal.status === "open" ? "accent" : "neutral")} style={{ fontFamily: monoFontFamily }}>
                 {journal.status === "open" ? "进行中" : "已完成"}
               </Tag>
             </Flex>
@@ -73,7 +74,7 @@ export function JournalDetailPanel({
               {formatJournalDate(journal.createdAt)}
             </Text>
           </Space>
-          <Tag color={tagColorForVariant("neutral")}>净仓 {formatNumber(netPosition(journal.events))}</Tag>
+            <Tag color={tagColorForVariant("neutral")} style={{ fontFamily: monoFontFamily }}>净仓 {formatNumber(netPosition(journal.events))}</Tag>
         </Flex>
 
         <Descriptions

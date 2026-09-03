@@ -97,4 +97,55 @@ describe("QuickCaptureCard", () => {
       });
     });
   });
+
+  it("submits on Enter key without Shift", async () => {
+    const onRecord = vi.fn().mockResolvedValue({ ok: true });
+
+    render(
+      <QuickCaptureCard
+        journal={createJournal({
+          id: "journal-1",
+          symbol: "BTCUSDT",
+          status: "open",
+          events: [],
+        })}
+        onRecord={onRecord}
+      />,
+    );
+
+    const textarea = screen.getByRole("textbox");
+    fireEvent.change(textarea, { target: { value: "测试内容" } });
+    fireEvent.keyDown(textarea, { key: "Enter", shiftKey: false });
+
+    await waitFor(() => {
+      expect(onRecord).toHaveBeenCalledWith({
+        type: "plan",
+        quantityInput: "",
+        priceInput: "",
+        content: "测试内容",
+      });
+    });
+  });
+
+  it("does not submit on Shift+Enter", async () => {
+    const onRecord = vi.fn();
+
+    render(
+      <QuickCaptureCard
+        journal={createJournal({
+          id: "journal-1",
+          symbol: "BTCUSDT",
+          status: "open",
+          events: [],
+        })}
+        onRecord={onRecord}
+      />,
+    );
+
+    const textarea = screen.getByRole("textbox");
+    fireEvent.change(textarea, { target: { value: "测试内容" } });
+    fireEvent.keyDown(textarea, { key: "Enter", shiftKey: true });
+
+    expect(onRecord).not.toHaveBeenCalled();
+  });
 });

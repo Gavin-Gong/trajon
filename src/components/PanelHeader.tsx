@@ -1,6 +1,7 @@
 import { Flex, Typography } from "antd";
 
 import { useReminderClock } from "../hooks/useReminderClock";
+import { monoFontFamily } from "../theme/useAppTheme";
 import { formatCalendarDate, formatClock } from "./JournalFormatters";
 
 const { Text } = Typography;
@@ -41,6 +42,7 @@ export function PanelHeader({
               fontWeight: 700,
               lineHeight: 1.1,
               letterSpacing: "0.08em",
+              fontFamily: monoFontFamily,
               fontVariantNumeric: "tabular-nums",
             }}
           >
@@ -53,6 +55,7 @@ export function PanelHeader({
               fontSize: 14,
               fontWeight: 600,
               lineHeight: 1,
+              fontFamily: monoFontFamily,
               fontVariantNumeric: "tabular-nums",
               whiteSpace: "nowrap",
             }}

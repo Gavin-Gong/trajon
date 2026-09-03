@@ -44,6 +44,10 @@
   background: rgba(15, 23, 42, 0.22);
 }
 
+.mono {
+  font-family: "JetBrains Mono", monospace;
+  font-variant-numeric: tabular-nums;
+}
 
 /* segmented */
 .ant-segmented {

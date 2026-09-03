@@ -1,5 +1,5 @@
 import { PushpinOutlined } from "@ant-design/icons";
-import { Button, Flex, message, Segmented, Space, Typography } from "antd";
+import { Button, Flex, message, Segmented, Space } from "antd";
 import { useEffect, useState } from "react";
 
 import { netPosition, type TradeJournal } from "../domain/journal";
@@ -10,7 +10,6 @@ import type { TradingJournalStore } from "./JournalStoreTypes";
 import { TimelineSection } from "./TimelineSection";
 
 const REVIEW_SAVE_SUCCESS_DURATION_SECONDS = 2;
-const { Text } = Typography;
 
 type WorkspaceTab = "capture" | "review";
 
