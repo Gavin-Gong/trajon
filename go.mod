@@ -3,8 +3,8 @@ module trajon
 go 1.27.1
 
 require (
-	github.com/egoist/mygo v0.4.6
-	github.com/oneo-me/onevra/source v0.2026.7
+	github.com/egoist/mygo v0.4.8
+	github.com/oneo-me/onevra/source v0.2026.8
 )
 
 require (
