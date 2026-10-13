@@ -72,8 +72,11 @@ type klineState struct {
 	replaySessionStarted    bool
 	replayComplete          bool
 	replayNextStep          time.Time
+	replaySpeed             float64
 	replayOrderQuantity     float64
 	replayAccount           market.ReplayAccount
+	replaySummaryOpen       bool
+	replaySummary           market.ReplayStatistics
 	replayTradeMessage      string
 	replayTradeMessageUntil time.Time
 	replayLineHandles       [4]ui.Handle
@@ -89,6 +92,7 @@ func newKlineState(count int) klineState {
 		hover:               -1,
 		showVolume:          true,
 		timeframe:           "1h",
+		replaySpeed:         1,
 		replayOrderQuantity: 1,
 	}
 }

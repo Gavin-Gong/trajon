@@ -40,7 +40,7 @@ func replaceReplaySetting(tt *ui.Tester, value string) {
 
 func TestReplaySettingsDialogSavesAndReopens(t *testing.T) {
 	app, tt := newReplaySettingsTester()
-	if app.replaySettings != (replaySettings{InitialCapital: 10000, Leverage: 1}) {
+	if app.replaySettings != (replaySettings{InitialCapital: 30000, Leverage: 1}) {
 		t.Fatalf("unexpected defaults: %+v", app.replaySettings)
 	}
 	bar, _ := tt.Find("K 线图操作栏")
@@ -52,6 +52,11 @@ func TestReplaySettingsDialogSavesAndReopens(t *testing.T) {
 	clickReplaySetting(t, tt, "回放设置")
 	if !app.replaySettingsOpen || !tt.Focused("初始资金") {
 		t.Fatal("opening settings did not focus the initial capital input")
+	}
+	tt.Key(ui.Cmd, ui.KeyA)
+	tt.Key(ui.Cmd, ui.KeyC)
+	if tt.Clipboard() != "30000" {
+		t.Fatalf("default initial capital input = %q, want 30000", tt.Clipboard())
 	}
 	replaceReplaySetting(tt, "25000.50")
 	for range 3 {
@@ -194,6 +199,7 @@ func TestReplaySettingsAvailableOnlyWithReplayStart(t *testing.T) {
 		clickReplaySetting(t, tt, "重置")
 		assertSettings(false, klineReplayActionBarWidth)
 		clickReplaySetting(t, tt, "结束")
+		clickReplaySetting(t, tt, "放弃")
 		assertSettings(true, klineActionBarWidth)
 		if app.replaySettings != (replaySettings{InitialCapital: 15000, Leverage: 2}) {
 			t.Fatal("ending replay lost the saved settings")
@@ -222,7 +228,7 @@ func TestReplaySettingsSurviveMarketSeriesChange(t *testing.T) {
 	clickReplaySetting(t, tt, "保存")
 	want := app.replaySettings
 	app.applyMarketSnapshot(market.Snapshot{
-		Instrument: binanceInstrumentCatalog[2],
+		Instrument: builtinInstrumentCatalog[0],
 		Interval:   "4h",
 		Candles:    demoCandles(),
 	})

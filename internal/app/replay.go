@@ -76,7 +76,7 @@ func (s *klineState) endReplay(count int) {
 
 func (a *application) startReplay(c *ui.Context) {
 	state := &a.chart
-	if !state.replayHasStart || state.replayComplete {
+	if !state.replayHasStart || state.replayComplete || state.replaySummaryOpen {
 		return
 	}
 	state.exitReplaySelection()
@@ -87,7 +87,7 @@ func (a *application) startReplay(c *ui.Context) {
 		return
 	}
 	state.actionPlaying = true
-	state.replayNextStep = c.Now().Add(replayStepInterval)
+	state.replayNextStep = c.Now().Add(replayInterval(state.replaySpeed))
 }
 
 func (a *application) advanceReplayFrame(c *ui.Context) {
@@ -96,7 +96,7 @@ func (a *application) advanceReplayFrame(c *ui.Context) {
 		return
 	}
 	if state.replayNextStep.IsZero() {
-		state.replayNextStep = c.Now().Add(replayStepInterval)
+		state.replayNextStep = c.Now().Add(replayInterval(state.replaySpeed))
 	}
 	if !c.Now().Before(state.replayNextStep) {
 		beforeTrades := len(state.replayAccount.Trades)
@@ -113,7 +113,7 @@ func (a *application) advanceReplayFrame(c *ui.Context) {
 			c.Toast("回放结束")
 			return
 		}
-		state.replayNextStep = c.Now().Add(replayStepInterval)
+		state.replayNextStep = c.Now().Add(replayInterval(state.replaySpeed))
 	}
 	c.After(max(time.Millisecond, state.replayNextStep.Sub(c.Now())))
 }

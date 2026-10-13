@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"math"
 	"testing"
 	"time"
@@ -66,6 +67,10 @@ func TestReplayPositionDragCreatesLongAndShortBrackets(t *testing.T) {
 				t.Fatal("preview placed an exit before pointer release")
 			}
 			draftPrice := app.chart.replayLineDrag.Price
+			caption := fmt.Sprintf("%s %+.2f", tc.label, (draftPrice-100)*app.chart.replayAccount.Quantity)
+			if _, ok := tt.Find(caption); !ok {
+				t.Fatalf("preview missing P&L caption %q; texts: %v", caption, tt.Texts())
+			}
 			tt.Release(x+30, y+tc.dy)
 			exit := app.chart.replayAccount.TakeProfit
 			if tc.kind == replayStopLossLine {
@@ -74,6 +79,9 @@ func TestReplayPositionDragCreatesLongAndShortBrackets(t *testing.T) {
 			if math.Abs(exit.Price-draftPrice) > .0001 || !exit.ActiveAfter.Equal(app.candles[120].Time) || app.chart.replayLineDrag.Source != 0 {
 				t.Fatalf("release did not commit the preview: exit=%+v draft=%v", exit, draftPrice)
 			}
+			if _, ok := tt.Find(caption); !ok {
+				t.Fatalf("committed bracket missing P&L caption %q", caption)
+			}
 			if app.chart.Start != initialStart || app.chart.dragging || app.chart.annotationGesture != annotationGestureNone || len(app.chart.annotations) != 0 {
 				t.Fatal("bracket drag panned the chart or created an annotation")
 			}
@@ -81,7 +89,66 @@ func TestReplayPositionDragCreatesLongAndShortBrackets(t *testing.T) {
 	}
 }
 
-func TestReplayBracketLinesAdjustCancelAndDoNotOverlapTags(t *testing.T) {
+func TestReplayBracketCaptionsTrackRemainingPositionPnL(t *testing.T) {
+	for _, tc := range []struct {
+		name                      string
+		side, closeSide           market.ReplaySide
+		takeProfit, stopLoss, add float64
+	}{
+		{"long", market.ReplayBuy, market.ReplaySell, 120, 80, 110},
+		{"short", market.ReplaySell, market.ReplayBuy, 80, 120, 90},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			app, tt := newReplayPositionTester(t, tc.side)
+			app.replaySettings.Leverage = 3 // Leverage must not multiply P&L.
+			stamp := app.candles[120].Time
+			if err := app.chart.replayAccount.SetExit(market.ReplayTakeProfit, tc.takeProfit, stamp); err != nil {
+				t.Fatal(err)
+			}
+			if err := app.chart.replayAccount.SetExit(market.ReplayStopLoss, tc.stopLoss, stamp); err != nil {
+				t.Fatal(err)
+			}
+			previousProfit, previousLoss := "", ""
+			assertCaptions := func(profit, loss string) {
+				t.Helper()
+				app.chart.replayOrderQuantity = 99 // Use held quantity, not the order input.
+				tt.Frame()
+				for _, caption := range []string{profit, loss} {
+					if _, ok := tt.Find(caption); !ok {
+						t.Fatalf("missing P&L caption %q; texts: %v", caption, tt.Texts())
+					}
+				}
+				for _, caption := range []string{
+					fmt.Sprintf("止盈 %g", tc.takeProfit), fmt.Sprintf("止损 %g", tc.stopLoss),
+					previousProfit, previousLoss,
+				} {
+					if _, ok := tt.Find(caption); caption != "" && ok {
+						t.Fatalf("price or stale P&L caption %q remained visible", caption)
+					}
+				}
+				previousProfit, previousLoss = profit, loss
+			}
+			assertCaptions("止盈 +20.00", "止损 -20.00")
+			app.candles[120].Close = tc.add
+			app.chart.replayOrderQuantity = 1
+			if _, err := app.placeReplayTrade(tc.side); err != nil {
+				t.Fatal(err)
+			}
+			assertCaptions("止盈 +30.00", "止损 -50.00")
+			app.candles[120].Close = 100
+			app.chart.replayOrderQuantity = .5
+			if _, err := app.placeReplayTrade(tc.closeSide); err != nil {
+				t.Fatal(err)
+			}
+			if app.chart.replayAccount.RealizedPnL != -2.5 {
+				t.Fatal("partial close did not realize the expected loss")
+			}
+			assertCaptions("止盈 +22.50", "止损 -37.50") // Exclude previously realized P&L.
+		})
+	}
+}
+
+func TestReplayBracketLinesAdjustCancelAndAlignTagsRight(t *testing.T) {
 	app, tt := newReplayPositionTester(t, market.ReplayBuy)
 	dragReplayLine(t, tt, "仓位线", -45)
 	dragReplayLine(t, tt, "仓位线", 45)
@@ -91,10 +158,11 @@ func TestReplayBracketLinesAdjustCancelAndDoNotOverlapTags(t *testing.T) {
 		t.Fatal("dragging an existing take-profit line did not update its price")
 	}
 	closePosition, _ := tt.Find("平仓")
-	closeProfit, _ := tt.Find("取消止盈")
-	closeLoss, _ := tt.Find("取消止损")
-	if closeLoss.X+closeLoss.W >= closeProfit.X || closeProfit.X+closeProfit.W >= closePosition.X {
-		t.Fatal("neighboring line tags overlapped horizontally")
+	for _, label := range []string{"取消止盈", "取消止损"} {
+		button, ok := tt.Find(label)
+		if !ok || math.Abs(float64(button.X+button.W-closePosition.X-closePosition.W)) > .01 {
+			t.Fatalf("%s tag is not right-aligned with the position tag: button=%+v position=%+v", label, button, closePosition)
+		}
 	}
 	clickReplaySetting(t, tt, "取消止盈")
 	if app.chart.replayAccount.TakeProfit.Price != 0 || app.chart.replayAccount.StopLoss.Price == 0 || app.chart.replayAccount.Quantity != 1 {
@@ -201,16 +269,24 @@ func TestReplayTriggeredExitCancelsAnInFlightDrag(t *testing.T) {
 	}
 }
 
-func TestReplayBracketTagsStayInTheMinimumChartViewport(t *testing.T) {
-	_, tt := newReplayPositionTester(t, market.ReplayBuy)
+func TestReplayBracketTagsStayCompactAndRightAlignedAcrossViewports(t *testing.T) {
+	app, tt := newReplayPositionTester(t, market.ReplayBuy)
 	dragReplayLine(t, tt, "仓位线", -45)
 	dragReplayLine(t, tt, "仓位线", 45)
-	tt.SetSize(420, 520)
-	chart, _ := tt.Find("BTC/USDT K 线图")
-	for _, label := range []string{"平仓", "取消止盈", "取消止损"} {
-		button, ok := tt.Find(label)
-		if !ok || button.X < chart.X || button.X+button.W > chart.X+chart.W || button.Y < chart.Y || button.Y+button.H > chart.Y+chart.H {
-			t.Fatalf("%s is outside the resized chart: %+v", label, button)
+	for _, width := range []int{900, 420, 900} {
+		tt.SetSize(width, 520)
+		chart, _ := tt.Find("BTC/USDT K 线图")
+		g := currentKlineGeometry(app)
+		wantRight := chart.X + g.left + g.width - 15 // Shared tag inset plus border/padding.
+		for _, pair := range [][2]string{{"平仓", "仓位线"}, {"取消止盈", "止盈"}, {"取消止损", "止损"}} {
+			button, ok := tt.Find(pair[0])
+			line, lineOK := tt.Find(pair[1])
+			if !ok || !lineOK || button.X < chart.X || button.X+button.W > chart.X+chart.W || button.Y < chart.Y || button.Y+button.H > chart.Y+chart.H {
+				t.Fatalf("%s is outside the resized chart at width %d: %+v", pair[0], width, button)
+			}
+			if button.W != 18 || button.H != 18 || math.Abs(float64(button.X+button.W-wantRight)) > .01 || math.Abs(float64(button.Y+button.H/2-line.Y-line.H/2)) > .01 {
+				t.Fatalf("%s tag is not compact, centered on its line, and right-aligned at width %d: button=%+v line=%+v wantRight=%v", pair[0], width, button, line, wantRight)
+			}
 		}
 	}
 }

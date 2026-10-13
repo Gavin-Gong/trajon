@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"math"
 	"strconv"
 
@@ -195,7 +196,6 @@ func (a *application) replayPositionLines(c *ui.Context) {
 		return
 	}
 	prices := a.replayLinePrices()
-	tagRight := float32(12)
 	for kind := replayPositionLine; kind <= replayStopLossLine; kind++ {
 		price := prices[kind]
 		if price <= 0 {
@@ -205,14 +205,15 @@ func (a *application) replayPositionLines(c *ui.Context) {
 		closeLabel := "平仓"
 		if kind != replayPositionLine {
 			label = replayExitLabel(replayExitKind(kind))
-			caption, closeLabel = label+" "+strconv.FormatFloat(price, 'g', 8, 64), "取消"+label
+			pnl := (price - state.replayAccount.AveragePrice) * state.replayAccount.Quantity
+			caption, closeLabel = fmt.Sprintf("%s %+.2f", label, pnl), "取消"+label
 			color = ui.Hex("#20a36a")
 			if kind == replayStopLossLine {
 				color = ui.Hex("#e5535d")
 			}
 		}
-		textWidth, _ := c.MeasureText(0, ui.Span{Text: caption, Size: 11})
-		width := min(float32(180), textWidth+38)
+		textWidth, _ := c.MeasureText(0, ui.Span{Text: caption, Size: 10})
+		width := min(float32(180), textWidth+30)
 		y := g.top + float32((high-price)/(high-low))*g.priceHeight
 		line := ui.Box(c.Key(kind)).Absolute().Left(g.left).Top(y-6).Size(g.width, 12).
 			Bind(&state.replayLineHandles[kind]).Focusable().Role(ui.RoleGroup).Label(label).
@@ -232,11 +233,11 @@ func (a *application) replayPositionLines(c *ui.Context) {
 			}
 		})
 		line.Children(func() {
-			ui.Row(c.Key("tag")).Absolute().Right(tagRight).Top(-6).Size(width, 24).
-				Bind(&state.replayLineTagHandles[kind]).Padding(0, 2, 0, 8).Gap(4).AlignItems(ui.Center).
-				Radius(4).Border(1, color).Background(c.Theme().Background).Children(func() {
-				components.Text(c, caption).FontSize(11).TextColor(color).SingleLine().Grow(1).MinWidth(0)
-				components.Button(c.Key("close"), "", components.ButtonGhost).Size(22, 22).Padding(0).Radius(3).
+			ui.Row(c.Key("tag")).Absolute().Right(12).Top(-4).Size(width, 20).
+				Bind(&state.replayLineTagHandles[kind]).Padding(0, 2, 0, 6).Gap(2).AlignItems(ui.Center).
+				Radius(3).Border(1, color).Background(c.Theme().Background).Children(func() {
+				components.Text(c, caption).FontSize(10).TextColor(color).SingleLine().Grow(1).MinWidth(0)
+				components.Button(c.Key("close"), "", components.ButtonGhost).Size(18, 18).Padding(0).Radius(2).
 					Bind(&state.replayLineCloseHandles[kind]).Label(closeLabel).TextColor(color).
 					OnClick(func() {
 						if kind == replayPositionLine {
@@ -246,10 +247,9 @@ func (a *application) replayPositionLines(c *ui.Context) {
 							state.replayLineDrag = replayLineDrag{}
 						}
 					}).Children(func() {
-					components.Icon(c, lucide.X).Size(12, 12)
+					components.Icon(c, lucide.X).Size(10, 10)
 				})
 			})
 		})
-		tagRight += width + 8 // Tags cannot overlap when bracket prices are close.
 	}
 }

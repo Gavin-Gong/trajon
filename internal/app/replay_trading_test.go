@@ -26,7 +26,7 @@ func TestReplayTradingControlsAreCompactAndFollowSession(t *testing.T) {
 	tt.Frame()
 	bar, _ := tt.Find("K 线图操作栏")
 	previousX := float32(-1)
-	for _, label := range []string{"播放", "重置", "结束", "下单数量", "买入", "卖出"} {
+	for _, label := range []string{"播放", "播放速度", "下单数量", "买入", "卖出", "重置", "结束"} {
 		control, ok := tt.Find(label)
 		if !ok || control.X < bar.X || control.X+control.W > bar.X+bar.W || control.Y < bar.Y || control.Y+control.H > bar.Y+bar.H || control.X <= previousX {
 			t.Fatalf("%s out of order or outside bar: bar=%+v control=%+v", label, bar, control)
@@ -34,7 +34,7 @@ func TestReplayTradingControlsAreCompactAndFollowSession(t *testing.T) {
 		if control.H < 27 || control.H > 29 {
 			t.Fatalf("%s height=%v, want compact height near 28", label, control.H)
 		}
-		previousX = control.X
+		previousX = control.X + control.W
 	}
 	clickReplaySetting(t, tt, "下单数量")
 	replaceReplaySetting(tt, "0.25")
@@ -45,10 +45,21 @@ func TestReplayTradingControlsAreCompactAndFollowSession(t *testing.T) {
 		t.Fatal("quantity input lost focus or its edit across rebuilds")
 	}
 	tt.Key(0, ui.KeyUp)
-	if app.chart.replayOrderQuantity != .26 {
-		t.Fatal("quantity input did not step up from the keyboard")
+	if app.chart.replayOrderQuantity != 1.25 {
+		t.Fatal("quantity input did not step up by 1 from the keyboard")
 	}
 	tt.Key(0, ui.KeyDown)
+	if app.chart.replayOrderQuantity != .25 {
+		t.Fatal("quantity input did not step down by 1 from the keyboard")
+	}
+	clickReplaySetting(t, tt, "下单数量 Increase")
+	if app.chart.replayOrderQuantity != 1.25 {
+		t.Fatal("quantity stepper did not increase by 1")
+	}
+	clickReplaySetting(t, tt, "下单数量 Decrease")
+	if app.chart.replayOrderQuantity != .25 {
+		t.Fatal("quantity stepper did not decrease by 1")
+	}
 	// Clicking the buy button must use the draft without requiring Enter.
 	clickReplaySetting(t, tt, "买入")
 	if account := app.chart.replayAccount; account.Quantity != .25 || len(account.Trades) != 1 {
@@ -65,6 +76,7 @@ func TestReplayTradingControlsAreCompactAndFollowSession(t *testing.T) {
 		t.Fatal("reset did not clear trades while preserving order quantity")
 	}
 	clickReplaySetting(t, tt, "结束")
+	clickReplaySetting(t, tt, "放弃")
 	for range 3 {
 		tt.Frame()
 	}
@@ -219,7 +231,7 @@ func TestReplayTradingClearsWithSessionAndMarketSeries(t *testing.T) {
 			case "instrument", "timeframe":
 				item, interval := app.currentInstrument, app.chart.timeframe
 				if mode == "instrument" {
-					item = binanceInstrumentCatalog[2]
+					item = builtinInstrumentCatalog[0]
 				} else {
 					interval = "4h"
 				}

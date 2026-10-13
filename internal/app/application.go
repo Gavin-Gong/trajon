@@ -22,6 +22,7 @@ type application struct {
 	replaySettingsDraft  replaySettings
 	replaySettingsOpen   bool
 	replaySettingsButton ui.Handle
+	replayEndButton      ui.Handle
 
 	currentInstrument      instrument
 	instrumentPickerOpen   bool
@@ -29,6 +30,10 @@ type application struct {
 	instrumentPickerTab    instrumentTab
 	instrumentPickerCursor int
 	instrumentPickerList   components.ListState
+	instrumentSearch       instrumentSearchState
+	instrumentHistory      []instrument
+	instrumentHistoryStore *instrumentHistoryStore
+	pendingHistoryIdentity string
 
 	window                   *mygo.Window
 	marketUpdates            chan market.Snapshot
@@ -72,6 +77,20 @@ func Run() {
 		dataSources:       defaults.NewRegistry(nil),
 	}
 	app.marketLoader = market.NewLoader(app.dataSources, app.publishMarketSnapshot)
+	if path, err := instrumentHistoryPath(); err != nil {
+		log.Printf("instrument history path: %v", err)
+	} else {
+		app.instrumentHistory, err = loadInstrumentHistory(path)
+		if err != nil {
+			log.Printf("load instrument history: %v", err)
+		}
+		app.instrumentHistoryStore = newInstrumentHistoryStore(path)
+		defer func() {
+			if err := app.instrumentHistoryStore.Close(); err != nil {
+				log.Printf("close instrument history: %v", err)
+			}
+		}()
+	}
 
 	mygo.App.WhenReady(func() {
 		shell := sidebar.NewShell(sidebar.ShellOptions{
@@ -80,9 +99,9 @@ func Run() {
 			Height:       760,
 			MinWidth:     760,
 			MinHeight:    520,
-			LeftWidth:    248,
-			LeftMinWidth: 200,
-			LeftMaxWidth: 340,
+			LeftWidth:    165,
+			LeftMinWidth: 133,
+			LeftMaxWidth: 227,
 			Left:         app.left,
 			Content:      app.content,
 			ContentTitle: app.contentTitle,
@@ -90,6 +109,7 @@ func Run() {
 		})
 		app.window = shell.Window()
 		app.window.OnClosed(func() {
+			app.stopInstrumentSearch()
 			if app.marketLoader != nil {
 				app.marketLoader.Close()
 			}
@@ -160,6 +180,7 @@ func (a *application) content(c *ui.Context) {
 	})
 	a.instrumentPickerDialog(c)
 	a.replaySettingsDialog(c)
+	a.replaySummaryDialog(c)
 }
 
 func (a *application) pageTitle() string {

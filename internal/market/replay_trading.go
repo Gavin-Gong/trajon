@@ -87,33 +87,14 @@ func (a *ReplayAccount) Execute(settings ReplayTradingSettings, trade ReplayTrad
 		return ErrInvalidReplayTrade
 	}
 
-	delta := trade.Quantity
-	if trade.Side == ReplaySell {
-		delta = -delta
-	}
-	next := *a
-	next.Quantity += delta
-	sameDirection := a.Quantity == 0 || (a.Quantity > 0) == (delta > 0)
-	if sameDirection {
-		total := math.Abs(next.Quantity)
-		next.AveragePrice = a.AveragePrice*(math.Abs(a.Quantity)/total) + trade.Price*(trade.Quantity/total)
-	} else {
-		closed := min(math.Abs(a.Quantity), trade.Quantity)
-		next.RealizedPnL += closed * (trade.Price - a.AveragePrice) * math.Copysign(1, a.Quantity)
-		switch {
-		case next.Quantity == 0:
-			next.AveragePrice = 0
-		case trade.Quantity > math.Abs(a.Quantity):
-			next.AveragePrice = trade.Price
-		}
-	}
-
+	next, _, _ := a.positionAfter(trade)
 	equity := next.Equity(settings.InitialCapital, trade.Price)
 	margin := math.Abs(next.Quantity) * (trade.Price / settings.Leverage)
 	if !replayFinite(next.Quantity) || !replayFinite(next.AveragePrice) ||
 		!replayFinite(next.RealizedPnL) || !replayFinite(equity) || !replayFinite(margin) {
 		return ErrInvalidReplayTrade
 	}
+	sameDirection := a.Quantity == 0 || (a.Quantity > 0) == (trade.Side == ReplayBuy)
 	opensPosition := sameDirection || trade.Quantity > math.Abs(a.Quantity)
 	if opensPosition && margin > equity {
 		return ErrInsufficientReplayCapital
@@ -125,6 +106,32 @@ func (a *ReplayAccount) Execute(settings ReplayTradingSettings, trade ReplayTrad
 	a.Quantity, a.AveragePrice, a.RealizedPnL = next.Quantity, next.AveragePrice, next.RealizedPnL
 	a.Trades = append(a.Trades, trade)
 	return nil
+}
+
+// positionAfter applies a validated fill without modifying the account or its
+// trade slice. The returned P&L and flag describe only its closing portion.
+func (a ReplayAccount) positionAfter(trade ReplayTrade) (next ReplayAccount, pnl float64, closed bool) {
+	delta := trade.Quantity
+	if trade.Side == ReplaySell {
+		delta = -delta
+	}
+	next = a
+	next.Quantity += delta
+	if a.Quantity == 0 || (a.Quantity > 0) == (delta > 0) {
+		total := math.Abs(next.Quantity)
+		next.AveragePrice = a.AveragePrice*(math.Abs(a.Quantity)/total) + trade.Price*(trade.Quantity/total)
+		return next, 0, false
+	}
+
+	pnl = min(math.Abs(a.Quantity), trade.Quantity) * (trade.Price - a.AveragePrice) * math.Copysign(1, a.Quantity)
+	next.RealizedPnL += pnl
+	switch {
+	case next.Quantity == 0:
+		next.AveragePrice = 0
+	case trade.Quantity > math.Abs(a.Quantity):
+		next.AveragePrice = trade.Price
+	}
+	return next, pnl, true
 }
 
 func replayFinite(value float64) bool {

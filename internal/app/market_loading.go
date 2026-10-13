@@ -36,6 +36,8 @@ func (a *application) selectInstrument(item instrument) {
 		return
 	}
 	a.pendingPreviousTimeframe = ""
+	a.stopInstrumentSearch()
+	a.pendingHistoryIdentity = item.Identity()
 	a.instrumentPickerOpen = false
 	a.instrumentPickerQuery = ""
 	a.instrumentPickerTab = instrumentTabAll
@@ -113,14 +115,19 @@ func (a *application) applyMarketSnapshot(snapshot market.Snapshot) {
 	if committed {
 		newSeries := !hadCandles || previousIdentity != snapshot.Instrument.Identity() || previousInterval != snapshot.Interval
 		a.currentInstrument = snapshot.Instrument
+		if a.pendingHistoryIdentity == snapshot.Instrument.Identity() {
+			a.rememberInstrument(snapshot.Instrument)
+			a.pendingHistoryIdentity = ""
+		}
 		if snapshot.Interval != "" {
 			a.chart.timeframe = snapshot.Interval
 		}
 		if newSeries {
-			showVolume := a.chart.showVolume
+			showVolume, replaySpeed := a.chart.showVolume, a.chart.replaySpeed
 			a.chart = newKlineState(len(a.candles))
 			a.chart.timeframe = snapshot.Interval
 			a.chart.showVolume = showVolume
+			a.chart.replaySpeed = replaySpeed
 		}
 		a.pendingPreviousTimeframe = ""
 	}

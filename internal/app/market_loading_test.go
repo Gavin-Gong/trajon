@@ -54,7 +54,7 @@ func TestPrependedHistoryKeepsReplayStartAndCutoffOnTheSameCandles(t *testing.T)
 }
 
 func TestMarketErrorIdentifiesSourceAndExposesCause(t *testing.T) {
-	item := binanceInstrumentCatalog[8]
+	item := defaultInstrument()
 	request := candleRequest{Instrument: item, Interval: "1h", Limit: binanceCandleLimit}
 	app := &application{
 		currentInstrument: item,

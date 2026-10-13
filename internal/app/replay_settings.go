@@ -11,7 +11,7 @@ import (
 type replaySettings = market.ReplayTradingSettings
 
 func defaultReplaySettings() replaySettings {
-	return replaySettings{InitialCapital: 10000, Leverage: 1}
+	return replaySettings{InitialCapital: 30000, Leverage: 1}
 }
 
 func (s *klineState) canEditReplaySettings() bool {

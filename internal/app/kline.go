@@ -15,9 +15,10 @@ const (
 	klineToolbarHeight        = float32(40)
 	klineRightGutter          = float32(72)
 	klineActionBarWidth       = float32(72)
-	klineReplayQuantityWidth  = float32(88)
+	klineReplayQuantityWidth  = float32(72)
 	klineReplayTradeBarWidth  = klineReplayQuantityWidth + 2*28 + 4*4 + 1
-	klineReplayActionBarWidth = float32(104) + klineReplayTradeBarWidth
+	klineReplaySpeedWidth     = float32(56)
+	klineReplayActionBarWidth = float32(104) + klineReplayTradeBarWidth + klineReplaySpeedWidth + 2*4 + 1
 	klineActionBarHeight      = float32(40)
 	klineActionBarInset       = float32(12)
 )
@@ -352,18 +353,18 @@ func (a *application) klineActionBar(c *ui.Context) {
 					a.startReplay(c)
 				}
 			})
+			a.replaySpeedControl(c)
+			a.replayTradingControls(c)
+			ui.Box(c.Key("replay-session-divider")).Size(1, 16).Background(c.Theme().Border)
 			klineActionIconButton(c.Key("replay-reset"), lucide.RotateCcw, "重置", false).
 				Disabled(!state.replaySessionStarted && !state.replayComplete && len(state.replayAccount.Trades) == 0).
 				OnClick(state.resetReplay)
 			klineActionIconButton(c.Key("replay-end"), lucide.Square, "结束", false).
-				OnClick(func() { state.endReplay(len(a.candles)) })
+				Bind(&a.replayEndButton).OnClick(a.openReplaySummary)
 		}
 		if state.canEditReplaySettings() {
 			klineActionIconButton(c.Key("replay-settings"), lucide.Settings2, "回放设置", false).
 				Bind(&a.replaySettingsButton).OnClick(a.openReplaySettings)
-		}
-		if state.replayHasStart {
-			a.replayTradingControls(c)
 		}
 	})
 }

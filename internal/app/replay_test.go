@@ -121,6 +121,7 @@ func TestReplaySelectionCanRestartAfterEndingReplay(t *testing.T) {
 	if err := tt.Click("结束"); err != nil {
 		t.Fatal(err)
 	}
+	clickReplaySetting(t, tt, "放弃")
 	if err := tt.Click("回放起点"); err != nil {
 		t.Fatal(err)
 	}
@@ -329,6 +330,7 @@ func TestReplayActionBarControlsFollowSession(t *testing.T) {
 		click("重置")
 		assertControls([]string{"播放", "重置", "结束"}, []string{"回放起点", "暂停", "回放设置"})
 		click("结束")
+		click("放弃")
 		assertControls([]string{"回放起点", "回放设置"}, []string{"播放", "暂停", "重置", "结束"})
 		if app.chart.replayHasStart || app.chart.replaySelecting || app.chart.actionPlaying {
 			t.Fatal("ending replay accidentally activated the returned start button")
@@ -371,6 +373,7 @@ func TestReplayEndReturnsToLatestAndUnlocksControls(t *testing.T) {
 			if err := tt.Click("结束"); err != nil {
 				t.Fatal(err)
 			}
+			clickReplaySetting(t, tt, "放弃")
 			if app.chart.replayHasStart || app.chart.replayComplete || app.chart.replaySessionStarted || app.chart.replayLocked() || app.chart.actionPlaying || !app.chart.replayNextStep.IsZero() {
 				t.Fatal("ending replay left an active session or scheduled playback step")
 			}
@@ -447,12 +450,12 @@ func TestReplayActionBarResizesAndClampsWithControls(t *testing.T) {
 				t.Fatal("expanding controls moved the action bar's center")
 			}
 			previousX := float32(-1)
-			for _, label := range []string{"播放", "重置", "结束", "下单数量", "买入", "卖出"} {
+			for _, label := range []string{"播放", "播放速度", "下单数量", "买入", "卖出", "重置", "结束"} {
 				button, ok := tt.Find(label)
 				if !ok || button.X < bar.X || button.X+button.W > bar.X+bar.W || button.Y < bar.Y || button.Y+button.H > bar.Y+bar.H || button.X <= previousX {
 					t.Fatalf("%s is outside the expanded bar or out of order: bar=%+v, button=%+v", label, bar, button)
 				}
-				previousX = button.X
+				previousX = button.X + button.W
 			}
 			if !pointerOverActionBar(&app.chart, bar.X+bar.W-3, bar.Y+bar.H/2) || pointerOverActionBar(&app.chart, bar.X+bar.W+1, bar.Y+bar.H/2) {
 				t.Fatal("expanded action bar hit region does not match its visible width")
@@ -469,6 +472,7 @@ func TestReplayActionBarResizesAndClampsWithControls(t *testing.T) {
 			if err := tt.Click("结束"); err != nil {
 				t.Fatal(err)
 			}
+			clickReplaySetting(t, tt, "放弃")
 			bar, ok = tt.Find("K 线图操作栏")
 			if !ok || bar.W != klineActionBarWidth || bar.X+bar.W/2 != center {
 				t.Fatalf("ending replay did not shrink the action bar around its center: %+v", bar)

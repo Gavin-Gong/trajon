@@ -366,7 +366,10 @@ func assertNeutralButtonBackground(t *testing.T, img *image.RGBA, bounds ui.Rect
 func newKlineToolbarTester() (*application, *ui.Tester) {
 	candles := demoCandles()
 	app := &application{candles: candles, chart: newKlineState(len(candles)), replaySettings: defaultReplaySettings()}
-	tt := ui.NewTester(func(c *ui.Context) { app.klineChart(c) }, 900, 560)
+	tt := ui.NewTester(func(c *ui.Context) {
+		app.klineChart(c)
+		app.replaySummaryDialog(c)
+	}, 900, 560)
 	tt.Frame() // settle chart dimensions so the toolbar can fill the chart width
 	return app, tt
 }

@@ -9,6 +9,11 @@ type CandleSource interface {
 	LoadCandles(ctx context.Context, request CandleRequest) ([]Candle, error)
 }
 
+// InstrumentSource optionally exposes a source's currently tradable catalog.
+type InstrumentSource interface {
+	LoadInstruments(ctx context.Context, marketType MarketType) ([]Instrument, error)
+}
+
 type Registry struct {
 	mu      sync.RWMutex
 	sources map[DataSourceID]CandleSource

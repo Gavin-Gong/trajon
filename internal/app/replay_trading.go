@@ -15,6 +15,8 @@ var errReplayTradingUnavailable = errors.New("replay trading unavailable")
 
 func (s *klineState) clearReplayTrading() {
 	s.replayAccount = market.ReplayAccount{}
+	s.replaySummaryOpen = false
+	s.replaySummary = market.ReplayStatistics{}
 	s.replayLineDrag = replayLineDrag{}
 	s.replayExitError = nil
 	s.replayTradeMessage = ""
@@ -23,7 +25,7 @@ func (s *klineState) clearReplayTrading() {
 
 func (a *application) canTradeReplay() bool {
 	state := &a.chart
-	return state.replayHasStart && !state.replaySelecting && !state.replayComplete &&
+	return state.replayHasStart && !state.replaySelecting && !state.replayComplete && !state.replaySummaryOpen &&
 		!a.marketLoading && state.replayEnd > 0 && state.replayEnd <= len(a.candles)
 }
 
@@ -99,10 +101,10 @@ func (a *application) replayTradeFeedback(c *ui.Context) {
 
 func (a *application) replayTradingControls(c *ui.Context) {
 	canTrade := a.canTradeReplay()
-	ui.Box(c).Size(1, 16).Background(c.Theme().Border)
+	ui.Box(c.Key("replay-trade-divider")).Size(1, 16).Background(c.Theme().Border)
 	ui.Box(c.Key("replay-order-quantity")).Size(klineReplayQuantityWidth, 28).FontSize(12).
 		Disabled(!canTrade).Children(func() {
-		components.NumberInput(c, &a.chart.replayOrderQuantity, 0, math.MaxFloat64, .01).
+		components.NumberInput(c, &a.chart.replayOrderQuantity, 0, math.MaxFloat64, 1).
 			Label("下单数量").FillWidth().Height(28)
 	})
 	klineActionIconButton(c.Key("replay-buy"), lucide.TrendingUp, "买入", false).
