@@ -17,6 +17,17 @@ type Strings struct {
 	Replay                     string
 	Navigation                 string
 	Settings                   string
+	CloseChangelog             string
+	ApplicationLogo            string
+	NewVersion                 string
+	Changelog                  string
+	NoReleaseNotes             string
+	UpdateAvailable            string
+	CheckingUpdates            string
+	UpdateCheckFailed          string
+	InstallUpdate              string
+	InstallingUpdate           string
+	UpdateInstallFailed        string
 	PagePlaceholder            string
 	Language                   string
 	SystemLanguage             string

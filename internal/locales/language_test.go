@@ -56,6 +56,7 @@ func TestCatalogsAreCompleteAndFormatsAcceptTheirArguments(t *testing.T) {
 	formats := map[string]int{
 		"ChooseInstrumentSymbol": 1, "HistoryInstrument": 1, "InstrumentLoadFailed": 2,
 		"MissingSource": 1, "NoCandles": 1, "CandleChart": 1,
+		"ApplicationLogo": 1, "NewVersion": 1,
 		"IncreaseNumber": 1, "DecreaseNumber": 1, "AdjustNumber": 1,
 	}
 	for _, language := range []Language{Chinese, English} {

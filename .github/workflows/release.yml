@@ -74,6 +74,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           MYGO_UPDATER_PRIVATE_KEY: ${{ secrets.MYGO_UPDATER_PRIVATE_KEY }}
         run: |
+          # MyGo embeds this version's CHANGELOG section in the update manifest.
+          # Use the draft's generated release notes unless a curated file exists.
+          if [ ! -f CHANGELOG.md ]; then
+            version="$(jq -er '.version' mygo.json)"
+            notes="$(gh release view "$GITHUB_REF_NAME" \
+              --repo "$GITHUB_REPOSITORY" --json body --jq '.body')"
+            if [ -z "$notes" ]; then
+              echo "::error::Release notes must not be empty."
+              exit 1
+            fi
+            printf '## %s\n\n' "$version" > CHANGELOG.md
+            # Level-two headings delimit versions in MyGo's changelog parser.
+            printf '%s\n' "$notes" | awk '{ sub(/^## /, "### "); print }' >> CHANGELOG.md
+          fi
           go run github.com/egoist/mygo/cmd/mygo build \
             -platform "darwin/arm64,darwin/amd64" \
             -upload

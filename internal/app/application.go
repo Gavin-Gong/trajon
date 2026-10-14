@@ -19,6 +19,9 @@ type application struct {
 	settingsOpen       bool
 	settingsButton     ui.Handle
 	settingsLanguage   ui.Handle
+	informationOpen    bool
+	informationButton  ui.Handle
+	updates            updateState
 	language           locales.Language
 	languagePreference locales.Preference
 	systemLocale       string
@@ -92,6 +95,10 @@ func Run() {
 		dataSources:       defaults.NewRegistry(nil),
 		// Shell owns the toolbar's title host, even while another page is active.
 		marketToolbarInTitle: true,
+		updates: updateState{
+			check:    checkAppUpdate,
+			relaunch: mygo.App.Relaunch,
+		},
 	}
 	app.marketLoader = market.NewLoader(app.dataSources, app.publishMarketSnapshot)
 	if path, err := instrumentHistoryPath(); err != nil {
@@ -130,7 +137,7 @@ func Run() {
 
 	mygo.App.WhenReady(func() {
 		shell := sidebar.NewShell(sidebar.ShellOptions{
-			Title:        "Trajon",
+			Title:        applicationName,
 			Width:        1120,
 			Height:       760,
 			MinWidth:     760,
@@ -146,7 +153,9 @@ func Run() {
 		app.shell = shell
 		shell.SetLabels(app.shellLabels())
 		app.window = shell.Window()
+		app.checkForUpdates()
 		app.window.OnClosed(func() {
+			app.closeUpdates()
 			app.closeIndicatorCalculations()
 			app.stopInstrumentSearch()
 			if app.marketLoader != nil {
@@ -181,6 +190,7 @@ func (a *application) leftToolbar(c *ui.Context) {
 	if sidebar.IconButton(c.Key("settings"), lucide.Settings(), a.text().Settings).Bind(&a.settingsButton).Clicked() {
 		a.settingsOpen = true
 	}
+	a.informationToolbarButton(c)
 }
 
 func (a *application) contentTitle(c *ui.Context) {
@@ -196,6 +206,7 @@ func (a *application) content(c *ui.Context) {
 }
 
 func (a *application) localizedContent(c *ui.Context) {
+	a.drainUpdateResults()
 	a.drainMarketUpdates()
 	if a.activePage != "market" {
 		a.advanceReplayFrame(c)
@@ -217,6 +228,7 @@ func (a *application) localizedContent(c *ui.Context) {
 	})
 
 	a.settingsDialog(c)
+	a.informationDialog(c)
 	a.instrumentPickerDialog(c)
 	a.indicatorsDialog(c)
 	a.replaySettingsDialog(c)
