@@ -5,12 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"trajon/internal/locales"
 	"trajon/internal/market"
 )
 
 func TestReplayPositionLineAndCloseUseWholePositionAtLatestClose(t *testing.T) {
 	for _, side := range []market.ReplaySide{market.ReplayBuy, market.ReplaySell} {
-		t.Run(replayPositionCaption(map[market.ReplaySide]float64{market.ReplayBuy: 2, market.ReplaySell: -2}[side]), func(t *testing.T) {
+		t.Run(replayPositionCaption(map[market.ReplaySide]float64{market.ReplayBuy: 2, market.ReplaySell: -2}[side], locales.For(locales.Chinese)), func(t *testing.T) {
 			app, tt := newKlineToolbarTester()
 			app.chart.Start = 100
 			app.chart.selectReplayStart(120, len(app.candles))
@@ -21,7 +22,7 @@ func TestReplayPositionLineAndCloseUseWholePositionAtLatestClose(t *testing.T) {
 				t.Fatal(err)
 			}
 			tt.Frame()
-			caption := replayPositionCaption(app.chart.replayAccount.Quantity)
+			caption := app.replayPositionCaption(app.chart.replayAccount.Quantity)
 			if _, ok := tt.Find(caption); !ok {
 				t.Fatalf("position tag %q missing", caption)
 			}
@@ -79,7 +80,7 @@ func TestReplayPositionLineTracksAverageAndDirection(t *testing.T) {
 		}
 		tt.Frame()
 		line, ok := tt.Find("仓位线")
-		if _, captionOK := tt.Find(replayPositionCaption(tc.held)); !captionOK || !ok {
+		if _, captionOK := tt.Find(app.replayPositionCaption(tc.held)); !captionOK || !ok {
 			t.Fatalf("position line/tag missing for quantity %v", tc.held)
 		}
 		low, high, _ := visibleKlinePriceRange(app.candles, &app.chart)

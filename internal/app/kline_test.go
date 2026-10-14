@@ -67,19 +67,26 @@ func TestKlineToolbarRendersAboveTheChart(t *testing.T) {
 	pair, pairOK := tt.Find("DEMO/USDT")
 	period, periodOK := tt.Find("15m")
 	trend, trendOK := tt.Find("趋势线")
-	deleteButton, deleteOK := tt.Find("删除标注")
-	if !pairOK || !periodOK || !trendOK || !deleteOK {
-		t.Fatal("toolbar is missing the trading pair, period selector, drawing tools, or delete action")
+	textButton, textOK := tt.Find("文本")
+	indicators, indicatorsOK := tt.Find("指标")
+	if !pairOK || !periodOK || !trendOK || !textOK || !indicatorsOK {
+		t.Fatal("toolbar is missing the trading pair, period selector, drawing tools, or indicators action")
+	}
+	if _, deleteOK := tt.Find("删除标注"); deleteOK {
+		t.Fatal("delete annotation button should not be rendered")
 	}
 	if _, selectOK := tt.Find("选择/平移"); selectOK {
 		t.Fatal("Select/Pan icon button should not be rendered")
 	}
 	toolbar, toolbarOK := tt.Find("K 线图工具栏")
-	if !toolbarOK || deleteButton.Y < toolbar.Y || deleteButton.Y+deleteButton.H > toolbar.Y+toolbar.H {
-		t.Fatalf("delete action is not inside the chart toolbar: toolbar=%+v, delete=%+v", toolbar, deleteButton)
+	if !toolbarOK || indicators.Y < toolbar.Y || indicators.Y+indicators.H > toolbar.Y+toolbar.H {
+		t.Fatalf("indicators action is not inside the chart toolbar: toolbar=%+v, indicators=%+v", toolbar, indicators)
 	}
-	if !(pair.X < period.X && period.X < trend.X && trend.X < deleteButton.X) {
-		t.Fatalf("toolbar order is wrong: pair x=%v, period x=%v, trend x=%v, delete x=%v", pair.X, period.X, trend.X, deleteButton.X)
+	if !(pair.X < period.X && period.X < trend.X && trend.X < textButton.X && textButton.X < indicators.X) {
+		t.Fatalf("toolbar order is wrong: pair=%+v, period=%+v, trend=%+v, text=%+v, indicators=%+v", pair, period, trend, textButton, indicators)
+	}
+	if gap := indicators.X - (textButton.X + textButton.W); gap > 20 {
+		t.Fatalf("indicators should follow the drawing tools and separator, not align to the far right: gap=%v", gap)
 	}
 	bar, barOK := tt.Find("K 线图操作栏")
 	replay, replayOK := tt.Find("回放起点")
@@ -103,6 +110,9 @@ func TestKlineActionBarFloatsAndCanBeDragged(t *testing.T) {
 	}
 	if bar.X != wantX || bar.Y != wantY {
 		t.Fatalf("action bar bounds = (%v, %v), want (%v, %v)", bar.X, bar.Y, wantX, wantY)
+	}
+	if gap := app.chart.chartHeight - (bar.Y + bar.H); gap != 52 {
+		t.Fatalf("action bar bottom gap = %v, want 52", gap)
 	}
 
 	initialStart := app.chart.Start
@@ -429,19 +439,19 @@ func TestMarketContentKeepsChartResponsive(t *testing.T) {
 	}
 }
 
-func TestKlineVolumeSwitchCanBeTurnedOff(t *testing.T) {
-	candles := demoCandles()
-	app := &application{candles: candles, chart: newKlineState(len(candles))}
-	tt := ui.NewTester(func(c *ui.Context) { app.marketPage(c) }, 1000, 700)
+func TestKlineVolumeCanBeTurnedOffInIndicators(t *testing.T) {
+	app, tt := newReplaySettingsTester()
 	if !app.chart.showVolume {
 		t.Fatal("volume should be visible by default")
 	}
-	if _, ok := tt.Find("成交量"); !ok {
-		t.Fatal("volume switch was not rendered")
+	clickReplaySetting(t, tt, "指标")
+	clickReplaySetting(t, tt, "显示 成交量")
+	if !app.chart.showVolume {
+		t.Fatal("unsaved edits changed the volume panel")
 	}
-	tt.Click("成交量")
+	clickReplaySetting(t, tt, "保存")
 	if app.chart.showVolume {
-		t.Fatal("clicking the volume switch did not turn the volume panel off")
+		t.Fatal("saving did not turn the volume panel off")
 	}
 }
 
@@ -566,11 +576,9 @@ func TestTrendLineToolCreatesEditsAndDeletesAnnotation(t *testing.T) {
 		t.Fatal("dragging the start handle also changed the end handle")
 	}
 
-	if err := tt.Click("删除标注"); err != nil {
-		t.Fatal(err)
-	}
+	tt.Key(0, ui.KeyDelete)
 	if len(app.chart.annotations) != 0 || app.chart.selectedAnnotation != 0 {
-		t.Fatal("delete toolbar action did not remove the selected trend line")
+		t.Fatal("Delete did not remove the selected trend line")
 	}
 }
 

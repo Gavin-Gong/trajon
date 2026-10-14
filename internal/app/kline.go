@@ -18,15 +18,17 @@ const (
 	klineReplayQuantityWidth  = float32(72)
 	klineReplayTradeBarWidth  = klineReplayQuantityWidth + 2*28 + 4*4 + 1
 	klineReplaySpeedWidth     = float32(56)
-	klineReplayActionBarWidth = float32(104) + klineReplayTradeBarWidth + klineReplaySpeedWidth + 2*4 + 1
+	klineReplayDividerMargin  = float32(12)
+	klineReplayActionBarWidth = float32(104) + klineReplayTradeBarWidth + klineReplaySpeedWidth + 2*4 + 1 + 4*klineReplayDividerMargin
 	klineActionBarHeight      = float32(40)
-	klineActionBarInset       = float32(12)
+	klineActionBarInset       = float32(52)
 )
 
 type klineGeometry struct {
 	left, top, width, priceHeight float32
 	priceBottom                   float32
 	volumeTop, volumeBottom       float32
+	macdTop, macdBottom           float32
 	bottom                        float32
 }
 
@@ -35,19 +37,29 @@ func geometryFor(width, height float32, showVolume bool) klineGeometry {
 }
 
 func geometryForMode(width, height float32, showVolume, toolbarInChart bool) klineGeometry {
+	return geometryForIndicators(width, height, showVolume, false, toolbarInChart)
+}
+
+func (s *klineState) geometry(width, height float32, toolbarInChart bool) klineGeometry {
+	return geometryForIndicators(width, height, s.showVolume, s.indicators.MACDEnabled, toolbarInChart)
+}
+
+func geometryForIndicators(width, height float32, showVolume, showMACD, toolbarInChart bool) klineGeometry {
 	top := float32(8)
 	if toolbarInChart {
 		top = 58
 	}
 	g := klineGeometry{left: 8, top: top, width: max(0, width-klineRightGutter), bottom: height - 28}
+	g.priceBottom = g.bottom
+	if showMACD {
+		g.macdBottom = g.priceBottom
+		g.macdTop = g.macdBottom - min(float32(104), height*.24)
+		g.priceBottom = g.macdTop - 26
+	}
 	if showVolume {
-		volumeHeight := min(float32(82), height*.2)
-		gap := float32(26)
-		g.volumeBottom = g.bottom
-		g.volumeTop = g.volumeBottom - volumeHeight
-		g.priceBottom = g.volumeTop - gap
-	} else {
-		g.priceBottom = g.bottom
+		g.volumeBottom = g.priceBottom
+		g.volumeTop = g.volumeBottom - min(float32(82), height*.2)
+		g.priceBottom = g.volumeTop - 26
 	}
 	g.priceHeight = max(48, g.priceBottom-g.top)
 	return g
@@ -61,6 +73,11 @@ func (a *application) marketPage(c *ui.Context) {
 }
 
 func (a *application) klineChart(c *ui.Context) {
+	components.WithLocalization(c, a.componentLocalization(), func() { a.localizedKlineChart(c) })
+}
+
+func (a *application) localizedKlineChart(c *ui.Context) {
+	a.ensureIndicators()
 	a.advanceReplayFrame(c)
 	t := c.Theme()
 	state := &a.chart
@@ -69,12 +86,12 @@ func (a *application) klineChart(c *ui.Context) {
 		cursor = ui.CursorCrosshair
 	}
 	currentInstrument := a.displayInstrument()
-	description := "滚轮缩放，拖动浏览历史；趋势线点击起点后移动预览，再点击终点完成"
+	description := a.text().ChartDescription
 	if state.replaySelecting {
-		description = "拖动浏览历史，点击 K 线选择回放起点，按 Esc 退出"
+		description = a.text().ReplaySelectionDescription
 	}
 	chart := ui.Box(c).Key("kline-chart").Fill().
-		Cursor(cursor).Focusable().Label(currentInstrument.Symbol + " K 线图").
+		Cursor(cursor).Focusable().Label(fmt.Sprintf(a.text().CandleChart, currentInstrument.Symbol)).
 		Description(description).Bind(&state.chartHandle)
 	if state.replaySelecting {
 		chart.OnShortcut(0, ui.KeyEscape, state.exitReplaySelection)
@@ -100,7 +117,7 @@ func (a *application) klineChart(c *ui.Context) {
 			}
 			return false
 		}
-		g := geometryForMode(state.plotWidth+klineRightGutter, state.chartHeight, state.showVolume, !a.marketToolbarInTitle)
+		g := state.geometry(state.plotWidth+klineRightGutter, state.chartHeight, !a.marketToolbarInTitle)
 		if state.plotWidth <= 0 || state.chartHeight <= 0 {
 			return false
 		}
@@ -259,14 +276,14 @@ func (a *application) klineChart(c *ui.Context) {
 		chart.Cursor(ui.CursorGrabbing)
 	}
 	chart.Draw(func(p *ui.Painter, r ui.Rect) {
-		g := geometryForMode(r.W, r.H, state.showVolume, !a.marketToolbarInTitle)
+		g := state.geometry(r.W, r.H, !a.marketToolbarInTitle)
 		if state.chartWidth != r.W || state.chartHeight != r.H {
 			state.chartWidth = r.W
 			state.chartHeight = r.H
 			c.Invalidate()
 		}
 		state.plotWidth = g.width
-		drawKline(p, r, g, a.candles, state, t)
+		drawKline(p, r, g, a.candles, state, t, a.text().Volume)
 		drawReplaySelection(p, r, g, state, t)
 	})
 	chart.Children(func() {
@@ -290,29 +307,30 @@ func (a *application) klineActionBar(c *ui.Context) {
 	if state.replayHasStart {
 		width = klineReplayActionBarWidth
 	}
-	if state.actionBarPositioned {
-		// Keep the bar's center when the replay controls appear or disappear.
-		state.actionBarX += (state.actionBarWidth - width) / 2
-	}
 	state.actionBarWidth = width
 	bar := ui.Row(c).Key("kline-action-bar").Size(width, klineActionBarHeight).
 		Padding(6).Gap(4).AlignItems(ui.Center).Justify(ui.Center).
 		Radius(klineActionBarHeight/2).Background(c.Theme().Background.Alpha(.78)).
 		Border(1, c.Theme().Border.Alpha(.55)).
 		Shadow(0, 2, 10, 0, c.Theme().Text.Alpha(.1)).
-		Role(ui.RoleGroup).Label("K 线图操作栏").Cursor(ui.CursorGrab)
+		Role(ui.RoleGroup).Label(a.text().ChartActions).Cursor(ui.CursorGrab)
 
 	if chartBounds.W > 0 && chartBounds.H > 0 {
-		if !state.actionBarPositioned {
-			state.actionBarX, state.actionBarY = defaultKlineActionBarPosition(chartBounds, width)
-			state.actionBarPositioned = true
-		}
+		// Anchor to the current chart size; dragging adds an offset from center/bottom.
+		// Keep the offset independent of clamping so shrinking and expanding do not drift.
+		x, y := defaultKlineActionBarPosition(chartBounds, width)
+		state.actionBarX = x + state.actionBarOffsetX
+		state.actionBarY = y + state.actionBarOffsetY
+		state.actionBarPositioned = true
 		clampKlineActionBarPosition(state, chartBounds)
 	}
 	if dx, dy, dragged := bar.Dragged(); dragged && state.actionBarPositioned {
 		state.actionBarX += dx
 		state.actionBarY += dy
 		clampKlineActionBarPosition(state, chartBounds)
+		x, y := defaultKlineActionBarPosition(chartBounds, width)
+		state.actionBarOffsetX = state.actionBarX - x
+		state.actionBarOffsetY = state.actionBarY - y
 	}
 	if state.actionBarPositioned {
 		bar.Absolute().Left(state.actionBarX).Top(state.actionBarY)
@@ -325,7 +343,7 @@ func (a *application) klineActionBar(c *ui.Context) {
 
 	bar.Children(func() {
 		if !state.replayHasStart {
-			replayTool := klineActionIconButton(c.Key("replay-start"), lucide.ClockArrowLeft, "回放起点", state.replaySelecting)
+			replayTool := klineActionIconButton(c.Key("replay-start"), lucide.ClockArrowLeft, a.text().ReplayStart, state.replaySelecting)
 			if state.replaySelecting {
 				replayTool.OnShortcut(0, ui.KeyEscape, state.exitReplaySelection)
 			}
@@ -341,32 +359,27 @@ func (a *application) klineActionBar(c *ui.Context) {
 				}
 			})
 		} else {
-			playLabel, playIcon := "播放", lucide.Play
+			playLabel, playIcon := a.text().Play, lucide.Play
 			if state.actionPlaying {
-				playLabel, playIcon = "暂停", lucide.Pause
+				playLabel, playIcon = a.text().Pause, lucide.Pause
 			}
-			klineActionIconButton(c.Key("replay-play"), playIcon, playLabel, false).
-				Disabled(state.replayComplete).OnClick(func() {
-				if state.actionPlaying {
-					state.pauseReplay()
-				} else {
-					a.startReplay(c)
-				}
-			})
+			klineActionIconButton(c.Key("replay-play"), playIcon, playLabel, false, "Space").
+				Disabled(state.replayComplete).OnClick(func() { a.toggleReplay(c) })
 			a.replaySpeedControl(c)
 			a.replayTradingControls(c)
-			ui.Box(c.Key("replay-session-divider")).Size(1, 16).Background(c.Theme().Border)
-			klineActionIconButton(c.Key("replay-reset"), lucide.RotateCcw, "重置", false).
+			ui.Box(c.Key("replay-session-divider")).Size(1, 16).MarginX(klineReplayDividerMargin).Background(c.Theme().Border)
+			klineActionIconButton(c.Key("replay-reset"), lucide.RotateCcw, a.text().Reset, false).
 				Disabled(!state.replaySessionStarted && !state.replayComplete && len(state.replayAccount.Trades) == 0).
 				OnClick(state.resetReplay)
-			klineActionIconButton(c.Key("replay-end"), lucide.Square, "结束", false).
+			klineActionIconButton(c.Key("replay-end"), lucide.Square, a.text().End, false).
 				Bind(&a.replayEndButton).OnClick(a.openReplaySummary)
 		}
 		if state.canEditReplaySettings() {
-			klineActionIconButton(c.Key("replay-settings"), lucide.Settings2, "回放设置", false).
+			klineActionIconButton(c.Key("replay-settings"), lucide.Settings2, a.text().ReplaySettings, false).
 				Bind(&a.replaySettingsButton).OnClick(a.openReplaySettings)
 		}
 	})
+	a.replayActionShortcuts(c, bar)
 }
 
 func defaultKlineActionBarPosition(chartBounds ui.Rect, width float32) (float32, float32) {
@@ -403,7 +416,7 @@ func (a *application) klineToolbarInTitle(c *ui.Context) {
 func (a *application) klineToolbarLayout(c *ui.Context, inTitle bool) {
 	state := &a.chart
 	t := c.Theme()
-	toolbar := ui.Row(c).Key("kline-toolbar").Role(ui.RoleToolbar).Label("K 线图工具栏")
+	toolbar := ui.Row(c).Key("kline-toolbar").Role(ui.RoleToolbar).Label(a.text().ChartToolbar)
 	if inTitle {
 		toolbar.FillWidth().FillHeight().Padding(0, 0).AlignItems(ui.Center)
 	} else {
@@ -417,7 +430,7 @@ func (a *application) klineToolbarLayout(c *ui.Context, inTitle bool) {
 		currentInstrument := a.displayInstrument()
 		instrumentButton := components.Button(c.Key("kline-instrument"), "", components.ButtonGhost).
 			Padding(4, 8).Radius(t.Radius).MinWidth(0).
-			Label("选择标的 " + currentInstrument.Symbol).
+			Label(fmt.Sprintf(a.text().ChooseInstrumentSymbol, currentInstrument.Symbol)).
 			Disabled(state.replayLocked())
 		instrumentButton.Children(func() {
 			ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
@@ -452,14 +465,14 @@ func (a *application) klineToolbarLayout(c *ui.Context, inTitle bool) {
 		})
 		klineToolbarDivider(c)
 
-		trendTool := klineActionIconButton(c, lucide.TrendingUp, "趋势线", state.tool == klineToolTrend).Disabled(state.replaySelecting)
+		trendTool := klineActionIconButton(c, lucide.TrendingUp, a.text().TrendLine, state.tool == klineToolTrend).Disabled(state.replaySelecting)
 		if trendTool.Clicked() {
 			resetAnnotationClickHistory(state)
 			finishAnnotationTextEdit(state, true)
 			state.annotationGesture = annotationGestureNone
 			state.tool = klineToolTrend
 		}
-		textTool := klineActionIconButton(c, lucide.Type, "文本", state.tool == klineToolText).Disabled(state.replaySelecting)
+		textTool := klineActionIconButton(c, lucide.Type, a.text().Text, state.tool == klineToolText).Disabled(state.replaySelecting)
 		if textTool.Clicked() {
 			resetAnnotationClickHistory(state)
 			finishAnnotationTextEdit(state, true)
@@ -468,14 +481,8 @@ func (a *application) klineToolbarLayout(c *ui.Context, inTitle bool) {
 		}
 
 		klineToolbarDivider(c)
-		remove := klineActionIconButton(c, lucide.Trash, "删除标注", false).Disabled(state.replaySelecting)
-		if remove.Clicked() {
-			resetAnnotationClickHistory(state)
-			deleteSelectedAnnotation(state)
-		}
-
-		ui.Spacer(c)
-		components.Switch(c, &state.showVolume, "成交量")
+		klineActionIconButton(c.Key("kline-indicators"), lucide.ChartNoAxesCombined, a.text().Indicators, a.indicatorsOpen).
+			Bind(&a.indicatorsButton).OnClick(a.openIndicators)
 	})
 }
 
@@ -483,7 +490,7 @@ func klineToolbarDivider(c *ui.Context) {
 	ui.Box(c).Size(1, 20).Background(c.Theme().Border)
 }
 
-func klineActionIconButton(c *ui.Context, icon func() *ui.SVG, label string, selected bool) ui.Element {
+func klineActionIconButton(c *ui.Context, icon func() *ui.SVG, label string, selected bool, shortcut ...string) ui.Element {
 	button := components.Button(c, "", components.ButtonGhost).
 		Size(28, 28).Padding(0).Radius(14).Center().Label(label).Selected(selected)
 	if selected {
@@ -492,13 +499,17 @@ func klineActionIconButton(c *ui.Context, icon func() *ui.SVG, label string, sel
 	button.Children(func() {
 		components.Icon(c, icon).Size(14, 14)
 	})
-	components.Tooltip(c, button, label)
+	tooltip := label
+	if len(shortcut) > 0 {
+		tooltip += " (" + shortcut[0] + ")"
+	}
+	components.Tooltip(c, button, tooltip)
 	return button
 }
 
 func (a *application) klineTextEditor(c *ui.Context) {
 	state := &a.chart
-	g := geometryForMode(state.plotWidth+klineRightGutter, state.chartHeight, state.showVolume, !a.marketToolbarInTitle)
+	g := state.geometry(state.plotWidth+klineRightGutter, state.chartHeight, !a.marketToolbarInTitle)
 	low, high, ok := visibleKlinePriceRange(a.candles, state)
 	if !ok {
 		return
@@ -512,7 +523,7 @@ func (a *application) klineTextEditor(c *ui.Context) {
 	state.textEditorY = max(4, min(y-height/2, state.chartHeight-height-4))
 	input := ui.TextInput(c, &state.textDraft).
 		Absolute().Left(state.textEditorX).Top(state.textEditorY).Size(width, height).
-		Placeholder("输入文字").Label("标注文字").AutoFocus().
+		Placeholder(a.text().EnterText).Label(a.text().AnnotationText).AutoFocus().
 		Background(c.Theme().Surface).Border(1, c.Theme().Accent).Radius(c.Theme().Radius / 2)
 	input.HandleInput(func(ev ui.InputEvent) bool {
 		if ev.Kind == ui.InputKeyDown && ev.Key == ui.KeyEscape {
@@ -543,7 +554,7 @@ func updateKlineHover(state *klineState, candles []Candle, x, y float32, toolbar
 		state.hover = -1
 		return changed
 	}
-	g := geometryForMode(state.plotWidth+klineRightGutter, state.chartHeight, state.showVolume, !toolbarInTitle)
+	g := state.geometry(state.plotWidth+klineRightGutter, state.chartHeight, !toolbarInTitle)
 	if !insideKlinePlot(x, y, g) || state.Visible <= 0 || g.width <= 0 {
 		if state.hover != -1 {
 			state.hover = -1
@@ -562,7 +573,7 @@ func updateKlineHover(state *klineState, candles []Candle, x, y float32, toolbar
 	return changed
 }
 
-func drawKline(p *ui.Painter, r ui.Rect, g klineGeometry, candles []Candle, state *klineState, t *ui.Theme) {
+func drawKline(p *ui.Painter, r ui.Rect, g klineGeometry, candles []Candle, state *klineState, t *ui.Theme, volumeLabel string) {
 	count := len(candles)
 	if count == 0 || state.Visible <= 0 || g.width <= 0 {
 		return
@@ -584,7 +595,6 @@ func drawKline(p *ui.Painter, r ui.Rect, g klineGeometry, candles []Candle, stat
 
 	upColor := ui.Hex("#20a36a")
 	downColor := ui.Hex("#e5535d")
-	emaColor := ui.Hex("#e4a83a")
 	gridColor := t.Border.Alpha(.55)
 	mutedColor := t.TextMuted
 	fontSize := max(float32(9), t.FontSize-3)
@@ -609,7 +619,6 @@ func drawKline(p *ui.Painter, r ui.Rect, g klineGeometry, candles []Candle, stat
 		p.Fill(ui.Rect{X: centerX - barWidth/2, Y: r.Y + g.top, W: barWidth, H: g.bottom - g.top}, t.Text.Alpha(.045), 0)
 	}
 	bodyWidth := max(float32(1), min(float32(10), barWidth*.72))
-	var emaPath ui.Path
 	for index := start; index < end; index++ {
 		candle := candles[index]
 		local := float32(index - start)
@@ -623,33 +632,29 @@ func drawKline(p *ui.Painter, r ui.Rect, g klineGeometry, candles []Candle, stat
 		bodyY := min(openY, closeY)
 		bodyHeight := max(float32(1), absFloat32(closeY-openY))
 		p.Fill(ui.Rect{X: centerX - bodyWidth/2, Y: bodyY, W: bodyWidth, H: bodyHeight}, color, 0)
-		emaY := priceAt(candle.EMA20)
-		if index == start {
-			emaPath.MoveTo(centerX, emaY)
-		} else {
-			emaPath.LineTo(centerX, emaY)
-		}
 	}
-	p.StrokePath(&emaPath, 1.5, emaColor)
+	drawEMAIndicators(p, r, g, candles, state, priceAt, fontSize)
 
 	if state.showVolume {
 		p.Line(plotLeft, r.Y+g.volumeTop, plotRight, r.Y+g.volumeTop, 1, gridColor)
-		p.Text(plotLeft, r.Y+g.volumeTop+4, "成交量", fontSize, mutedColor)
+		p.Text(plotLeft, r.Y+g.volumeTop+4, volumeLabel, fontSize, mutedColor)
 		if volumeHigh > 0 {
 			for index := start; index < end; index++ {
 				candle := candles[index]
 				local := float32(index - start)
 				centerX := plotLeft + (local+.5)*barWidth
-				barHeight := float32(candle.Volume/volumeHigh) * (g.volumeBottom - g.volumeTop - 8)
-				color := upColor
+				barHeight := float32(candle.Volume/volumeHigh) * (g.volumeBottom - g.volumeTop - 20)
+				color := state.indicators.VolumeUp
 				if candle.Close < candle.Open {
-					color = downColor
+					color = state.indicators.VolumeDown
 				}
 				p.Fill(ui.Rect{X: centerX - bodyWidth/2, Y: r.Y + g.volumeBottom - barHeight, W: bodyWidth, H: barHeight}, color.Alpha(.48), 0)
 			}
 		}
 		p.Line(plotLeft, r.Y+g.volumeBottom, plotRight, r.Y+g.volumeBottom, 1, gridColor)
 	}
+
+	drawMACDIndicator(p, r, g, state, start, end, fontSize, t)
 
 	for i := 0; i <= 4; i++ {
 		index := start + (end-start-1)*i/4

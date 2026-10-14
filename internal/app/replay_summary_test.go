@@ -121,7 +121,7 @@ func TestReplaySummaryDismissalKeepsPausedSessionAndRestoresFocus(t *testing.T) 
 				if !tt.Focused("结束") {
 					t.Fatal("dismissal did not restore focus to End")
 				}
-				tt.Key(0, ui.KeySpace)
+				tt.Key(0, ui.KeyEnter) // Space now toggles playback from action-bar buttons.
 				if !app.chart.replaySummaryOpen || !tt.Focused("模拟交易统计") {
 					t.Fatal("keyboard reopening lost summary identity or focus")
 				}

@@ -33,11 +33,8 @@ type Instrument struct {
 	ContractType   ContractType
 }
 
-func (i Instrument) TypeLabel() string {
-	marketLabel := "现货"
-	if i.MarketType == MarketFutures {
-		marketLabel = "合约"
-	}
+// SourceLabel is the provider name, independent of the UI language.
+func (i Instrument) SourceLabel() string {
 	sourceLabel := string(i.SourceID)
 	switch i.SourceID {
 	case DataSourceBinance:
@@ -45,7 +42,7 @@ func (i Instrument) TypeLabel() string {
 	case DataSourceOKX:
 		sourceLabel = "OKX"
 	}
-	return sourceLabel + " · " + marketLabel
+	return sourceLabel
 }
 
 func (i Instrument) Identity() string {

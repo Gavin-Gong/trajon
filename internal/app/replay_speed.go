@@ -39,7 +39,8 @@ func (a *application) replaySpeedControl(c *ui.Context) {
 	speed := state.replaySpeed
 	sel := components.Select(c.Key("replay-speed"), &speed)
 	sel.Trigger.Size(klineReplaySpeedWidth, 28).Padding(0, 18, 0, 6).Radius(14).FontSize(12).
-		Label("播放速度").Tooltip("播放速度").Disabled(state.replayComplete).
+		Label(a.text().PlaybackSpeed).Tooltip(a.text().PlaybackSpeed).Disabled(state.replayComplete).
+		Bind(&state.replaySpeedHandle).
 		OnChange(func() { state.setReplaySpeed(speed, c.Now()) }).
 		Children(func() {
 			components.Text(c, fmt.Sprint(state.replaySpeed)+"×").SingleLine()

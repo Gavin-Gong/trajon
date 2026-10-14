@@ -172,9 +172,19 @@ func visibleKlinePriceRange(candles []Candle, state *klineState) (float64, float
 	}
 	low, high := math.MaxFloat64, -math.MaxFloat64
 	if start < end {
-		for _, candle := range candles[start:end] {
-			low = math.Min(low, math.Min(candle.Low, candle.EMA20))
-			high = math.Max(high, math.Max(candle.High, candle.EMA20))
+		for index := start; index < end; index++ {
+			low = math.Min(low, candles[index].Low)
+			high = math.Max(high, candles[index].High)
+			if state.indicators.EMAEnabled {
+				for _, line := range state.indicators.EMALines {
+					if !line.Enabled {
+						continue
+					}
+					if value, ok := state.emaValue(int(line.Period), index, candles); ok && !math.IsNaN(value) && !math.IsInf(value, 0) {
+						low, high = math.Min(low, value), math.Max(high, value)
+					}
+				}
+			}
 		}
 	}
 	if state.replayAccount.Quantity != 0 {

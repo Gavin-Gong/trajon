@@ -3,7 +3,6 @@ package market
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -49,7 +48,7 @@ func (s *InstrumentSearcher) Search(ctx context.Context, query string) ([]Instru
 	}
 	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
 	if len(ids) == 0 {
-		return nil, errors.New("未找到标的搜索数据源")
+		return nil, ErrNoInstrumentSource
 	}
 
 	results := make([]result, len(ids)*2)
@@ -60,7 +59,7 @@ func (s *InstrumentSearcher) Search(ctx context.Context, query string) ([]Instru
 			jobs.Go(func() {
 				items, err := s.loadCatalog(ctx, instrumentCatalogKey{id, marketType}, sources[id])
 				if err != nil {
-					err = fmt.Errorf("%s: %w", (Instrument{SourceID: id, MarketType: marketType}).TypeLabel(), err)
+					err = &InstrumentSearchError{SourceID: id, MarketType: marketType, Err: err}
 				}
 				results[index] = result{items, err}
 			})

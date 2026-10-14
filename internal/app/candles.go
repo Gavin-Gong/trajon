@@ -17,16 +17,18 @@ type Candle = market.Candle
 
 type klineState struct {
 	chart.Viewport
-	hover         int
-	hoverY        float32
-	showVolume    bool
-	dragging      bool
-	dragX         float32
-	dragRemainder float32
-	plotWidth     float32
-	chartWidth    float32
-	chartHeight   float32
-	chartHandle   ui.Handle
+	hover           int
+	hoverY          float32
+	showVolume      bool
+	indicators      indicatorSettings
+	indicatorValues *indicatorValues
+	dragging        bool
+	dragX           float32
+	dragRemainder   float32
+	plotWidth       float32
+	chartWidth      float32
+	chartHeight     float32
+	chartHandle     ui.Handle
 
 	tool                  klineTool
 	annotations           []klineAnnotation
@@ -58,6 +60,8 @@ type klineState struct {
 	actionBarX          float32
 	actionBarY          float32
 	actionBarWidth      float32
+	actionBarOffsetX    float32
+	actionBarOffsetY    float32
 	timeframe           string
 
 	replaySelecting         bool
@@ -74,6 +78,8 @@ type klineState struct {
 	replayNextStep          time.Time
 	replaySpeed             float64
 	replayOrderQuantity     float64
+	replayQuantityHandle    ui.Handle
+	replaySpeedHandle       ui.Handle
 	replayAccount           market.ReplayAccount
 	replaySummaryOpen       bool
 	replaySummary           market.ReplayStatistics
@@ -91,6 +97,7 @@ func newKlineState(count int) klineState {
 		Viewport:            chart.NewViewport(count),
 		hover:               -1,
 		showVolume:          true,
+		indicators:          defaultIndicatorSettings(),
 		timeframe:           "1h",
 		replaySpeed:         1,
 		replayOrderQuantity: 1,

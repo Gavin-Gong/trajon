@@ -99,18 +99,7 @@ func (a *application) advanceReplayFrame(c *ui.Context) {
 		state.replayNextStep = c.Now().Add(replayInterval(state.replaySpeed))
 	}
 	if !c.Now().Before(state.replayNextStep) {
-		beforeTrades := len(state.replayAccount.Trades)
-		completed := a.advanceReplayStep()
-		if state.replayExitError != nil {
-			a.showReplayTradeMessage(c, "止盈止损执行失败")
-			return
-		}
-		if len(state.replayAccount.Trades) > beforeTrades {
-			trade := state.replayAccount.Trades[len(state.replayAccount.Trades)-1]
-			a.showReplayTradeMessage(c, replayFillMessage(replayExitLabel(trade.ExitKind), trade))
-		}
-		if completed {
-			c.Toast("回放结束")
+		if a.advanceReplayWithFeedback(c) || state.replayExitError != nil {
 			return
 		}
 		state.replayNextStep = c.Now().Add(replayInterval(state.replaySpeed))
@@ -118,11 +107,33 @@ func (a *application) advanceReplayFrame(c *ui.Context) {
 	c.After(max(time.Millisecond, state.replayNextStep.Sub(c.Now())))
 }
 
-func (a *application) advanceReplayStep() bool {
+func (a *application) advanceReplayWithFeedback(c *ui.Context) bool {
 	state := &a.chart
-	if !state.actionPlaying {
+	beforeTrades := len(state.replayAccount.Trades)
+	completed := a.advanceReplayStep()
+	if state.replayExitError != nil {
+		a.showReplayTradeMessage(c, a.text().ExitFailed)
 		return false
 	}
+	if len(state.replayAccount.Trades) > beforeTrades {
+		trade := state.replayAccount.Trades[len(state.replayAccount.Trades)-1]
+		a.showReplayTradeMessage(c, replayFillMessage(a.replayExitLabel(trade.ExitKind), trade))
+	}
+	if completed {
+		c.Toast(a.text().ReplayComplete)
+	}
+	return completed
+}
+
+// advanceReplayStep reveals one candle without starting or rescheduling playback.
+func (a *application) advanceReplayStep() bool {
+	state := &a.chart
+	if !state.replayHasStart || state.replaySelecting || state.replayComplete || state.replaySummaryOpen ||
+		a.marketLoading || state.replayEnd <= 0 || state.replayEnd > len(a.candles) {
+		return false
+	}
+	state.replaySessionStarted = true
+	state.replayExitError = nil
 	nextEnd := min(len(a.candles), state.replayEnd+1)
 	if nextEnd > state.replayEnd {
 		if _, err := state.replayAccount.CheckExits(a.replaySettings, a.candles[nextEnd-1]); err != nil {
@@ -158,7 +169,7 @@ func (a *application) completeReplay() {
 
 func (a *application) finishReplay(c *ui.Context) {
 	a.completeReplay()
-	c.Toast("回放结束")
+	c.Toast(a.text().ReplayComplete)
 }
 
 func (a *application) followReplay() {
@@ -207,7 +218,7 @@ func replayCandleIndexAtX(state *klineState, candles []Candle, x float32) int {
 	if len(candles) == 0 || state.Visible <= 0 || state.plotWidth <= 0 {
 		return -1
 	}
-	g := geometryForMode(state.plotWidth+klineRightGutter, state.chartHeight, state.showVolume, true)
+	g := state.geometry(state.plotWidth+klineRightGutter, state.chartHeight, true)
 	fraction := max(0, min(1, (x-g.left)/g.width))
 	index := state.Start + min(state.Visible-1, int(fraction*float32(state.Visible)))
 	return max(0, min(index, len(candles)-1))

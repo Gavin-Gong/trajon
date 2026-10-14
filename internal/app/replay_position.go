@@ -8,6 +8,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/oneo-me/onevra/source/components"
 	"github.com/oneo-me/onevra/source/icons/lucide"
+	"trajon/internal/locales"
 	"trajon/internal/market"
 )
 
@@ -27,12 +28,12 @@ type replayLineDrag struct {
 	Moved          bool
 }
 
-func replayPositionCaption(quantity float64) string {
-	direction := "多 "
+func replayPositionCaption(quantity float64, text *locales.Strings) string {
+	direction := text.Long
 	if quantity < 0 {
-		direction = "空 "
+		direction = text.Short
 	}
-	return direction + strconv.FormatFloat(math.Abs(quantity), 'f', -1, 64)
+	return direction + " " + strconv.FormatFloat(math.Abs(quantity), 'f', -1, 64)
 }
 
 func replayExitKind(kind replayLineKind) market.ReplayExitKind {
@@ -40,13 +41,6 @@ func replayExitKind(kind replayLineKind) market.ReplayExitKind {
 		return market.ReplayTakeProfit
 	}
 	return market.ReplayStopLoss
-}
-
-func replayExitLabel(kind market.ReplayExitKind) string {
-	if kind == market.ReplayTakeProfit {
-		return "止盈"
-	}
-	return "止损"
 }
 
 func (a *application) closeReplayPosition() (market.ReplayTrade, error) {
@@ -69,10 +63,10 @@ func replayFillMessage(label string, trade market.ReplayTrade) string {
 func (a *application) submitReplayClose(c *ui.Context) {
 	trade, err := a.closeReplayPosition()
 	if err != nil {
-		a.showReplayTradeMessage(c, "当前无法平仓")
+		a.showReplayTradeMessage(c, a.text().CloseUnavailable)
 		return
 	}
-	a.showReplayTradeMessage(c, replayFillMessage("平仓", trade))
+	a.showReplayTradeMessage(c, replayFillMessage(a.text().ClosePosition, trade))
 }
 
 func (a *application) pointerOverReplayLines(c *ui.Context, x, y float32) bool {
@@ -118,7 +112,7 @@ func (a *application) updateReplayLineDrag(y float32) {
 		return
 	}
 	drag.Moved = true
-	g := geometryForMode(state.chartWidth, state.chartHeight, state.showVolume, !a.marketToolbarInTitle)
+	g := state.geometry(state.chartWidth, state.chartHeight, !a.marketToolbarInTitle)
 	drag.Price = priceForY(y, g, drag.Low, drag.High)
 	if drag.Source == replayPositionLine {
 		profitable := (drag.Price > state.replayAccount.AveragePrice) == (state.replayAccount.Quantity > 0)
@@ -139,7 +133,7 @@ func (a *application) finishReplayLineDrag(c *ui.Context, y float32) {
 	}
 	stamp := a.candles[a.chart.replayEnd-1].Time
 	if err := a.chart.replayAccount.SetExit(replayExitKind(drag.Target), drag.Price, stamp); err != nil {
-		a.showReplayTradeMessage(c, "止盈止损价格无效")
+		a.showReplayTradeMessage(c, a.text().InvalidExitPrice)
 	}
 }
 
@@ -190,7 +184,7 @@ func (a *application) replayPositionLines(c *ui.Context) {
 	if !state.replayHasStart || state.replaySelecting || state.replayAccount.Quantity == 0 {
 		return
 	}
-	g := geometryForMode(state.chartWidth, state.chartHeight, state.showVolume, !a.marketToolbarInTitle)
+	g := state.geometry(state.chartWidth, state.chartHeight, !a.marketToolbarInTitle)
 	low, high, ok := visibleKlinePriceRange(a.candles, state)
 	if !ok || g.width <= 0 || g.priceHeight <= 0 {
 		return
@@ -201,12 +195,16 @@ func (a *application) replayPositionLines(c *ui.Context) {
 		if price <= 0 {
 			continue
 		}
-		label, caption, color := "仓位线", replayPositionCaption(state.replayAccount.Quantity), c.Theme().Accent
-		closeLabel := "平仓"
+		label, caption, color := a.text().PositionLine, a.replayPositionCaption(state.replayAccount.Quantity), c.Theme().Accent
+		closeLabel := a.text().ClosePosition
 		if kind != replayPositionLine {
-			label = replayExitLabel(replayExitKind(kind))
+			label = a.replayExitLabel(replayExitKind(kind))
 			pnl := (price - state.replayAccount.AveragePrice) * state.replayAccount.Quantity
-			caption, closeLabel = fmt.Sprintf("%s %+.2f", label, pnl), "取消"+label
+			caption = fmt.Sprintf("%s %+.2f", label, pnl)
+			closeLabel = a.text().CancelTakeProfit
+			if kind == replayStopLossLine {
+				closeLabel = a.text().CancelStopLoss
+			}
 			color = ui.Hex("#20a36a")
 			if kind == replayStopLossLine {
 				color = ui.Hex("#e5535d")

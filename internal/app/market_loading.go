@@ -124,7 +124,9 @@ func (a *application) applyMarketSnapshot(snapshot market.Snapshot) {
 		}
 		if newSeries {
 			showVolume, replaySpeed := a.chart.showVolume, a.chart.replaySpeed
+			indicators := a.chart.indicators
 			a.chart = newKlineState(len(a.candles))
+			a.chart.indicators = indicators
 			a.chart.timeframe = snapshot.Interval
 			a.chart.showVolume = showVolume
 			a.chart.replaySpeed = replaySpeed
@@ -178,10 +180,10 @@ func (a *application) showPendingMarketToasts(c *ui.Context) {
 	}
 	c.AddToast(ui.Toast{
 		ID:          olderErrorToastID,
-		Title:       "无法加载更早行情",
-		Description: a.olderError.Error(),
+		Title:       a.text().OlderMarketLoadFailed,
+		Description: appui.MarketError(a.text(), a.olderError),
 		Type:        "error",
-		Action:      "重试",
+		Action:      a.text().Retry,
 		OnAction:    a.retryOlderCandles,
 	})
 }
@@ -194,5 +196,5 @@ func (a *application) marketStatus(c *ui.Context) {
 		Pending:      (*market.CandleRequest)(a.pendingCandleLoad),
 		OlderLoading: a.olderLoading,
 		OlderError:   a.olderError,
-	}, a.retryMarketData, a.retryOlderCandles)
+	}, a.text(), a.retryMarketData, a.retryOlderCandles)
 }

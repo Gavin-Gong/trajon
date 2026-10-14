@@ -2,7 +2,6 @@ package market
 
 import (
 	"context"
-	"fmt"
 	"sync"
 )
 
@@ -101,7 +100,7 @@ func (l *Loader) Select(instrument Instrument, interval string, force bool) {
 	}
 	if !ok || source == nil {
 		l.loading = false
-		l.loadError = fmt.Errorf("未找到数据源 %q", instrument.SourceID)
+		l.loadError = &MissingSourceError{SourceID: instrument.SourceID}
 		snapshot := l.snapshotLocked(0)
 		l.mu.Unlock()
 		l.notify(snapshot)
@@ -151,7 +150,7 @@ func (l *Loader) LoadOlder() {
 		source, ok = l.registry.Source(request.Instrument.SourceID)
 	}
 	if !ok || source == nil {
-		l.olderError = fmt.Errorf("未找到数据源 %q", request.Instrument.SourceID)
+		l.olderError = &MissingSourceError{SourceID: request.Instrument.SourceID}
 		snapshot := l.snapshotLocked(0)
 		l.mu.Unlock()
 		l.notify(snapshot)
@@ -228,7 +227,7 @@ func (l *Loader) finishLatest(generation uint64, request CandleRequest, candles 
 		return
 	}
 	if len(candles) == 0 {
-		l.loadError = fmt.Errorf("%s 没有可用 K 线", request.Instrument.Symbol)
+		l.loadError = &NoCandlesError{Symbol: request.Instrument.Symbol}
 		snapshot := l.snapshotLocked(0)
 		l.mu.Unlock()
 		l.notify(snapshot)

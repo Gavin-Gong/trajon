@@ -236,7 +236,7 @@ func TestReplaySelectionRejectsNonChartClicksAndOutsideRelease(t *testing.T) {
 
 func TestReplaySelectionBelowTitleToolbarUsesChartLocalPointer(t *testing.T) {
 	candles := demoCandles()
-	app := &application{activePage: "market", candles: candles, chart: newKlineState(len(candles))}
+	app := &application{activePage: "market", candles: candles, chart: newKlineState(len(candles)), marketToolbarInTitle: true}
 	tt := ui.NewTester(func(c *ui.Context) {
 		ui.Column(c).Fill().Children(func() {
 			ui.Box(c).FillWidth().Height(40).Children(func() { app.contentTitle(c) })
@@ -434,9 +434,9 @@ func TestReplayActionBarResizesAndClampsWithControls(t *testing.T) {
 			app, tt := newKlineToolbarTester()
 			switch edge {
 			case "left":
-				app.chart.actionBarX = 0
+				app.chart.actionBarOffsetX = -app.chart.actionBarX
 			case "right":
-				app.chart.actionBarX = app.chart.chartWidth - klineActionBarWidth
+				app.chart.actionBarOffsetX = app.chart.chartWidth - klineActionBarWidth - app.chart.actionBarX
 			}
 			tt.Frame()
 			oldCenter := app.chart.actionBarX + klineActionBarWidth/2

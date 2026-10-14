@@ -46,24 +46,24 @@ func (a *application) replaySettingsDialog(c *ui.Context) {
 		a.replaySettingsOpen = false
 	}
 	wasOpen := a.replaySettingsOpen
-	components.Dialog(c.Key("replay-settings-dialog"), &a.replaySettingsOpen, components.DialogOptions{Label: "回放设置"}, func(panel ui.Element) {
+	components.Dialog(c.Key("replay-settings-dialog"), &a.replaySettingsOpen, components.DialogOptions{Label: a.text().ReplaySettings}, func(panel ui.Element) {
 		panel.Width(360).Padding(18).Gap(16)
-		components.Text(c, "回放设置").FontSize(18).Bold().SingleLine()
+		components.Text(c, a.text().ReplaySettings).FontSize(18).Bold().SingleLine()
 
 		ui.Column(c).FillWidth().Gap(6).Children(func() {
-			components.Text(c, "初始资金").SingleLine()
+			components.Text(c, a.text().InitialCapital).SingleLine()
 			components.NumberInput(c.Key("replay-initial-capital"), &a.replaySettingsDraft.InitialCapital, .01, math.MaxFloat64, 1000).
-				Label("初始资金").AutoFocus().FillWidth()
+				Label(a.text().InitialCapital).AutoFocus().FillWidth()
 		})
 		ui.Column(c).FillWidth().Gap(6).Children(func() {
-			components.Text(c, "资金杠杆（倍）").SingleLine()
+			components.Text(c, a.text().LeverageMultiple).SingleLine()
 			components.NumberInput(c.Key("replay-leverage"), &a.replaySettingsDraft.Leverage, 1, math.MaxFloat64, 1).
-				Label("资金杠杆").FillWidth()
+				Label(a.text().Leverage).FillWidth()
 		})
 		ui.Row(c).FillWidth().Justify(ui.End).Gap(8).Children(func() {
-			components.Button(c.Key("replay-settings-cancel"), "取消", components.ButtonSecondary).
+			components.Button(c.Key("replay-settings-cancel"), a.text().Cancel, components.ButtonSecondary).
 				OnClick(a.closeReplaySettings)
-			components.Button(c.Key("replay-settings-save"), "保存", components.ButtonPrimary).
+			components.Button(c.Key("replay-settings-save"), a.text().Save, components.ButtonPrimary).
 				OnClick(a.saveReplaySettings)
 		})
 	})

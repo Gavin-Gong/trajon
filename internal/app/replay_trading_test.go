@@ -52,11 +52,11 @@ func TestReplayTradingControlsAreCompactAndFollowSession(t *testing.T) {
 	if app.chart.replayOrderQuantity != .25 {
 		t.Fatal("quantity input did not step down by 1 from the keyboard")
 	}
-	clickReplaySetting(t, tt, "下单数量 Increase")
+	clickReplaySetting(t, tt, "增加 下单数量")
 	if app.chart.replayOrderQuantity != 1.25 {
 		t.Fatal("quantity stepper did not increase by 1")
 	}
-	clickReplaySetting(t, tt, "下单数量 Decrease")
+	clickReplaySetting(t, tt, "减少 下单数量")
 	if app.chart.replayOrderQuantity != .25 {
 		t.Fatal("quantity stepper did not decrease by 1")
 	}

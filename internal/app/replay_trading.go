@@ -51,21 +51,21 @@ func (a *application) placeReplayTrade(side market.ReplaySide) (market.ReplayTra
 func (a *application) submitReplayTrade(c *ui.Context, side market.ReplaySide) {
 	trade, err := a.placeReplayTrade(side)
 	if err != nil {
-		message := "当前无法下单"
+		message := a.text().OrderUnavailable
 		switch {
 		case errors.Is(err, market.ErrInsufficientReplayCapital):
-			message = "资金不足"
+			message = a.text().InsufficientCapital
 		case errors.Is(err, market.ErrInvalidReplayTrade):
-			message = "下单数量或价格无效"
+			message = a.text().InvalidOrder
 		case errors.Is(err, market.ErrInvalidReplaySettings):
-			message = "回放资金设置无效"
+			message = a.text().InvalidReplaySettings
 		}
 		a.showReplayTradeMessage(c, message)
 		return
 	}
-	label := "买入"
+	label := a.text().Buy
 	if side == market.ReplaySell {
-		label = "卖出"
+		label = a.text().Sell
 	}
 	a.showReplayTradeMessage(c, replayFillMessage(label, trade))
 }
@@ -101,16 +101,16 @@ func (a *application) replayTradeFeedback(c *ui.Context) {
 
 func (a *application) replayTradingControls(c *ui.Context) {
 	canTrade := a.canTradeReplay()
-	ui.Box(c.Key("replay-trade-divider")).Size(1, 16).Background(c.Theme().Border)
+	ui.Box(c.Key("replay-trade-divider")).Size(1, 16).MarginX(klineReplayDividerMargin).Background(c.Theme().Border)
 	ui.Box(c.Key("replay-order-quantity")).Size(klineReplayQuantityWidth, 28).FontSize(12).
-		Disabled(!canTrade).Children(func() {
+		Bind(&a.chart.replayQuantityHandle).Disabled(!canTrade).Children(func() {
 		components.NumberInput(c, &a.chart.replayOrderQuantity, 0, math.MaxFloat64, 1).
-			Label("下单数量").FillWidth().Height(28)
+			Label(a.text().OrderQuantity).FillWidth().Height(28)
 	})
-	klineActionIconButton(c.Key("replay-buy"), lucide.TrendingUp, "买入", false).
+	klineActionIconButton(c.Key("replay-buy"), lucide.TrendingUp, a.text().Buy, false, "↑").
 		Disabled(!canTrade || a.chart.replayOrderQuantity <= 0).
 		OnClick(func() { a.submitReplayTrade(c, market.ReplayBuy) })
-	klineActionIconButton(c.Key("replay-sell"), lucide.TrendingDown, "卖出", false).
+	klineActionIconButton(c.Key("replay-sell"), lucide.TrendingDown, a.text().Sell, false, "↓").
 		Disabled(!canTrade || a.chart.replayOrderQuantity <= 0).
 		OnClick(func() { a.submitReplayTrade(c, market.ReplaySell) })
 }
