@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  macos:
+    name: macOS
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Validate release
+        env:
+          MYGO_UPDATER_PRIVATE_KEY: ${{ secrets.MYGO_UPDATER_PRIVATE_KEY }}
+        run: |
+          version="$(jq -er '.version' mygo.json)"
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::Release tag must match mygo.json version: v$version"
+            exit 1
+          fi
+          if [ -z "$MYGO_UPDATER_PRIVATE_KEY" ]; then
+            echo "::error::Set the MYGO_UPDATER_PRIVATE_KEY repository secret."
+            exit 1
+          fi
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Test
+        run: |
+          go test ./...
+          CGO_ENABLED=0 go test ./...
+
+      - name: Vet MyGo UI
+        run: go run github.com/egoist/mygo/cmd/mygo vet .
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if draft="$(gh release view "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" --json isDraft --jq '.isDraft' 2>/dev/null)"; then
+            if [ "$draft" != "true" ]; then
+              echo "::error::Refusing to replace assets of a published release."
+              exit 1
+            fi
+          else
+            gh release create "$GITHUB_REF_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --draft --verify-tag \
+              --title "$GITHUB_REF_NAME" \
+              --generate-notes
+          fi
+
+      - name: Build and upload
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MYGO_UPDATER_PRIVATE_KEY: ${{ secrets.MYGO_UPDATER_PRIVATE_KEY }}
+        run: |
+          go run github.com/egoist/mygo/cmd/mygo build \
+            -platform "darwin/arm64,darwin/amd64" \
+            -upload

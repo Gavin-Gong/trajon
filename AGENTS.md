@@ -32,6 +32,12 @@ go run github.com/egoist/mygo/cmd/mygo vet .
 
 Use targeted package tests while iterating, for example `go test ./internal/market/...` or `go test ./internal/app`. Run the full suite before finishing. Add or update focused tests for changes to loaders, pagination, cache keys, instrument identity, indicators, adapters, or viewport calculations.
 
+## Releases
+
+- `mygo.json` defines the application identity, version, and signed-update public key. Keep `identifier` and the public key stable after release; never commit the private key.
+- `.github/workflows/release.yml` currently releases macOS only (`darwin/arm64` and `darwin/amd64`). Push a `v<version>` tag matching `mygo.json` to run tests and MyGo UI vet, build with the pinned MyGo CLI, and upload installers and signed updates to a Draft Release. Set the repository secret `MYGO_UPDATER_PRIVATE_KEY` to the signing key's contents. Review and publish the draft manually; reruns can replace draft assets but must not overwrite published releases.
+- Updater signatures do not replace macOS Developer ID signing or notarization; those are not yet configured in CI.
+
 ## Go and domain conventions
 
 - Follow standard Go formatting and error handling. Prefer small, deterministic functions and explicit dependencies.
