@@ -1,7 +1,7 @@
 {
   "name": "Trajon",
   "identifier": "dev.astralym.trajon",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "out": "dist",
   "i18n": {
     "dir": "internal/locales",
