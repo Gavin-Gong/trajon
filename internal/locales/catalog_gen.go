@@ -1474,6 +1474,36 @@ func (msgs Messages) WinLossBreakeven() string {
 	return Catalog.Format(msgs.locale, "WinLossBreakeven", nil)
 }
 
+// WinningCloses says "Wins"
+// in the language the app shows.
+func WinningCloses() string { return In(i18n.Locale()).WinningCloses() }
+
+// WinningCloses says "Wins"
+// in the language of msgs.
+func (msgs Messages) WinningCloses() string {
+	return Catalog.Format(msgs.locale, "WinningCloses", nil)
+}
+
+// LosingCloses says "Losses"
+// in the language the app shows.
+func LosingCloses() string { return In(i18n.Locale()).LosingCloses() }
+
+// LosingCloses says "Losses"
+// in the language of msgs.
+func (msgs Messages) LosingCloses() string {
+	return Catalog.Format(msgs.locale, "LosingCloses", nil)
+}
+
+// BreakevenCloses says "Breakeven"
+// in the language the app shows.
+func BreakevenCloses() string { return In(i18n.Locale()).BreakevenCloses() }
+
+// BreakevenCloses says "Breakeven"
+// in the language of msgs.
+func (msgs Messages) BreakevenCloses() string {
+	return Catalog.Format(msgs.locale, "BreakevenCloses", nil)
+}
+
 // WinRate says "Win rate"
 // in the language the app shows.
 func WinRate() string { return In(i18n.Locale()).WinRate() }

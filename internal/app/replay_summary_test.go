@@ -49,7 +49,7 @@ func TestReplaySummaryPausesAndShowsLastRevealedTradingStatistics(t *testing.T) 
 	}
 	for _, text := range []string{
 		"模拟交易统计", "初始资金", "账户权益", "已实现盈亏", "浮动盈亏", "收益率", "平仓次数", "胜率", "盈亏比", "放弃", "保存",
-		"30000.00", "29980.00", "+20.00", "-40.00", "-0.07%", "100.00%", "1 / 0 / 0", "∞",
+		"30000.00", "29980.00", "+20.00", "-40.00", "-0.07%", "100.00%", "盈利", "亏损", "持平", "∞",
 	} {
 		if _, shown := tt.Find(text); !shown {
 			t.Fatalf("summary missing %q; texts: %v", text, tt.Texts())
@@ -240,7 +240,7 @@ func TestReplaySummaryEmptyMetricsAndLayout(t *testing.T) {
 			dashes++
 		}
 	}
-	if dashes != 2 || !tt.HasText("0 / 0 / 0") || tt.HasText("NaN") || tt.HasText("Inf") {
+	if dashes != 2 || app.chart.replaySummary.ClosingTrades != 0 || tt.HasText("NaN") || tt.HasText("Inf") {
 		t.Fatalf("empty summary metrics are not well-defined: %v", tt.Texts())
 	}
 	for _, dark := range []bool{false, true} {
@@ -252,7 +252,7 @@ func TestReplaySummaryEmptyMetricsAndLayout(t *testing.T) {
 			if !ok || panel.X < 0 || panel.Y < 0 || panel.X+panel.W > float32(size[0]) || panel.Y+panel.H > float32(size[1]) {
 				t.Fatalf("dialog overflows %v viewport: %+v", size, panel)
 			}
-			for _, label := range []string{"初始资金", "账户权益", "已实现盈亏", "浮动盈亏", "收益率", "平仓次数", "盈利 / 亏损 / 持平", "胜率", "盈亏比", "放弃", "保存"} {
+			for _, label := range []string{"初始资金", "账户权益", "已实现盈亏", "浮动盈亏", "收益率", "平仓次数", "盈利", "亏损", "持平", "胜率", "盈亏比", "放弃", "保存"} {
 				bounds, shown := tt.Find(label)
 				if !shown || bounds.X < panel.X || bounds.Y < panel.Y || bounds.X+bounds.W > panel.X+panel.W || bounds.Y+bounds.H > panel.Y+panel.H {
 					t.Fatalf("%s outside dialog at %v: panel=%+v control=%+v", label, size, panel, bounds)
