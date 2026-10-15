@@ -121,6 +121,32 @@
   },
   "ChartActions": "Chart actions",
   "ChartToolbar": "Chart toolbar",
+  "Timeframes": "Timeframes",
+  "SelectTimeframe": "Select {period}",
+  "@SelectTimeframe": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "FavoriteTimeframe": "Favorite {period}",
+  "@FavoriteTimeframe": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "UnfavoriteTimeframe": "Unfavorite {period}",
+  "@UnfavoriteTimeframe": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "TimeframeSaveFailed": "Could not save favorites",
   "ReplayStart": "Replay start",
   "Play": "Play",
   "Pause": "Pause",

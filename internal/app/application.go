@@ -35,6 +35,14 @@ type application struct {
 	candles            []Candle
 	chart              klineState
 
+	timeframePickerOpen bool
+	timeframeButton     ui.Handle
+	timeframePickerList components.ListState
+	timeframeCursor     int
+	timeframeFavorites  []string // nil uses defaults; an empty slice means no favorites.
+	timeframeStore      *timeframeFavoritesStore
+	timeframeSaveError  error
+
 	indicatorsOpen    bool
 	indicatorsButton  ui.Handle
 	indicatorSelected int
@@ -121,6 +129,22 @@ func Run() {
 		}()
 	}
 
+	if path, err := timeframeFavoritesPath(); err != nil {
+		log.Printf("timeframe favorites path: %v", err)
+		app.timeframeSaveError = err
+	} else {
+		app.timeframeFavorites, err = loadTimeframeFavorites(path)
+		if err != nil {
+			log.Printf("load timeframe favorites: %v", err)
+		}
+		app.timeframeStore = newTimeframeFavoritesStore(path, app.publishTimeframeSaveResult)
+		defer func() {
+			if err := app.timeframeStore.Close(); err != nil {
+				log.Printf("close timeframe favorites: %v", err)
+			}
+		}()
+	}
+
 	app.languagePreference = locales.System
 	app.transientLocale = i18n.Normalize(os.Getenv("MYGO_LOCALE")) != ""
 	if path, err := localePreferencePath(); err != nil {
@@ -189,6 +213,7 @@ func (a *application) left(c *ui.Context) {
 				components.SidebarSection(c, a.text().Navigation(), func() {
 					for _, item := range navigationItems {
 						if appui.NavigationItem(c.Key(item.id), item.label(a.text()), item.icon(), a.activePage == item.id).Clicked() {
+							a.timeframePickerOpen = false
 							a.activePage = item.id
 						}
 					}

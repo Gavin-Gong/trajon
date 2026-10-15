@@ -111,10 +111,12 @@ func (s *Source) endpoint(item market.Instrument) (string, string, error) {
 
 func interval(value string) (string, bool) {
 	switch value {
-	case "15m", "1h", "4h":
+	case "1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "1M":
 		return value, true
 	case "1D":
 		return "1d", true
+	case "1W":
+		return "1w", true
 	default:
 		return "", false
 	}

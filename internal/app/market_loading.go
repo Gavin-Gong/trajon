@@ -89,6 +89,9 @@ func (a *application) applyMarketSnapshot(snapshot market.Snapshot) {
 	hadCandles := len(a.candles) > 0
 	previousIdentity := a.currentInstrument.Identity()
 	previousInterval := a.chart.timeframe
+	if a.pendingPreviousTimeframe != "" {
+		previousInterval = a.pendingPreviousTimeframe
+	}
 	previousOlderError := a.olderError
 	if snapshot.HistoryPrepended > 0 {
 		a.chart.Start += snapshot.HistoryPrepended

@@ -654,6 +654,56 @@ func (msgs Messages) ChartToolbar() string {
 	return Catalog.Format(msgs.locale, "ChartToolbar", nil)
 }
 
+// Timeframes says "Timeframes"
+// in the language the app shows.
+func Timeframes() string { return In(i18n.Locale()).Timeframes() }
+
+// Timeframes says "Timeframes"
+// in the language of msgs.
+func (msgs Messages) Timeframes() string {
+	return Catalog.Format(msgs.locale, "Timeframes", nil)
+}
+
+// SelectTimeframe says "Select {period}"
+// in the language the app shows.
+func SelectTimeframe(period string) string { return In(i18n.Locale()).SelectTimeframe(period) }
+
+// SelectTimeframe says "Select {period}"
+// in the language of msgs.
+func (msgs Messages) SelectTimeframe(period string) string {
+	return Catalog.Format(msgs.locale, "SelectTimeframe", map[string]any{"period": period})
+}
+
+// FavoriteTimeframe says "Favorite {period}"
+// in the language the app shows.
+func FavoriteTimeframe(period string) string { return In(i18n.Locale()).FavoriteTimeframe(period) }
+
+// FavoriteTimeframe says "Favorite {period}"
+// in the language of msgs.
+func (msgs Messages) FavoriteTimeframe(period string) string {
+	return Catalog.Format(msgs.locale, "FavoriteTimeframe", map[string]any{"period": period})
+}
+
+// UnfavoriteTimeframe says "Unfavorite {period}"
+// in the language the app shows.
+func UnfavoriteTimeframe(period string) string { return In(i18n.Locale()).UnfavoriteTimeframe(period) }
+
+// UnfavoriteTimeframe says "Unfavorite {period}"
+// in the language of msgs.
+func (msgs Messages) UnfavoriteTimeframe(period string) string {
+	return Catalog.Format(msgs.locale, "UnfavoriteTimeframe", map[string]any{"period": period})
+}
+
+// TimeframeSaveFailed says "Could not save favorites"
+// in the language the app shows.
+func TimeframeSaveFailed() string { return In(i18n.Locale()).TimeframeSaveFailed() }
+
+// TimeframeSaveFailed says "Could not save favorites"
+// in the language of msgs.
+func (msgs Messages) TimeframeSaveFailed() string {
+	return Catalog.Format(msgs.locale, "TimeframeSaveFailed", nil)
+}
+
 // ReplayStart says "Replay start"
 // in the language the app shows.
 func ReplayStart() string { return In(i18n.Locale()).ReplayStart() }

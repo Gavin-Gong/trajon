@@ -162,14 +162,12 @@ func endpoint(item market.Instrument) (string, error) {
 
 func interval(value string) (string, bool) {
 	switch value {
-	case "15m":
-		return "15m", true
-	case "1h":
-		return "1H", true
-	case "4h":
-		return "4H", true
-	case "1D":
-		return "1Dutc", true
+	case "1m", "3m", "5m", "15m", "30m":
+		return value, true
+	case "1h", "2h", "4h":
+		return strings.ToUpper(value), true
+	case "1D", "1W", "1M":
+		return value + "utc", true
 	default:
 		return "", false
 	}

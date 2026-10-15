@@ -97,7 +97,9 @@ func (a *application) localizedKlineChart(c *ui.Context) {
 		chart.OnShortcut(0, ui.KeyEscape, state.exitReplaySelection)
 	}
 
-	if x, y, over := chart.PointerPosition(); state.replaySelecting {
+	if x, y, over := chart.PointerPosition(); a.timeframePickerOpen {
+		state.hover = -1
+	} else if state.replaySelecting {
 		state.replayPointerX = x
 		state.hover = -1
 	} else if state.replayLineDrag.Source != 0 || (over && a.pointerOverReplayLines(c, x, y)) {
@@ -443,26 +445,7 @@ func (a *application) klineToolbarLayout(c *ui.Context, inTitle bool) {
 		}
 		klineToolbarDivider(c)
 
-		ui.Row(c).Gap(2).AlignItems(ui.Center).Children(func() {
-			for _, period := range []string{"15m", "1h", "4h", "1D"} {
-				selected := state.timeframe == period
-				button := components.Button(c, period, components.ButtonGhost).
-					Size(32, 26).Padding(0).Radius(t.Radius).Selected(selected).
-					Disabled(state.replayLocked())
-				if selected {
-					button.Background(t.Text.Alpha(.12)).TextColor(t.Text)
-				}
-				if button.Clicked() {
-					previousTimeframe := state.timeframe
-					state.timeframe = period
-					state.hover = -1
-					if a.marketLoader != nil && a.marketLoadStarted && currentInstrument.SourceID != "" {
-						a.pendingPreviousTimeframe = previousTimeframe
-						a.loadMarketData(currentInstrument, period, false)
-					}
-				}
-			}
-		})
+		a.timeframeControl(c)
 		klineToolbarDivider(c)
 
 		trendTool := klineActionIconButton(c, lucide.TrendingUp, a.text().TrendLine(), state.tool == klineToolTrend).Disabled(state.replaySelecting)

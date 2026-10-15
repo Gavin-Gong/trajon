@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.0.3
+
+### Added
+
+- A timeframe dropdown with 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 1D, 1W, and 1M intervals on Binance and OKX.
+- Starred timeframe shortcuts with local persistence across application restarts.
+
+### Changed
+
+- Show the current unstarred timeframe beside the dropdown arrow without adding it to saved favorites.
+- Use a compact, left-aligned timeframe list with whole-row hover and selection backgrounds, color-only star highlights, and space for the scrollbar.
+- Keep the timeframe dropdown and drawing tools reachable in narrow windows by scrolling only the starred shortcuts.
+
+### Fixed
+
+- Restore the last successfully loaded timeframe when rapid timeframe switching fails.
+- Reset series-specific chart state after a successful timeframe change while preserving replay preferences and starred shortcuts.
+
 ## 0.0.2
 
 ### Added
