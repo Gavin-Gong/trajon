@@ -180,10 +180,10 @@ func (a *application) showPendingMarketToasts(c *ui.Context) {
 	}
 	c.AddToast(ui.Toast{
 		ID:          olderErrorToastID,
-		Title:       a.text().OlderMarketLoadFailed,
+		Title:       a.text().OlderMarketLoadFailed(),
 		Description: appui.MarketError(a.text(), a.olderError),
 		Type:        "error",
-		Action:      a.text().Retry,
+		Action:      a.text().Retry(),
 		OnAction:    a.retryOlderCandles,
 	})
 }

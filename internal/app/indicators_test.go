@@ -143,7 +143,7 @@ func TestIndicatorDialogValidatesPeriods(t *testing.T) {
 	clickReplaySetting(t, tt, "EMA")
 	clickReplaySetting(t, tt, "EMA 1 周期")
 	replaceReplaySetting(tt, "9.5")
-	if app.indicatorDraft.valid() || !tt.HasText(app.text().IndicatorPeriodsInvalid) {
+	if app.indicatorDraft.valid() || !tt.HasText(app.text().IndicatorPeriodsInvalid()) {
 		t.Fatal("fractional period was accepted")
 	}
 	clickReplaySetting(t, tt, "保存")
@@ -154,7 +154,7 @@ func TestIndicatorDialogValidatesPeriods(t *testing.T) {
 	replaceReplaySetting(tt, "9")
 	clickReplaySetting(t, tt, "MACD")
 	indicatorEditField(t, tt, "快线周期", "26")
-	if app.indicatorDraft.valid() || !tt.HasText(app.text().MACDPeriodsInvalid) {
+	if app.indicatorDraft.valid() || !tt.HasText(app.text().MACDPeriodsInvalid()) {
 		t.Fatal("fast >= slow was accepted")
 	}
 	clickReplaySetting(t, tt, "取消")

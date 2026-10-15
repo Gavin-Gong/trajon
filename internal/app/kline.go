@@ -86,12 +86,12 @@ func (a *application) localizedKlineChart(c *ui.Context) {
 		cursor = ui.CursorCrosshair
 	}
 	currentInstrument := a.displayInstrument()
-	description := a.text().ChartDescription
+	description := a.text().ChartDescription()
 	if state.replaySelecting {
-		description = a.text().ReplaySelectionDescription
+		description = a.text().ReplaySelectionDescription()
 	}
-	chart := ui.Box(c).Key("kline-chart").Fill().
-		Cursor(cursor).Focusable().Label(fmt.Sprintf(a.text().CandleChart, currentInstrument.Symbol)).
+	chart := ui.Box(c.Key("kline-chart")).Fill().
+		Cursor(cursor).Focusable().Label(a.text().CandleChart(currentInstrument.Symbol)).
 		Description(description).Bind(&state.chartHandle)
 	if state.replaySelecting {
 		chart.OnShortcut(0, ui.KeyEscape, state.exitReplaySelection)
@@ -283,7 +283,7 @@ func (a *application) localizedKlineChart(c *ui.Context) {
 			c.Invalidate()
 		}
 		state.plotWidth = g.width
-		drawKline(p, r, g, a.candles, state, t, a.text().Volume)
+		drawKline(p, r, g, a.candles, state, t, a.text().Volume())
 		drawReplaySelection(p, r, g, state, t)
 	})
 	chart.Children(func() {
@@ -308,12 +308,12 @@ func (a *application) klineActionBar(c *ui.Context) {
 		width = klineReplayActionBarWidth
 	}
 	state.actionBarWidth = width
-	bar := ui.Row(c).Key("kline-action-bar").Size(width, klineActionBarHeight).
+	bar := ui.Row(c.Key("kline-action-bar")).Size(width, klineActionBarHeight).
 		Padding(6).Gap(4).AlignItems(ui.Center).Justify(ui.Center).
 		Radius(klineActionBarHeight/2).Background(c.Theme().Background.Alpha(.78)).
 		Border(1, c.Theme().Border.Alpha(.55)).
 		Shadow(0, 2, 10, 0, c.Theme().Text.Alpha(.1)).
-		Role(ui.RoleGroup).Label(a.text().ChartActions).Cursor(ui.CursorGrab)
+		Role(ui.RoleGroup).Label(a.text().ChartActions()).Cursor(ui.CursorGrab)
 
 	if chartBounds.W > 0 && chartBounds.H > 0 {
 		// Anchor to the current chart size; dragging adds an offset from center/bottom.
@@ -343,7 +343,7 @@ func (a *application) klineActionBar(c *ui.Context) {
 
 	bar.Children(func() {
 		if !state.replayHasStart {
-			replayTool := klineActionIconButton(c.Key("replay-start"), lucide.ClockArrowLeft, a.text().ReplayStart, state.replaySelecting)
+			replayTool := klineActionIconButton(c.Key("replay-start"), lucide.ClockArrowLeft, a.text().ReplayStart(), state.replaySelecting)
 			if state.replaySelecting {
 				replayTool.OnShortcut(0, ui.KeyEscape, state.exitReplaySelection)
 			}
@@ -359,23 +359,23 @@ func (a *application) klineActionBar(c *ui.Context) {
 				}
 			})
 		} else {
-			playLabel, playIcon := a.text().Play, lucide.Play
+			playLabel, playIcon := a.text().Play(), lucide.Play
 			if state.actionPlaying {
-				playLabel, playIcon = a.text().Pause, lucide.Pause
+				playLabel, playIcon = a.text().Pause(), lucide.Pause
 			}
 			klineActionIconButton(c.Key("replay-play"), playIcon, playLabel, false, "Space").
 				Disabled(state.replayComplete).OnClick(func() { a.toggleReplay(c) })
 			a.replaySpeedControl(c)
 			a.replayTradingControls(c)
 			ui.Box(c.Key("replay-session-divider")).Size(1, 16).MarginX(klineReplayDividerMargin).Background(c.Theme().Border)
-			klineActionIconButton(c.Key("replay-reset"), lucide.RotateCcw, a.text().Reset, false).
+			klineActionIconButton(c.Key("replay-reset"), lucide.RotateCcw, a.text().Reset(), false).
 				Disabled(!state.replaySessionStarted && !state.replayComplete && len(state.replayAccount.Trades) == 0).
 				OnClick(state.resetReplay)
-			klineActionIconButton(c.Key("replay-end"), lucide.Square, a.text().End, false).
+			klineActionIconButton(c.Key("replay-end"), lucide.Square, a.text().End(), false).
 				Bind(&a.replayEndButton).OnClick(a.openReplaySummary)
 		}
 		if state.canEditReplaySettings() {
-			klineActionIconButton(c.Key("replay-settings"), lucide.Settings2, a.text().ReplaySettings, false).
+			klineActionIconButton(c.Key("replay-settings"), lucide.Settings2, a.text().ReplaySettings(), false).
 				Bind(&a.replaySettingsButton).OnClick(a.openReplaySettings)
 		}
 	})
@@ -416,7 +416,7 @@ func (a *application) klineToolbarInTitle(c *ui.Context) {
 func (a *application) klineToolbarLayout(c *ui.Context, inTitle bool) {
 	state := &a.chart
 	t := c.Theme()
-	toolbar := ui.Row(c).Key("kline-toolbar").Role(ui.RoleToolbar).Label(a.text().ChartToolbar)
+	toolbar := ui.Row(c.Key("kline-toolbar")).Role(ui.RoleToolbar).Label(a.text().ChartToolbar())
 	if inTitle {
 		toolbar.FillWidth().FillHeight().Padding(0, 0).AlignItems(ui.Center)
 	} else {
@@ -430,7 +430,7 @@ func (a *application) klineToolbarLayout(c *ui.Context, inTitle bool) {
 		currentInstrument := a.displayInstrument()
 		instrumentButton := components.Button(c.Key("kline-instrument"), "", components.ButtonGhost).
 			Padding(4, 8).Radius(t.Radius).MinWidth(0).
-			Label(fmt.Sprintf(a.text().ChooseInstrumentSymbol, currentInstrument.Symbol)).
+			Label(a.text().ChooseInstrumentSymbol(currentInstrument.Symbol)).
 			Disabled(state.replayLocked())
 		instrumentButton.Children(func() {
 			ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
@@ -465,14 +465,14 @@ func (a *application) klineToolbarLayout(c *ui.Context, inTitle bool) {
 		})
 		klineToolbarDivider(c)
 
-		trendTool := klineActionIconButton(c, lucide.TrendingUp, a.text().TrendLine, state.tool == klineToolTrend).Disabled(state.replaySelecting)
+		trendTool := klineActionIconButton(c, lucide.TrendingUp, a.text().TrendLine(), state.tool == klineToolTrend).Disabled(state.replaySelecting)
 		if trendTool.Clicked() {
 			resetAnnotationClickHistory(state)
 			finishAnnotationTextEdit(state, true)
 			state.annotationGesture = annotationGestureNone
 			state.tool = klineToolTrend
 		}
-		textTool := klineActionIconButton(c, lucide.Type, a.text().Text, state.tool == klineToolText).Disabled(state.replaySelecting)
+		textTool := klineActionIconButton(c, lucide.Type, a.text().Text(), state.tool == klineToolText).Disabled(state.replaySelecting)
 		if textTool.Clicked() {
 			resetAnnotationClickHistory(state)
 			finishAnnotationTextEdit(state, true)
@@ -481,7 +481,7 @@ func (a *application) klineToolbarLayout(c *ui.Context, inTitle bool) {
 		}
 
 		klineToolbarDivider(c)
-		klineActionIconButton(c.Key("kline-indicators"), lucide.ChartNoAxesCombined, a.text().Indicators, a.indicatorsOpen).
+		klineActionIconButton(c.Key("kline-indicators"), lucide.ChartNoAxesCombined, a.text().Indicators(), a.indicatorsOpen).
 			Bind(&a.indicatorsButton).OnClick(a.openIndicators)
 	})
 }
@@ -523,7 +523,7 @@ func (a *application) klineTextEditor(c *ui.Context) {
 	state.textEditorY = max(4, min(y-height/2, state.chartHeight-height-4))
 	input := ui.TextInput(c, &state.textDraft).
 		Absolute().Left(state.textEditorX).Top(state.textEditorY).Size(width, height).
-		Placeholder(a.text().EnterText).Label(a.text().AnnotationText).AutoFocus().
+		Placeholder(a.text().EnterText()).Label(a.text().AnnotationText()).AutoFocus().
 		Background(c.Theme().Surface).Border(1, c.Theme().Accent).Radius(c.Theme().Radius / 2)
 	input.HandleInput(func(ev ui.InputEvent) bool {
 		if ev.Kind == ui.InputKeyDown && ev.Key == ui.KeyEscape {

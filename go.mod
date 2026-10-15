@@ -3,8 +3,8 @@ module trajon
 go 1.27.1
 
 require (
-	github.com/egoist/mygo v0.4.8
-	github.com/oneo-me/onevra/source v0.2026.8
+	github.com/egoist/mygo v0.5.1
+	github.com/oneo-me/onevra/source v0.2026.9
 )
 
 require (
@@ -14,4 +14,5 @@ require (
 	github.com/go-text/typesetting v0.3.5 // indirect
 	github.com/yuin/goldmark v1.8.6 // indirect
 	golang.org/x/image v0.47.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
 )

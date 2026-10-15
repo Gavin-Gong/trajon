@@ -11,7 +11,7 @@ import (
 
 func TestReplayPositionLineAndCloseUseWholePositionAtLatestClose(t *testing.T) {
 	for _, side := range []market.ReplaySide{market.ReplayBuy, market.ReplaySell} {
-		t.Run(replayPositionCaption(map[market.ReplaySide]float64{market.ReplayBuy: 2, market.ReplaySell: -2}[side], locales.For(locales.Chinese)), func(t *testing.T) {
+		t.Run(replayPositionCaption(map[market.ReplaySide]float64{market.ReplayBuy: 2, market.ReplaySell: -2}[side], locales.In(string(locales.Chinese))), func(t *testing.T) {
 			app, tt := newKlineToolbarTester()
 			app.chart.Start = 100
 			app.chart.selectReplayStart(120, len(app.candles))

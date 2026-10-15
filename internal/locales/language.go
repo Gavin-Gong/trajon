@@ -1,6 +1,7 @@
+// Package locales owns the app's JSON/ICU catalogs and typed message accessors.
 package locales
 
-import "strings"
+import "github.com/egoist/mygo/i18n"
 
 type Language string
 
@@ -22,44 +23,28 @@ func (p Preference) Valid() bool {
 	return p == System || p == PreferChinese || p == PreferEnglish
 }
 
-func Resolve(preference Preference, systemLocale string) Language {
-	switch preference {
-	case PreferChinese:
-		return Chinese
-	case PreferEnglish:
-		return English
-	default:
-		return Match(systemLocale)
+// Locale is the tag App.SetLocale accepts; an empty tag follows the system.
+func (p Preference) Locale() string {
+	if p == PreferChinese || p == PreferEnglish {
+		return string(p)
 	}
+	return ""
 }
 
-// Match follows MyGo's updater language matching: accept BCP 47 and POSIX
-// locales, infer Chinese scripts from regions, and use English for languages
-// or scripts we do not translate (including Traditional Chinese).
-func Match(locale string) Language {
-	locale, _, _ = strings.Cut(strings.TrimSpace(locale), ".")
-	locale, _, _ = strings.Cut(locale, "@")
-	parts := strings.FieldsFunc(locale, func(r rune) bool { return r == '-' || r == '_' })
-	if len(parts) == 0 || !strings.EqualFold(parts[0], "zh") {
-		return English
+// Resolve supports standalone views without a MyGo application host. Native
+// windows follow App.Locale and OnLocaleChanged instead of resolving separately.
+func Resolve(preference Preference, preferred ...string) Language {
+	if preference == PreferChinese || preference == PreferEnglish {
+		return Language(preference)
 	}
-	var script, region string
-	for _, part := range parts[1:] {
-		switch len(part) {
-		case 4:
-			script = strings.ToLower(part)
-		case 2, 3:
-			region = strings.ToUpper(part)
-		}
-	}
-	if script == "" {
-		script = "hans"
-		if region == "TW" || region == "HK" || region == "MO" {
-			script = "hant"
-		}
-	}
-	if script == "hans" {
-		return Chinese
+	return Match(preferred...)
+}
+
+// Match uses MyGo's BCP 47/POSIX and CLDR matching, including script boundaries
+// and ordered preferred languages. Unsupported languages fall back to English.
+func Match(preferred ...string) Language {
+	if tag := i18n.Match(preferred, Catalog.Languages()); tag != "" {
+		return Language(tag)
 	}
 	return English
 }

@@ -15,7 +15,7 @@ import (
 func newLocaleSettingsTester() (*application, *ui.Tester) {
 	app := &application{
 		activePage:           "overview",
-		systemLocale:         "en-US",
+		preferredLanguages:   []string{"en-US"},
 		languagePreference:   locales.System,
 		language:             locales.Resolve(locales.System, "en-US"),
 		chart:                newKlineState(0),
@@ -56,7 +56,7 @@ func TestLanguageSettingsSwitchImmediatelyAndPersist(t *testing.T) {
 		for range 3 {
 			tt.Frame()
 		}
-		if app.languagePreference != choice.preference || !app.settingsOpen || !tt.HasText(choice.title) || !tt.Focused(app.text().Language) {
+		if app.languagePreference != choice.preference || !app.settingsOpen || !tt.HasText(choice.title) || !tt.Focused(app.text().LanguageLabel()) {
 			t.Fatalf("choice %q left preference=%q, open=%v, texts=%v", choice.option, app.languagePreference, app.settingsOpen, tt.Texts())
 		}
 	}

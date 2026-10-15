@@ -51,21 +51,21 @@ func (a *application) placeReplayTrade(side market.ReplaySide) (market.ReplayTra
 func (a *application) submitReplayTrade(c *ui.Context, side market.ReplaySide) {
 	trade, err := a.placeReplayTrade(side)
 	if err != nil {
-		message := a.text().OrderUnavailable
+		message := a.text().OrderUnavailable()
 		switch {
 		case errors.Is(err, market.ErrInsufficientReplayCapital):
-			message = a.text().InsufficientCapital
+			message = a.text().InsufficientCapital()
 		case errors.Is(err, market.ErrInvalidReplayTrade):
-			message = a.text().InvalidOrder
+			message = a.text().InvalidOrder()
 		case errors.Is(err, market.ErrInvalidReplaySettings):
-			message = a.text().InvalidReplaySettings
+			message = a.text().InvalidReplaySettings()
 		}
 		a.showReplayTradeMessage(c, message)
 		return
 	}
-	label := a.text().Buy
+	label := a.text().Buy()
 	if side == market.ReplaySell {
-		label = a.text().Sell
+		label = a.text().Sell()
 	}
 	a.showReplayTradeMessage(c, replayFillMessage(label, trade))
 }
@@ -105,12 +105,12 @@ func (a *application) replayTradingControls(c *ui.Context) {
 	ui.Box(c.Key("replay-order-quantity")).Size(klineReplayQuantityWidth, 28).FontSize(12).
 		Bind(&a.chart.replayQuantityHandle).Disabled(!canTrade).Children(func() {
 		components.NumberInput(c, &a.chart.replayOrderQuantity, 0, math.MaxFloat64, 1).
-			Label(a.text().OrderQuantity).FillWidth().Height(28)
+			Label(a.text().OrderQuantity()).FillWidth().Height(28)
 	})
-	klineActionIconButton(c.Key("replay-buy"), lucide.TrendingUp, a.text().Buy, false, "↑").
+	klineActionIconButton(c.Key("replay-buy"), lucide.TrendingUp, a.text().Buy(), false, "↑").
 		Disabled(!canTrade || a.chart.replayOrderQuantity <= 0).
 		OnClick(func() { a.submitReplayTrade(c, market.ReplayBuy) })
-	klineActionIconButton(c.Key("replay-sell"), lucide.TrendingDown, a.text().Sell, false, "↓").
+	klineActionIconButton(c.Key("replay-sell"), lucide.TrendingDown, a.text().Sell(), false, "↓").
 		Disabled(!canTrade || a.chart.replayOrderQuantity <= 0).
 		OnClick(func() { a.submitReplayTrade(c, market.ReplaySell) })
 }

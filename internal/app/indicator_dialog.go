@@ -12,18 +12,18 @@ import (
 func (a *application) indicatorsDialog(c *ui.Context) {
 	wasOpen := a.indicatorsOpen
 	text := a.text()
-	components.Dialog(c.Key("indicators-dialog"), &a.indicatorsOpen, components.DialogOptions{Label: text.Indicators}, func(panel ui.Element) {
+	components.Dialog(c.Key("indicators-dialog"), &a.indicatorsOpen, components.DialogOptions{Label: text.Indicators()}, func(panel ui.Element) {
 		panel.Width(700).Height(480).Padding(18).Gap(16)
 		ui.Row(c).FillWidth().AlignItems(ui.Center).Children(func() {
-			components.Text(c, text.Indicators).FontSize(18).Bold().SingleLine()
+			components.Text(c, text.Indicators()).FontSize(18).Bold().SingleLine()
 			ui.Spacer(c)
 			components.Button(c.Key("indicators-close"), "", components.ButtonGhost).
-				Size(28, 28).Padding(0).Radius(14).Center().Label(text.CloseIndicators).
+				Size(28, 28).Padding(0).Radius(14).Center().Label(text.CloseIndicators()).
 				OnClick(a.closeIndicators).Children(func() { components.Icon(c, lucide.X).Size(15, 15) })
 		})
 		ui.Row(c).FillWidth().Grow(1).MinHeight(0).Gap(16).Children(func() {
-			ui.Column(c).Width(132).FillHeight().Justify(ui.Start).Gap(4).Role(ui.RoleGroup).Label(text.Indicators).Children(func() {
-				for i, name := range []string{text.Volume, "EMA", "MACD"} {
+			ui.Column(c).Width(132).FillHeight().Justify(ui.Start).Gap(4).Role(ui.RoleGroup).Label(text.Indicators()).Children(func() {
+				for i, name := range []string{text.Volume(), "EMA", "MACD"} {
 					enabled := a.indicatorDraft.ShowVolume
 					if i == 1 {
 						enabled = a.indicatorDraft.EMAEnabled
@@ -64,16 +64,16 @@ func (a *application) indicatorsDialog(c *ui.Context) {
 		})
 		ui.Row(c).FillWidth().AlignItems(ui.Center).Gap(8).Children(func() {
 			if !a.indicatorDraft.valid() {
-				message := text.IndicatorPeriodsInvalid
+				message := text.IndicatorPeriodsInvalid()
 				if a.indicatorDraft.MACDFast >= a.indicatorDraft.MACDSlow {
-					message = text.MACDPeriodsInvalid
+					message = text.MACDPeriodsInvalid()
 				}
 				components.Text(c, message).TextColor(c.Theme().TextMuted).Wrap().Grow(1).MinWidth(0)
 			} else {
 				ui.Spacer(c)
 			}
-			components.Button(c.Key("indicators-cancel"), text.Cancel, components.ButtonSecondary).OnClick(a.closeIndicators)
-			components.Button(c.Key("indicators-save"), text.Save, components.ButtonPrimary).
+			components.Button(c.Key("indicators-cancel"), text.Cancel(), components.ButtonSecondary).OnClick(a.closeIndicators)
+			components.Button(c.Key("indicators-save"), text.Save(), components.ButtonPrimary).
 				Disabled(!a.indicatorDraft.valid()).OnClick(a.saveIndicators)
 		})
 	})
@@ -84,23 +84,23 @@ func (a *application) indicatorsDialog(c *ui.Context) {
 
 func (a *application) volumeOptions(c *ui.Context) {
 	text, draft := a.text(), &a.indicatorDraft
-	components.Switch(c.Key("volume-enabled"), &draft.ShowVolume, fmt.Sprintf(text.ShowIndicator, text.Volume))
-	indicatorColorField(c.Key("volume-up"), text.RisingColor, &draft.VolumeUp)
-	indicatorColorField(c.Key("volume-down"), text.FallingColor, &draft.VolumeDown)
+	components.Switch(c.Key("volume-enabled"), &draft.ShowVolume, text.ShowIndicator(text.Volume()))
+	indicatorColorField(c.Key("volume-up"), text.RisingColor(), &draft.VolumeUp)
+	indicatorColorField(c.Key("volume-down"), text.FallingColor(), &draft.VolumeDown)
 }
 
 func (a *application) emaOptions(c *ui.Context) {
 	text, draft := a.text(), &a.indicatorDraft
 	ui.Row(c).FillWidth().AlignItems(ui.Center).Children(func() {
-		components.Switch(c.Key("ema-enabled"), &draft.EMAEnabled, fmt.Sprintf(text.ShowIndicator, "EMA"))
+		components.Switch(c.Key("ema-enabled"), &draft.EMAEnabled, text.ShowIndicator("EMA"))
 		ui.Spacer(c)
-		components.Button(c.Key("ema-add"), text.AddEMALine, components.ButtonSecondary).Height(28).OnClick(a.addEMALine)
+		components.Button(c.Key("ema-add"), text.AddEMALine(), components.ButtonSecondary).Height(28).OnClick(a.addEMALine)
 	})
 	ui.Row(c).FillWidth().Gap(8).AlignItems(ui.Center).TextColor(c.Theme().TextMuted).Children(func() {
-		components.Text(c, text.Display).Width(76).SingleLine()
-		components.Text(c, text.Period).Grow(1).MinWidth(0).SingleLine()
-		components.Text(c, text.Color).Width(48).SingleLine()
-		components.Text(c, text.LineWidth).Width(76).SingleLine()
+		components.Text(c, text.Display()).Width(76).SingleLine()
+		components.Text(c, text.Period()).Grow(1).MinWidth(0).SingleLine()
+		components.Text(c, text.Color()).Width(48).SingleLine()
+		components.Text(c, text.LineWidth()).Width(76).SingleLine()
 		ui.Box(c).Width(28)
 	})
 	for i := range draft.EMALines {
@@ -109,12 +109,12 @@ func (a *application) emaOptions(c *ui.Context) {
 		ui.Row(c.Key(fmt.Sprintf("ema-line-%d", id))).FillWidth().Gap(8).AlignItems(ui.Center).Children(func() {
 			components.Checkbox(c.Key("enabled"), &line.Enabled, name).Width(76)
 			components.NumberInput(c.Key("period"), &line.Period, 1, maxIndicatorPeriod, 1).
-				Label(fmt.Sprintf(text.EMAPeriod, i+1)).Grow(1).MinWidth(0)
-			components.ColorPicker(c.Key("color"), &line.Color).Label(fmt.Sprintf(text.EMAColor, i+1)).Size(48, 28)
+				Label(text.EMAPeriod(i + 1)).Grow(1).MinWidth(0)
+			components.ColorPicker(c.Key("color"), &line.Color).Label(text.EMAColor(i+1)).Size(48, 28)
 			components.NumberInput(c.Key("width"), &line.Width, .5, 4, .5).
-				Label(fmt.Sprintf(text.EMAWidth, i+1)).Width(76).MinWidth(0)
+				Label(text.EMAWidth(i + 1)).Width(76).MinWidth(0)
 			components.Button(c.Key("remove"), "", components.ButtonGhost).Size(28, 28).Padding(0).Center().
-				Label(fmt.Sprintf(text.RemoveEMALine, i+1)).OnClick(func() { a.removeEMALine(id) }).
+				Label(text.RemoveEMALine(i + 1)).OnClick(func() { a.removeEMALine(id) }).
 				Children(func() { components.Icon(c, lucide.X).Size(14, 14) })
 		})
 	}
@@ -122,14 +122,14 @@ func (a *application) emaOptions(c *ui.Context) {
 
 func (a *application) macdOptions(c *ui.Context) {
 	text, draft := a.text(), &a.indicatorDraft
-	components.Switch(c.Key("macd-enabled"), &draft.MACDEnabled, fmt.Sprintf(text.ShowIndicator, "MACD"))
-	indicatorPeriodField(c.Key("macd-fast"), text.FastPeriod, &draft.MACDFast)
-	indicatorPeriodField(c.Key("macd-slow"), text.SlowPeriod, &draft.MACDSlow)
-	indicatorPeriodField(c.Key("macd-signal"), text.SignalPeriod, &draft.MACDSignal)
-	indicatorColorField(c.Key("macd-dif"), text.DIFColor, &draft.MACDDIF)
-	indicatorColorField(c.Key("macd-dea"), text.DEAColor, &draft.MACDDEA)
-	indicatorColorField(c.Key("macd-positive"), text.PositiveColor, &draft.MACDPositive)
-	indicatorColorField(c.Key("macd-negative"), text.NegativeColor, &draft.MACDNegative)
+	components.Switch(c.Key("macd-enabled"), &draft.MACDEnabled, text.ShowIndicator("MACD"))
+	indicatorPeriodField(c.Key("macd-fast"), text.FastPeriod(), &draft.MACDFast)
+	indicatorPeriodField(c.Key("macd-slow"), text.SlowPeriod(), &draft.MACDSlow)
+	indicatorPeriodField(c.Key("macd-signal"), text.SignalPeriod(), &draft.MACDSignal)
+	indicatorColorField(c.Key("macd-dif"), text.DIFColor(), &draft.MACDDIF)
+	indicatorColorField(c.Key("macd-dea"), text.DEAColor(), &draft.MACDDEA)
+	indicatorColorField(c.Key("macd-positive"), text.PositiveColor(), &draft.MACDPositive)
+	indicatorColorField(c.Key("macd-negative"), text.NegativeColor(), &draft.MACDNegative)
 }
 
 func indicatorPeriodField(c *ui.Context, label string, value *float64) {

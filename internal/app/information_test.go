@@ -43,19 +43,19 @@ func TestInformationButtonAndCurrentVersion(t *testing.T) {
 			app, tt := newLocaleSettingsTester()
 			app.language = language
 			tt.Frame()
-			settings, settingsOK := tt.Find(app.text().Settings)
-			information, informationOK := tt.Find(app.text().Changelog)
+			settings, settingsOK := tt.Find(app.text().Settings())
+			information, informationOK := tt.Find(app.text().Changelog())
 			if !settingsOK || !informationOK || information.X < settings.X+settings.W || information.Y != settings.Y {
 				t.Fatalf("information should follow settings: settings=%+v, information=%+v", settings, information)
 			}
 			if app.informationIcon() != lucide.Info() {
 				t.Fatal("current version should use Info")
 			}
-			clickReplaySetting(t, tt, app.text().Changelog)
+			clickReplaySetting(t, tt, app.text().Changelog())
 			if !app.informationOpen || !tt.HasText(applicationName) || !tt.HasText("v0.0.1") || !tt.HasText("GitHub") {
 				t.Fatalf("information did not show version and GitHub: %v", tt.Texts())
 			}
-			if tt.HasText(app.text().InstallUpdate) {
+			if tt.HasText(app.text().InstallUpdate()) {
 				t.Fatal("current version should not show install")
 			}
 			if tt.HasText(projectGitHubURL) {
@@ -76,7 +76,7 @@ func TestInformationButtonAndCurrentVersion(t *testing.T) {
 
 func assertInformationHeader(t *testing.T, tt *ui.Tester, app *application, width float32) {
 	t.Helper()
-	logo, logoOK := tt.Find(fmt.Sprintf(app.text().ApplicationLogo, applicationName))
+	logo, logoOK := tt.Find(app.text().ApplicationLogo(applicationName))
 	name, nameOK := tt.Find(applicationName)
 	versionText := mygo.App.Version()
 	if versionText == "" {
@@ -99,7 +99,7 @@ func assertInformationHeader(t *testing.T, tt *ui.Tester, app *application, widt
 	// with an update. It must not also appear as a visible dialog title.
 	count := 0
 	for _, label := range tt.Texts() {
-		if label == app.text().Changelog {
+		if label == app.text().Changelog() {
 			count++
 		}
 	}
@@ -124,14 +124,14 @@ func TestInformationUpdateChangelogAndInstallPlacement(t *testing.T) {
 				t.Fatal("new update should use Download")
 			}
 			tt.SetSize(1120, 760)
-			clickReplaySetting(t, tt, app.text().UpdateAvailable)
+			clickReplaySetting(t, tt, app.text().UpdateAvailable())
 			assertInformationHeader(t, tt, app, 1120)
-			for _, text := range []string{fmt.Sprintf(app.text().NewVersion, "0.0.2"), app.text().Changelog, "Fixes", "Chart zoom", "Replay controls", "Install Update"} {
+			for _, text := range []string{app.text().NewVersion("0.0.2"), app.text().Changelog(), "Fixes", "Chart zoom", "Replay controls", "Install Update"} {
 				if !tt.HasText(text) {
 					t.Errorf("missing update text %q: %v", text, tt.Texts())
 				}
 			}
-			panel, _ := tt.Find(applicationName + " " + app.text().Changelog)
+			panel, _ := tt.Find(applicationName + " " + app.text().Changelog())
 			button, ok := tt.Find("Install Update")
 			if !ok || button.X+button.W > panel.X+panel.W || button.X < panel.X+panel.W/2 || button.Y+button.H > panel.Y+panel.H || button.Y < panel.Y+panel.H/2 {
 				t.Fatalf("install should be bottom-right: panel=%+v, button=%+v", panel, button)
@@ -158,7 +158,7 @@ func TestInformationDismissalRestoresStableButtonFocus(t *testing.T) {
 				tt.Frame()
 				switch dismissal {
 				case "close":
-					clickReplaySetting(t, tt, app.text().CloseChangelog)
+					clickReplaySetting(t, tt, app.text().CloseChangelog())
 				case "escape":
 					tt.Key(0, ui.KeyEscape)
 				case "backdrop":
@@ -167,7 +167,7 @@ func TestInformationDismissalRestoresStableButtonFocus(t *testing.T) {
 				for range 3 {
 					tt.Frame()
 				}
-				if app.informationOpen || !tt.Focused(app.text().UpdateAvailable) {
+				if app.informationOpen || !tt.Focused(app.text().UpdateAvailable()) {
 					t.Fatal("dismissal did not restore focus to the updated opener")
 				}
 			}
@@ -179,19 +179,19 @@ func TestInformationCheckErrorAndRetry(t *testing.T) {
 	app, tt := newLocaleSettingsTester()
 	app.updates.check = func(context.Context) (*availableUpdate, error) { return nil, errors.New("offline") }
 	t.Cleanup(app.closeUpdates)
-	clickReplaySetting(t, tt, app.text().Changelog)
+	clickReplaySetting(t, tt, app.text().Changelog())
 	waitForUpdateState(t, app, func() bool { return !app.updates.checking })
 	tt.Frame()
-	if !tt.HasText(app.text().UpdateCheckFailed) || !tt.HasText(app.text().Retry) || tt.HasText("Install Update") {
+	if !tt.HasText(app.text().UpdateCheckFailed()) || !tt.HasText(app.text().Retry()) || tt.HasText("Install Update") {
 		t.Fatal("failed check did not offer retry")
 	}
 	app.updates.check = func(context.Context) (*availableUpdate, error) {
 		return &availableUpdate{version: "0.0.2", notes: "- Fixed replay"}, nil
 	}
-	clickReplaySetting(t, tt, app.text().Retry)
+	clickReplaySetting(t, tt, app.text().Retry())
 	waitForUpdateState(t, app, func() bool { return !app.updates.checking })
 	tt.Frame()
-	if tt.HasText(app.text().UpdateCheckFailed) || !tt.HasText("Install Update") || !app.informationOpen {
+	if tt.HasText(app.text().UpdateCheckFailed()) || !tt.HasText("Install Update") || !app.informationOpen {
 		t.Fatal("successful retry did not update the open dialog")
 	}
 }
@@ -214,12 +214,12 @@ func TestInformationInstallDismissalAndRetry(t *testing.T) {
 	app.updates.relaunch = func() { relaunched = true }
 	t.Cleanup(app.closeUpdates)
 	tt.Frame()
-	clickReplaySetting(t, tt, app.text().UpdateAvailable)
+	clickReplaySetting(t, tt, app.text().UpdateAvailable())
 	clickReplaySetting(t, tt, "Install Update")
 	<-started
 	waitForUpdateState(t, app, func() bool { return app.updates.total == 100 })
 	tt.Frame()
-	if !tt.HasText(app.text().InstallingUpdate) {
+	if !tt.HasText(app.text().InstallingUpdate()) {
 		t.Fatal("installation progress is not visible")
 	}
 	clickReplaySetting(t, tt, "Install Update")
@@ -231,11 +231,11 @@ func TestInformationInstallDismissalAndRetry(t *testing.T) {
 	if app.informationOpen || !app.updates.installing {
 		t.Fatal("dismissing information canceled installation")
 	}
-	clickReplaySetting(t, tt, app.text().UpdateAvailable)
+	clickReplaySetting(t, tt, app.text().UpdateAvailable())
 	release <- errors.New("download failed")
 	waitForUpdateState(t, app, func() bool { return !app.updates.installing })
 	tt.Frame()
-	if !tt.HasText(app.text().UpdateInstallFailed) || relaunched {
+	if !tt.HasText(app.text().UpdateInstallFailed()) || relaunched {
 		t.Fatal("failed installation did not show an error or relaunched")
 	}
 	clickReplaySetting(t, tt, "Install Update")
@@ -251,11 +251,11 @@ func TestInformationLongNotesKeepInstallVisible(t *testing.T) {
 	app, tt := newLocaleSettingsTester()
 	setTestAvailableUpdate(app, strings.Repeat("- Fixed chart interactions with a long description that wraps across the available width.\n", 40))
 	tt.Frame()
-	clickReplaySetting(t, tt, app.text().UpdateAvailable)
+	clickReplaySetting(t, tt, app.text().UpdateAvailable())
 	for _, size := range [][2]int{{760, 520}, {1120, 760}} {
 		tt.SetSize(size[0], size[1])
 		assertInformationHeader(t, tt, app, float32(size[0]))
-		panel, _ := tt.Find(applicationName + " " + app.text().Changelog)
+		panel, _ := tt.Find(applicationName + " " + app.text().Changelog())
 		button, ok := tt.Find("Install Update")
 		if !ok || button.Y+button.H > panel.Y+panel.H || button.Y+button.H > float32(size[1]-20) {
 			t.Fatalf("long notes clipped install: size=%v, panel=%+v, button=%+v", size, panel, button)
@@ -309,10 +309,10 @@ func TestInformationVisualEvidence(t *testing.T) {
 func TestChangelogDialogWidthsAndLiveExpansion(t *testing.T) {
 	app, tt := newLocaleSettingsTester()
 	tt.SetSize(1120, 760)
-	clickReplaySetting(t, tt, app.text().Changelog)
+	clickReplaySetting(t, tt, app.text().Changelog())
 	assertPanel := func(wantWidth float32, windowWidth, windowHeight float32) ui.Rect {
 		t.Helper()
-		panel, ok := tt.Find(applicationName + " " + app.text().Changelog)
+		panel, ok := tt.Find(applicationName + " " + app.text().Changelog())
 		if !ok || math.Abs(float64(panel.W-wantWidth)) > 1 ||
 			panel.X < 20 || panel.Y < 20 || panel.X+panel.W > windowWidth-20 || panel.Y+panel.H > windowHeight-20 {
 			t.Fatalf("panel=%+v, want width=%v within %vx%v", panel, wantWidth, windowWidth, windowHeight)
@@ -340,14 +340,14 @@ func TestChangelogDialogWidthsAndLiveExpansion(t *testing.T) {
 	tt.Frame()
 	assertPanel(780, 1120, 760) // 520 * 3/2
 	firstNote, noteOK := tt.Find("Change 00")
-	install, installOK := tt.Find(app.text().InstallUpdate)
+	install, installOK := tt.Find(app.text().InstallUpdate())
 	if !noteOK || !installOK || math.Abs(float64(install.Y-firstNote.Y-406)) > 1 {
 		t.Fatalf("notes should get 390px plus a 16px footer gap: first=%+v, install=%+v", firstNote, install)
 	}
 
 	tt.SetSize(760, 520)
 	panel := assertPanel(720, 760, 520) // Window insets cap the expanded width.
-	for _, label := range []string{app.text().CloseChangelog, app.text().InstallUpdate} {
+	for _, label := range []string{app.text().CloseChangelog(), app.text().InstallUpdate()} {
 		control, ok := tt.Find(label)
 		if !ok || control.X < panel.X || control.Y < panel.Y || control.X+control.W > panel.X+panel.W || control.Y+control.H > panel.Y+panel.H {
 			t.Fatalf("%q falls outside the small-window panel: control=%+v, panel=%+v", label, control, panel)
@@ -355,7 +355,7 @@ func TestChangelogDialogWidthsAndLiveExpansion(t *testing.T) {
 	}
 	tt.Key(0, ui.KeyEscape)
 	tt.Frame()
-	if app.informationOpen || !tt.Focused(app.text().UpdateAvailable) {
+	if app.informationOpen || !tt.Focused(app.text().UpdateAvailable()) {
 		t.Fatal("resizing lost dismissal or opener focus")
 	}
 }
@@ -364,8 +364,8 @@ func TestInformationEmptyChangelogAndLanguageSwitch(t *testing.T) {
 	app, tt := newLocaleSettingsTester()
 	setTestAvailableUpdate(app, "  \n")
 	tt.Frame()
-	clickReplaySetting(t, tt, app.text().UpdateAvailable)
-	if !tt.HasText(app.text().NoReleaseNotes) {
+	clickReplaySetting(t, tt, app.text().UpdateAvailable())
+	if !tt.HasText(app.text().NoReleaseNotes()) {
 		t.Fatal("empty changelog did not show a fallback")
 	}
 	available := app.updates.available

@@ -1,8 +1,6 @@
 package app
 
 import (
-	"fmt"
-
 	"github.com/egoist/mygo/ui"
 	"github.com/oneo-me/onevra/source/components"
 	"github.com/oneo-me/onevra/source/icons/lucide"
@@ -12,13 +10,13 @@ import (
 	appui "trajon/internal/ui"
 )
 
-func (a *application) text() *locales.Strings {
+func (a *application) text() locales.Messages {
 	// A zero-value application retains Chinese until startup resolves the locale.
 	language := a.language
 	if language == "" {
 		language = locales.Chinese
 	}
-	return locales.For(language)
+	return locales.In(string(language))
 }
 
 func (a *application) instrumentTypeLabel(item instrument) string {
@@ -28,22 +26,22 @@ func (a *application) instrumentTypeLabel(item instrument) string {
 func (a *application) componentLocalization() components.Localization {
 	text := a.text()
 	return components.Localization{
-		SaturationBrightness: text.SaturationBrightness,
-		Hue:                  text.Hue,
-		Opacity:              text.Opacity,
-		ColorFormat:          text.ColorFormat,
-		CopyColor:            text.CopyColor,
-		Red:                  text.Red,
-		Green:                text.Green,
-		Blue:                 text.Blue,
-		HexColor:             text.HexColor,
-		OpacityPercent:       text.OpacityPercent,
-		HueDegrees:           text.HueDegrees,
-		SaturationPercent:    text.SaturationPercent,
-		BrightnessPercent:    text.BrightnessPercent,
-		LightnessPercent:     text.LightnessPercent,
-		Settings:             text.Settings,
-		CloseToast:           text.CloseToast,
+		SaturationBrightness: text.SaturationBrightness(),
+		Hue:                  text.Hue(),
+		Opacity:              text.Opacity(),
+		ColorFormat:          text.ColorFormat(),
+		CopyColor:            text.CopyColor(),
+		Red:                  text.Red(),
+		Green:                text.Green(),
+		Blue:                 text.Blue(),
+		HexColor:             text.HexColor(),
+		OpacityPercent:       text.OpacityPercent(),
+		HueDegrees:           text.HueDegrees(),
+		SaturationPercent:    text.SaturationPercent(),
+		BrightnessPercent:    text.BrightnessPercent(),
+		LightnessPercent:     text.LightnessPercent(),
+		Settings:             text.Settings(),
+		CloseToast:           text.CloseToast(),
 		NumberAction: func(action, label string) string {
 			format := text.AdjustNumber
 			switch action {
@@ -52,7 +50,7 @@ func (a *application) componentLocalization() components.Localization {
 			case "decrease":
 				format = text.DecreaseNumber
 			}
-			return fmt.Sprintf(format, label)
+			return format(label)
 		},
 	}
 }
@@ -62,13 +60,24 @@ func (a *application) setLanguagePreference(preference locales.Preference) {
 		return
 	}
 	a.languagePreference = preference
-	a.language = locales.Resolve(preference, a.systemLocale)
-	if a.shell != nil {
-		a.shell.SetLabels(a.shellLabels())
+	if a.changeLocale != nil {
+		// The host reports the language actually shown, including dev overrides.
+		a.changeLocale(preference.Locale())
+	} else {
+		a.applyLocale(string(locales.Resolve(preference, a.preferredLanguages...)))
 	}
-	if a.localeStore != nil {
+	if a.localeStore != nil && !a.transientLocale {
 		a.languageSaveError = nil
 		a.localeStore.Save(preference)
+	}
+}
+
+// applyLocale runs on the UI thread, from MyGo's OnLocaleChanged listener.
+// It updates presentation only: drafts, focus and market/replay state survive.
+func (a *application) applyLocale(locale string) {
+	a.language = locales.Language(locale)
+	if a.shell != nil {
+		a.shell.SetLabels(a.shellLabels())
 	}
 }
 
@@ -87,13 +96,13 @@ func (a *application) applyLocaleSaveResult(preference locales.Preference, err e
 func (a *application) shellLabels() sidebar.Labels {
 	text := a.text()
 	return sidebar.Labels{
-		LeftToggle: text.ToggleSidebar,
-		LeftResize: text.ResizeSidebar,
-		Minimize:   text.MinimizeWindow,
-		Maximize:   text.MaximizeWindow,
-		Restore:    text.RestoreWindow,
-		Close:      text.CloseWindow,
-		CloseToast: text.CloseToast,
+		LeftToggle: text.ToggleSidebar(),
+		LeftResize: text.ResizeSidebar(),
+		Minimize:   text.MinimizeWindow(),
+		Maximize:   text.MaximizeWindow(),
+		Restore:    text.RestoreWindow(),
+		Close:      text.CloseWindow(),
+		CloseToast: text.CloseToast(),
 	}
 }
 
@@ -105,19 +114,19 @@ func (a *application) closeSettings() {
 func (a *application) settingsDialog(c *ui.Context) {
 	text := a.text()
 	wasOpen := a.settingsOpen
-	components.Dialog(c.Key("settings-dialog"), &a.settingsOpen, components.DialogOptions{Label: text.Settings}, func(panel ui.Element) {
+	components.Dialog(c.Key("settings-dialog"), &a.settingsOpen, components.DialogOptions{Label: text.Settings()}, func(panel ui.Element) {
 		panel.Width(440).Padding(18).Gap(16)
 		ui.Row(c).FillWidth().AlignItems(ui.Center).Children(func() {
-			components.Text(c, text.Settings).FontSize(18).Bold().SingleLine()
+			components.Text(c, text.Settings()).FontSize(18).Bold().SingleLine()
 			ui.Spacer(c)
 			components.Button(c.Key("settings-close"), "", components.ButtonGhost).
-				Size(28, 28).Padding(0).Radius(14).Center().Label(text.CloseSettings).
+				Size(28, 28).Padding(0).Radius(14).Center().Label(text.CloseSettings()).
 				OnClick(a.closeSettings).Children(func() {
 				components.Icon(c, lucide.X).Size(15, 15)
 			})
 		})
 		ui.Row(c).FillWidth().Gap(16).AlignItems(ui.Center).Children(func() {
-			components.Text(c, text.Language).SingleLine()
+			components.Text(c, text.LanguageLabel()).SingleLine()
 			ui.Spacer(c)
 			preference := a.languagePreference
 			if !preference.Valid() {
@@ -126,15 +135,15 @@ func (a *application) settingsDialog(c *ui.Context) {
 			label := func(value locales.Preference) string {
 				switch value {
 				case locales.PreferChinese:
-					return text.ChineseName
+					return text.ChineseName()
 				case locales.PreferEnglish:
-					return text.EnglishName
+					return text.EnglishName()
 				default:
-					return text.SystemLanguage
+					return text.SystemLanguage()
 				}
 			}
 			sel := components.Select(c.Key("settings-language"), &preference)
-			sel.Trigger.Width(200).Label(text.Language).Bind(&a.settingsLanguage).AutoFocus().
+			sel.Trigger.Width(200).Label(text.LanguageLabel()).Bind(&a.settingsLanguage).AutoFocus().
 				OnChange(func() {
 					a.setLanguagePreference(preference)
 					a.settingsLanguage.Focus(c)
@@ -151,9 +160,9 @@ func (a *application) settingsDialog(c *ui.Context) {
 		})
 		if a.languageSaveError != nil {
 			ui.Row(c).FillWidth().Gap(8).AlignItems(ui.Center).Children(func() {
-				components.Text(c, text.LanguageSaveFailed).TextColor(c.Theme().TextMuted).Wrap().
+				components.Text(c, text.LanguageSaveFailed()).TextColor(c.Theme().TextMuted).Wrap().
 					Tooltip(a.languageSaveError.Error()).Grow(1).MinWidth(0)
-				components.Button(c.Key("settings-language-retry"), text.Retry, components.ButtonSecondary).
+				components.Button(c.Key("settings-language-retry"), text.Retry(), components.ButtonSecondary).
 					OnClick(func() { a.setLanguagePreference(a.languagePreference) })
 			})
 		}
@@ -169,7 +178,7 @@ func (a *application) replayPositionCaption(quantity float64) string {
 
 func (a *application) replayExitLabel(kind market.ReplayExitKind) string {
 	if kind == market.ReplayTakeProfit {
-		return a.text().TakeProfit
+		return a.text().TakeProfit()
 	}
-	return a.text().StopLoss
+	return a.text().StopLoss()
 }

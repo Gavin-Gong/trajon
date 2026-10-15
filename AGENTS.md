@@ -14,7 +14,7 @@ The module currently targets Go 1.27.1. Keep dependency versions pinned in `go.m
 - `internal/market/adapters/` — exchange-specific candle-source implementations (currently Binance and OKX).
 - `internal/market/defaults/` — default source registry and instrument catalog.
 - `internal/chart/` — chart viewport calculations and other rendering-independent chart behavior.
-- `internal/locales/` — typed Simplified Chinese and English UI catalogs, system-locale matching, and language preferences.
+- `internal/locales/` — Simplified Chinese and English JSON/ICU catalogs, generated typed MyGo message accessors, and language preferences.
 - `internal/ui/` — small reusable UI helpers.
 
 Keep exchange/API concerns in adapters, domain behavior in `internal/market`, and presentation/state orchestration in `internal/app` or `internal/ui`.
@@ -25,6 +25,8 @@ Run from the repository root:
 
 ```sh
 gofmt -w .
+go run github.com/egoist/mygo/cmd/mygo i18n check .
+go run github.com/egoist/mygo/cmd/mygo generate .
 go test ./...
 CGO_ENABLED=0 go test ./...
 go run github.com/egoist/mygo/cmd/mygo vet .
@@ -35,7 +37,7 @@ Use targeted package tests while iterating, for example `go test ./internal/mark
 ## Releases
 
 - `mygo.json` defines the application identity, version, and signed-update public key. Keep `identifier` and the public key stable after release; never commit the private key.
-- `.github/workflows/release.yml` currently releases macOS only (`darwin/arm64` and `darwin/amd64`). Push a `v<version>` tag matching `mygo.json` to run tests and MyGo UI vet, build with the pinned MyGo CLI, and upload installers and signed updates to a Draft Release. Set the repository secret `MYGO_UPDATER_PRIVATE_KEY` to the signing key's contents. Review and publish the draft manually; reruns can replace draft assets but must not overwrite published releases.
+- `.github/workflows/release.yml` currently releases macOS only (`darwin/arm64` and `darwin/amd64`). Push a `v<version>` tag matching `mygo.json` to check catalogs and generated accessors, run tests and MyGo UI vet, build with the pinned MyGo CLI, and upload installers and signed updates to a Draft Release. Set the repository secret `MYGO_UPDATER_PRIVATE_KEY` to the signing key's contents. Review and publish the draft manually; reruns can replace draft assets but must not overwrite published releases.
 - Updater signatures do not replace macOS Developer ID signing or notarization; those are not yet configured in CI.
 - The settings toolbar's right-hand Changelog button switches from Info to Download when a signed-feed update is available. Startup and opening Changelog without a known update check asynchronously; failures offer retry without claiming the app is up to date. The dialog is 312px wide without an update, 780px with an update, and its notes area is capped at 390px tall, all constrained by the window's modal insets. The dialog has no visible title: a centered header shows the bundled app logo, the Trajon name with a smaller running version beside it, and an icon-only GitHub hyperlink beneath (never the raw URL). It also shows the new version and scrollable Markdown changelog when available. Its bottom-right “Install Update” action downloads/verifies/installs through MyGo, shows progress, permits retry on failure, and relaunches only on success. Dismissal restores opener focus without canceling an install; window closure cancels update jobs and rejects late results. Release builds use a curated CHANGELOG.md when present, otherwise CI creates its version section from the draft release body before building; edit notes before building so the update manifest contains them.
 
@@ -55,7 +57,7 @@ Use targeted package tests while iterating, for example `go test ./internal/mark
 - Give stateful controls stable, unique keys before construction and preserve identity across rebuilds. Never derive keys from translated labels; the navigation helper avoids Onevra SidebarItem's label-based key.
 - Sidebar navigation contains only Overview and Replay; instrument history remains in the instrument picker.
 - Treat `marketToolbarInTitle` as fixed host-layout configuration: the native Shell enables it at startup, while standalone chart views leave it disabled. Never set it from `contentTitle` or another build callback; Shell constructs Content before ContentTitle, so a cross-frame marker can build both toolbar instances and bind one Handle twice on page entry. Test sidebar page transitions with content-before-title as well as title-before-content hosts.
-- Localized UI text belongs in `internal/locales`, modeled after MyGo's updater catalogs. Startup resolves `mygo.App.Locale()` (BCP 47 or POSIX) to Simplified Chinese (`zh-Hans`) or English (`en`); unsupported languages/scripts, including Traditional Chinese, fall back to English. Settings provides System / 简体中文 / English with immediate switching and asynchronous atomic persistence to `trajon/locale.json` under `os.UserConfigDir()`. Missing/invalid preferences follow the system. Saving failures retain the active choice and offer retry. Language changes must preserve focused drafts, instrument identity/cache keys, annotations, replay state, and trades. Keep market errors structured and language-independent; localize them and source/market labels in presentation, preserving provider details. Apply Onevra component localization and update Shell labels on language changes.
+- Localized UI text belongs in the `internal/locales/en.json` and `zh-Hans.json` JSON/ICU catalogs configured in `mygo.json`. Run the pinned MyGo CLI's `generate` after editing them and include `catalog_gen.go`; use its `locales.Messages` methods with typed placeholders, not fmt format strings or hand-written catalogs. Importing the generated package declares English (`en`, the source/fallback) and Simplified Chinese (`zh-Hans`) and links MyGo's own Chinese strings. Native startup applies the saved preference through `mygo.App.SetLocale`, and `App.Locale()` / `OnLocaleChanged` are the single source of the shown language; do not treat `App.Locale()` as the user's system language (use `App.PreferredLanguages()` for those). Standalone views use MyGo's CLDR matcher over ordered BCP 47/POSIX preferences. Unsupported languages/scripts, including Traditional Chinese, fall back to the next supported preferred language, then English. Settings provides System / 简体中文 / English with immediate switching and asynchronous atomic persistence to `trajon/locale.json` under `os.UserConfigDir()`. Missing/invalid preferences follow the system. Saving failures retain the active choice and offer retry. Language changes must preserve focused drafts, instrument identity/cache keys, annotations, replay state, and trades. Keep market errors structured and language-independent; localize them and source/market labels in presentation, preserving provider details. Apply Onevra component localization and update Shell labels on language changes. `MYGO_LOCALE` / `mygo dev -lang` take priority at startup, support MyGo pseudo locales, and must not rewrite the saved preference.
 - Use `Window.Update`/the established update path to publish background results; do not mutate UI state directly from worker goroutines.
 - Keep drawing callbacks limited to painting and use existing MyGo/onevra components for controls, focus, keyboard behavior, and accessibility.
 - Verify UI lifecycle and focus changes with the project’s existing tester patterns where applicable. Consult the pinned MyGo source before relying on an API.
@@ -72,5 +74,5 @@ Use targeted package tests while iterating, for example `go test ./internal/mark
 ## Change hygiene
 
 - Keep user-facing copy concise and consistent across the Chinese/English catalogs; preserve existing Chinese UI terminology and do not add decorative or marketing copy.
-- Do not commit generated artifacts, credentials, or local build output.
+- Do not commit generated build artifacts, credentials, or local build output. The generated `internal/locales/catalog_gen.go` is required source: keep it with its catalogs so plain `go build` and `go test` work without the CLI.
 - Prefer a focused change over broad refactors. If behavior or public project conventions change, update this file and the relevant tests together.

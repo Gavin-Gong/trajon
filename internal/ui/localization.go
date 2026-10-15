@@ -1,32 +1,32 @@
 package ui
 
 import (
-	"fmt"
+	"strconv"
 	"strings"
 
 	"trajon/internal/locales"
 	"trajon/internal/market"
 )
 
-func InstrumentTypeLabel(text *locales.Strings, item market.Instrument) string {
-	marketLabel := text.Spot
+func InstrumentTypeLabel(text locales.Messages, item market.Instrument) string {
+	marketLabel := text.Spot()
 	if item.MarketType == market.MarketFutures {
-		marketLabel = text.Futures
+		marketLabel = text.Futures()
 	}
 	return item.SourceLabel() + " · " + marketLabel
 }
 
 // MarketError localizes our structured errors and preserves provider/system
 // details verbatim. It never changes shared errors or market data.
-func MarketError(text *locales.Strings, err error) string {
+func MarketError(text locales.Messages, err error) string {
 	if err == nil {
 		return ""
 	}
 	switch err := err.(type) {
 	case *market.MissingSourceError:
-		return fmt.Sprintf(text.MissingSource, err.SourceID)
+		return text.MissingSource(strconv.Quote(string(err.SourceID)))
 	case *market.NoCandlesError:
-		return fmt.Sprintf(text.NoCandles, err.Symbol)
+		return text.NoCandles(err.Symbol)
 	case *market.InstrumentSearchError:
 		item := market.Instrument{SourceID: err.SourceID, MarketType: err.MarketType}
 		return InstrumentTypeLabel(text, item) + ": " + MarketError(text, err.Err)
@@ -38,7 +38,7 @@ func MarketError(text *locales.Strings, err error) string {
 		return strings.Join(messages, "\n")
 	}
 	if err == market.ErrNoInstrumentSource {
-		return text.NoSearchSource
+		return text.NoSearchSource()
 	}
 	return err.Error()
 }

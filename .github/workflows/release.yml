@@ -43,6 +43,12 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - name: Check i18n catalogs
+        run: |
+          go run github.com/egoist/mygo/cmd/mygo i18n check .
+          go run github.com/egoist/mygo/cmd/mygo generate .
+          git diff --exit-code -- internal/locales/catalog_gen.go
+
       - name: Test
         run: |
           go test ./...

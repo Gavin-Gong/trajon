@@ -17,6 +17,8 @@ func TestMatchSystemLocale(t *testing.T) {
 		{"zh-TW", English}, {"zh_HK.UTF-8", English}, {"zh-MO", English}, {"zh-Hant-CN", English},
 		{"en", English}, {"en-GB", English}, {"en_US.UTF-8", English},
 		{"ja-JP", English}, {"fr-FR", English}, {"C", English}, {"", English}, {"unknown", English},
+		{"zh-Latn", English}, {"zh_CN@latin", English}, {"zh-!", English},
+		{"zh-Hans-u-ca-gregory", Chinese},
 	} {
 		t.Run(tc.locale, func(t *testing.T) {
 			if got := Match(tc.locale); got != tc.want {
@@ -52,42 +54,68 @@ func TestResolveLanguagePreference(t *testing.T) {
 	}
 }
 
-func TestCatalogsAreCompleteAndFormatsAcceptTheirArguments(t *testing.T) {
-	formats := map[string]int{
-		"ChooseInstrumentSymbol": 1, "HistoryInstrument": 1, "InstrumentLoadFailed": 2,
-		"MissingSource": 1, "NoCandles": 1, "CandleChart": 1,
-		"ApplicationLogo": 1, "NewVersion": 1,
-		"IncreaseNumber": 1, "DecreaseNumber": 1, "AdjustNumber": 1,
+func TestPreferredLanguageOrder(t *testing.T) {
+	for _, tc := range []struct {
+		preferred []string
+		want      Language
+	}{
+		{[]string{"fr-FR", "zh-CN", "en-US"}, Chinese},
+		{[]string{"zh-TW", "en-GB", "zh-CN"}, English},
+		{[]string{"en-GB", "zh-CN"}, English},
+		{[]string{"zh-Hant", "ja"}, English},
+		{nil, English},
+	} {
+		if got := Resolve(System, tc.preferred...); got != tc.want {
+			t.Errorf("Resolve(System, %v) = %q, want %q", tc.preferred, got, tc.want)
+		}
 	}
+}
+
+func TestPreferenceLocaleTag(t *testing.T) {
+	for _, tc := range []struct {
+		preference Preference
+		want       string
+	}{
+		{System, ""}, {PreferChinese, "zh-Hans"}, {PreferEnglish, "en"},
+		{Preference("unsupported"), ""},
+	} {
+		if got := tc.preference.Locale(); got != tc.want {
+			t.Errorf("%q.Locale() = %q, want %q", tc.preference, got, tc.want)
+		}
+	}
+}
+
+func TestCatalogsAreCompleteAndFormatsAcceptTheirArguments(t *testing.T) {
 	for _, language := range []Language{Chinese, English} {
 		t.Run(string(language), func(t *testing.T) {
-			value := reflect.ValueOf(For(language)).Elem()
-			for i := range value.NumField() {
-				name, text := value.Type().Field(i).Name, value.Field(i).String()
-				if strings.TrimSpace(text) == "" {
-					t.Errorf("missing %s", name)
-				}
-				count, formatted := formats[name]
-				if !formatted {
-					continue
-				}
-				args := make([]any, count)
+			value := reflect.ValueOf(In(string(language)))
+			for i := range value.NumMethod() {
+				method := value.Method(i)
+				name := value.Type().Method(i).Name
+				args := make([]reflect.Value, method.Type().NumIn())
 				for j := range args {
-					args[j] = fmt.Sprintf("argument%d", j)
+					switch method.Type().In(j).Kind() {
+					case reflect.String:
+						args[j] = reflect.ValueOf(fmt.Sprintf("argument%d", j))
+					case reflect.Int:
+						args[j] = reflect.ValueOf(17 + j)
+					default:
+						t.Fatalf("%s: unexpected argument type %s", name, method.Type().In(j))
+					}
 				}
-				output := fmt.Sprintf(text, args...)
-				if strings.Contains(output, "%!") {
-					t.Errorf("%s: invalid format %q", name, text)
+				output := method.Call(args)[0].String()
+				if strings.TrimSpace(output) == "" || strings.Contains(output, "%!") {
+					t.Errorf("%s: invalid message %q", name, output)
 				}
 				for _, arg := range args {
-					if !strings.Contains(output, arg.(string)) {
-						t.Errorf("%s omits %q", name, arg)
+					if !strings.Contains(output, fmt.Sprint(arg.Interface())) {
+						t.Errorf("%s omits %v", name, arg.Interface())
 					}
 				}
 			}
 		})
 	}
-	if For(Language("fr")) != For(English) {
+	if In("fr").Overview() != In("en").Overview() {
 		t.Fatal("unsupported catalog did not fall back to English")
 	}
 }

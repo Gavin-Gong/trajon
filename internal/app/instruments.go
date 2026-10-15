@@ -68,17 +68,17 @@ func (a *application) filteredInstruments() []instrument {
 func (a *application) instrumentPickerDialog(c *ui.Context) {
 	a.drainInstrumentSearchUpdates()
 	components.Dialog(c.Key("instrument-picker-dialog"), &a.instrumentPickerOpen, components.DialogOptions{
-		Label:              a.text().ChooseInstrument,
+		Label:              a.text().ChooseInstrument(),
 		DisableEscapeClose: a.instrumentPickerQuery != "" && a.instrumentSearchHandle.Focused(c),
 	}, func(panel ui.Element) {
 		panel.Width(460).Height(520).Padding(18).Gap(12)
 
 		t := c.Theme()
 		ui.Row(c).FillWidth().Height(28).AlignItems(ui.Center).Children(func() {
-			components.Text(c, a.text().ChooseInstrument).FontSize(18).Bold().SingleLine()
+			components.Text(c, a.text().ChooseInstrument()).FontSize(18).Bold().SingleLine()
 			ui.Spacer(c)
 			close := components.Button(c.Key("instrument-picker-close"), "", components.ButtonGhost).
-				Size(28, 28).Padding(0).Radius(14).Center().Label(a.text().CloseInstrumentPicker)
+				Size(28, 28).Padding(0).Radius(14).Center().Label(a.text().CloseInstrumentPicker())
 			close.Children(func() {
 				components.Icon(c, lucide.X).Size(15, 15)
 			})
@@ -92,32 +92,32 @@ func (a *application) instrumentPickerDialog(c *ui.Context) {
 		a.instrumentHistoryChoices(c)
 
 		ui.Row(c).FillWidth().Gap(4).Children(func() {
-			a.instrumentTabButton(c, a.text().All, instrumentTabAll)
-			a.instrumentTabButton(c, a.text().Spot, instrumentTabSpot)
-			a.instrumentTabButton(c, a.text().Futures, instrumentTabFutures)
+			a.instrumentTabButton(c, a.text().All(), instrumentTabAll)
+			a.instrumentTabButton(c, a.text().Spot(), instrumentTabSpot)
+			a.instrumentTabButton(c, a.text().Futures(), instrumentTabFutures)
 		})
 
 		ui.Row(c).FillWidth().Padding(8, 10, 4, 10).Gap(8).TextColor(t.TextMuted).Children(func() {
-			components.Text(c, a.text().Name).FontSize(11).SingleLine()
+			components.Text(c, a.text().Name()).FontSize(11).SingleLine()
 			ui.Spacer(c)
-			components.Text(c, a.text().Symbol).FontSize(11).SingleLine()
-			components.Text(c, a.text().Market).FontSize(11).Width(112).SingleLine()
+			components.Text(c, a.text().Symbol()).FontSize(11).SingleLine()
+			components.Text(c, a.text().Market()).FontSize(11).Width(112).SingleLine()
 			ui.Box(c).Size(15, 1)
 		})
 
 		items := a.filteredInstruments()
 		if a.instrumentSearch.loading && len(items) > 0 {
-			components.Text(c, a.text().Searching).FontSize(11).TextColor(t.TextMuted)
+			components.Text(c, a.text().Searching()).FontSize(11).TextColor(t.TextMuted)
 		} else if a.instrumentSearch.err != nil {
 			ui.Row(c).FillWidth().AlignItems(ui.Center).Children(func() {
-				label := a.text().PartialSearchFailed
+				label := a.text().PartialSearchFailed()
 				if len(items) == 0 {
-					label = a.text().SearchFailed
+					label = a.text().SearchFailed()
 				}
 				components.Text(c, label).FontSize(11).TextColor(t.TextMuted).
 					Tooltip(appui.MarketError(a.text(), a.instrumentSearch.err))
 				ui.Spacer(c)
-				components.Button(c.Key("instrument-search-retry"), a.text().Retry, components.ButtonGhost).
+				components.Button(c.Key("instrument-search-retry"), a.text().Retry(), components.ButtonGhost).
 					Height(24).OnClick(a.searchInstruments)
 			})
 		}
@@ -141,11 +141,11 @@ func (a *application) instrumentPickerDialog(c *ui.Context) {
 
 		if len(items) == 0 {
 			ui.Box(c).Fill().Center().Children(func() {
-				label := a.text().NoInstrument
+				label := a.text().NoInstrument()
 				if a.instrumentSearch.loading {
-					label = a.text().Searching
+					label = a.text().Searching()
 				} else if a.instrumentSearch.err != nil {
-					label = a.text().SearchUnavailable
+					label = a.text().SearchUnavailable()
 				}
 				components.Text(c, label).TextColor(t.TextMuted)
 			})

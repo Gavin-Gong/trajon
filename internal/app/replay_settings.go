@@ -46,24 +46,24 @@ func (a *application) replaySettingsDialog(c *ui.Context) {
 		a.replaySettingsOpen = false
 	}
 	wasOpen := a.replaySettingsOpen
-	components.Dialog(c.Key("replay-settings-dialog"), &a.replaySettingsOpen, components.DialogOptions{Label: a.text().ReplaySettings}, func(panel ui.Element) {
+	components.Dialog(c.Key("replay-settings-dialog"), &a.replaySettingsOpen, components.DialogOptions{Label: a.text().ReplaySettings()}, func(panel ui.Element) {
 		panel.Width(360).Padding(18).Gap(16)
-		components.Text(c, a.text().ReplaySettings).FontSize(18).Bold().SingleLine()
+		components.Text(c, a.text().ReplaySettings()).FontSize(18).Bold().SingleLine()
 
 		ui.Column(c).FillWidth().Gap(6).Children(func() {
-			components.Text(c, a.text().InitialCapital).SingleLine()
+			components.Text(c, a.text().InitialCapital()).SingleLine()
 			components.NumberInput(c.Key("replay-initial-capital"), &a.replaySettingsDraft.InitialCapital, .01, math.MaxFloat64, 1000).
-				Label(a.text().InitialCapital).AutoFocus().FillWidth()
+				Label(a.text().InitialCapital()).AutoFocus().FillWidth()
 		})
 		ui.Column(c).FillWidth().Gap(6).Children(func() {
-			components.Text(c, a.text().LeverageMultiple).SingleLine()
+			components.Text(c, a.text().LeverageMultiple()).SingleLine()
 			components.NumberInput(c.Key("replay-leverage"), &a.replaySettingsDraft.Leverage, 1, math.MaxFloat64, 1).
-				Label(a.text().Leverage).FillWidth()
+				Label(a.text().Leverage()).FillWidth()
 		})
 		ui.Row(c).FillWidth().Justify(ui.End).Gap(8).Children(func() {
-			components.Button(c.Key("replay-settings-cancel"), a.text().Cancel, components.ButtonSecondary).
+			components.Button(c.Key("replay-settings-cancel"), a.text().Cancel(), components.ButtonSecondary).
 				OnClick(a.closeReplaySettings)
-			components.Button(c.Key("replay-settings-save"), a.text().Save, components.ButtonPrimary).
+			components.Button(c.Key("replay-settings-save"), a.text().Save(), components.ButtonPrimary).
 				OnClick(a.saveReplaySettings)
 		})
 	})

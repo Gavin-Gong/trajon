@@ -42,7 +42,7 @@ func TestReplayRightStepsOneCandleAndStaysPaused(t *testing.T) {
 		t.Fatal("modified Right activated single stepping")
 	}
 
-	clickReplaySetting(t, tt, app.text().Play)
+	clickReplaySetting(t, tt, app.text().Play())
 	app.chart.replayNextStep = time.Now().Add(time.Hour)
 	nextStep := app.chart.replayNextStep
 	tt.Key(0, ui.KeyRight)
@@ -54,7 +54,7 @@ func TestReplayRightStepsOneCandleAndStaysPaused(t *testing.T) {
 	if app.chart.replayEnd != end+1 || app.chart.actionPlaying || !app.chart.replayNextStep.IsZero() {
 		t.Fatal("Right on the paused playback button did not single-step")
 	}
-	clickReplaySetting(t, tt, app.text().Reset)
+	clickReplaySetting(t, tt, app.text().Reset())
 	tt.Key(0, ui.KeyRight)
 	if app.chart.replayEnd != start+2 || app.chart.actionPlaying {
 		t.Fatal("Right did not single-step after reset")
@@ -111,7 +111,7 @@ func TestReplayRightChecksExitsBeforeCompletingLastCandle(t *testing.T) {
 	if account.Quantity != 0 || len(account.Trades) != 2 || account.Trades[1].Price != 90 || account.Trades[1].ExitKind != market.ReplayStopLoss {
 		t.Fatalf("last single step did not execute the stop loss: %+v", account)
 	}
-	if !tt.HasText("止损 1 @") || !tt.HasText(app.text().ReplayComplete) {
+	if !tt.HasText("止损 1 @") || !tt.HasText(app.text().ReplayComplete()) {
 		t.Fatal("single step omitted exit feedback or the completion toast")
 	}
 	tt.Key(0, ui.KeyRight)
@@ -129,7 +129,7 @@ func TestReplayRightReportsExitFailureAndCanRetry(t *testing.T) {
 	app.chart.chartHandle.Focus()
 	tt.Frame()
 	tt.Key(0, ui.KeyRight)
-	if app.chart.replayEnd != 121 || app.chart.replayAccount.Quantity != 1 || len(app.chart.replayAccount.Trades) != 1 || app.chart.replayExitError == nil || !tt.HasText(app.text().ExitFailed) {
+	if app.chart.replayEnd != 121 || app.chart.replayAccount.Quantity != 1 || len(app.chart.replayAccount.Trades) != 1 || app.chart.replayExitError == nil || !tt.HasText(app.text().ExitFailed()) {
 		t.Fatal("failed single step advanced or mutated the position without reporting the error")
 	}
 	app.candles[121].Low = 95

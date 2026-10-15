@@ -2,12 +2,15 @@ package app
 
 import (
 	"log"
+	"os"
 
 	"github.com/egoist/mygo"
+	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
 	"github.com/oneo-me/onevra/source/components"
 	"github.com/oneo-me/onevra/source/icons/lucide"
 	"github.com/oneo-me/onevra/source/shells/sidebar"
+	"github.com/oneo-me/onevra/source/theme"
 	"trajon/internal/locales"
 	"trajon/internal/market"
 	"trajon/internal/market/defaults"
@@ -24,7 +27,9 @@ type application struct {
 	updates            updateState
 	language           locales.Language
 	languagePreference locales.Preference
-	systemLocale       string
+	preferredLanguages []string // Standalone views only; native windows use MyGo.
+	changeLocale       func(string)
+	transientLocale    bool // MYGO_LOCALE must not overwrite saved preferences.
 	localeStore        *localePreferenceStore
 	languageSaveError  error
 	candles            []Candle
@@ -75,13 +80,13 @@ type application struct {
 
 type navigationItem struct {
 	id    string
-	label func(*locales.Strings) string
+	label func(locales.Messages) string
 	icon  func() *ui.SVG
 }
 
 var navigationItems = []navigationItem{
-	{id: "overview", label: func(t *locales.Strings) string { return t.Overview }, icon: lucide.LayoutDashboard},
-	{id: "market", label: func(t *locales.Strings) string { return t.Replay }, icon: lucide.MonitorPlay},
+	{id: "overview", label: func(t locales.Messages) string { return t.Overview() }, icon: lucide.LayoutDashboard},
+	{id: "market", label: func(t locales.Messages) string { return t.Replay() }, icon: lucide.MonitorPlay},
 }
 
 func Run() {
@@ -116,8 +121,8 @@ func Run() {
 		}()
 	}
 
-	app.systemLocale = mygo.App.Locale()
 	app.languagePreference = locales.System
+	app.transientLocale = i18n.Normalize(os.Getenv("MYGO_LOCALE")) != ""
 	if path, err := localePreferencePath(); err != nil {
 		log.Printf("language preference path: %v", err)
 		app.languageSaveError = err
@@ -133,9 +138,14 @@ func Run() {
 			}
 		}()
 	}
-	app.language = locales.Resolve(app.languagePreference, app.systemLocale)
+	app.changeLocale = mygo.App.SetLocale
+	stopLocaleChanges := mygo.App.OnLocaleChanged(app.applyLocale)
+	defer stopLocaleChanges()
+	// Before readiness, MYGO_LOCALE (mygo dev -lang) takes precedence.
+	app.changeLocale(app.languagePreference.Locale())
 
 	mygo.App.WhenReady(func() {
+		app.applyLocale(mygo.App.Locale())
 		shell := sidebar.NewShell(sidebar.ShellOptions{
 			Title:        applicationName,
 			Width:        1120,
@@ -149,12 +159,14 @@ func Run() {
 			Content:      app.content,
 			ContentTitle: app.contentTitle,
 			LeftToolbar:  app.leftToolbar,
+			Theme:        theme.Onevra,
 		})
 		app.shell = shell
 		shell.SetLabels(app.shellLabels())
 		app.window = shell.Window()
 		app.checkForUpdates()
 		app.window.OnClosed(func() {
+			stopLocaleChanges()
 			app.closeUpdates()
 			app.closeIndicatorCalculations()
 			app.stopInstrumentSearch()
@@ -174,7 +186,7 @@ func (a *application) left(c *ui.Context) {
 	ui.Column(c).Fill().Padding(sidebar.HeaderHeight(c), 0, 0, 0).Children(func() {
 		components.ScrollView(c, components.ScrollViewOptions{}).Fill().Children(func() {
 			components.Sidebar(c).Children(func() {
-				components.SidebarSection(c, a.text().Navigation, func() {
+				components.SidebarSection(c, a.text().Navigation(), func() {
 					for _, item := range navigationItems {
 						if appui.NavigationItem(c.Key(item.id), item.label(a.text()), item.icon(), a.activePage == item.id).Clicked() {
 							a.activePage = item.id
@@ -187,7 +199,7 @@ func (a *application) left(c *ui.Context) {
 }
 
 func (a *application) leftToolbar(c *ui.Context) {
-	if sidebar.IconButton(c.Key("settings"), lucide.Settings(), a.text().Settings).Bind(&a.settingsButton).Clicked() {
+	if sidebar.IconButton(c.Key("settings"), lucide.Settings(), a.text().Settings()).Bind(&a.settingsButton).Clicked() {
 		a.settingsOpen = true
 	}
 	a.informationToolbarButton(c)
@@ -222,7 +234,7 @@ func (a *application) localizedContent(c *ui.Context) {
 		components.ScrollView(c, components.ScrollViewOptions{}).Fill().Children(func() {
 			ui.Column(c).FillWidth().Padding(40).Gap(12).Children(func() {
 				components.Text(c, a.pageTitle()).FontSize(28).Bold()
-				components.Text(c, a.text().PagePlaceholder).TextColor(c.Theme().TextMuted).Wrap()
+				components.Text(c, a.text().PagePlaceholder()).TextColor(c.Theme().TextMuted).Wrap()
 			})
 		})
 	})
@@ -241,5 +253,5 @@ func (a *application) pageTitle() string {
 			return item.label(a.text())
 		}
 	}
-	return a.text().Overview
+	return a.text().Overview()
 }

@@ -50,7 +50,7 @@ func TestReplayPositionDragCreatesLongAndShortBrackets(t *testing.T) {
 		{market.ReplaySell, -45, "止损", replayStopLossLine},
 		{market.ReplaySell, 45, "止盈", replayTakeProfitLine},
 	} {
-		t.Run(replayPositionCaption(map[market.ReplaySide]float64{market.ReplayBuy: 1, market.ReplaySell: -1}[tc.side], locales.For(locales.Chinese))+tc.label, func(t *testing.T) {
+		t.Run(replayPositionCaption(map[market.ReplaySide]float64{market.ReplayBuy: 1, market.ReplaySell: -1}[tc.side], locales.In(string(locales.Chinese)))+tc.label, func(t *testing.T) {
 			app, tt := newReplayPositionTester(t, tc.side)
 			line, _ := tt.Find("仓位线")
 			x, y := line.X+60, line.Y+line.H/2

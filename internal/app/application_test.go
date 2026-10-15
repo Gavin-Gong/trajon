@@ -22,8 +22,8 @@ func TestApplicationSidebarNavigation(t *testing.T) {
 			for _, page := range []struct {
 				id, label string
 			}{
-				{"market", app.text().Replay},
-				{"overview", app.text().Overview},
+				{"market", app.text().Replay()},
+				{"overview", app.text().Overview()},
 			} {
 				clickReplaySetting(t, tt, page.label)
 				if app.activePage != page.id || app.pageTitle() != page.label {
@@ -76,7 +76,7 @@ func TestApplicationEnteringReplayWithContentBuiltBeforeTitle(t *testing.T) {
 			t.Run(fmt.Sprintf("%s/title-first=%v", language, titleFirst), func(t *testing.T) {
 				app, tt := newApplicationShellOrderTester(language, titleFirst)
 				for range 3 {
-					clickReplaySetting(t, tt, app.text().Replay)
+					clickReplaySetting(t, tt, app.text().Replay())
 					for range 3 {
 						tt.Frame()
 					}
@@ -85,27 +85,27 @@ func TestApplicationEnteringReplayWithContentBuiltBeforeTitle(t *testing.T) {
 					}
 					labels, toolbarCount := tt.Texts(), 0
 					for _, label := range labels {
-						if label == app.text().ChartToolbar {
+						if label == app.text().ChartToolbar() {
 							toolbarCount++
 						}
 					}
 					if toolbarCount != 1 {
 						t.Fatalf("Replay built %d chart toolbars, want one: %v", toolbarCount, labels)
 					}
-					toolbar, ok := tt.Find(app.text().ChartToolbar)
-					chart, chartOK := tt.Find(fmt.Sprintf(app.text().CandleChart, app.currentInstrument.Symbol))
+					toolbar, ok := tt.Find(app.text().ChartToolbar())
+					chart, chartOK := tt.Find(app.text().CandleChart(app.currentInstrument.Symbol))
 					if !ok || !chartOK || toolbar.Y+toolbar.H > chart.Y {
 						t.Fatalf("toolbar did not stay in the header: toolbar=%+v, chart=%+v", toolbar, chart)
 					}
-					textTool, textOK := tt.Find(app.text().Text)
-					indicators, indicatorsOK := tt.Find(app.text().Indicators)
+					textTool, textOK := tt.Find(app.text().Text())
+					indicators, indicatorsOK := tt.Find(app.text().Indicators())
 					if !textOK || !indicatorsOK || indicators.X <= textTool.X || indicators.X-(textTool.X+textTool.W) > 20 {
 						t.Fatalf("header indicators should follow drawing tools: text=%+v, indicators=%+v", textTool, indicators)
 					}
-					if _, ok := tt.Find(app.text().DeleteAnnotation); ok {
+					if _, ok := tt.Find(app.text().DeleteAnnotation()); ok {
 						t.Fatal("header should not render the delete annotation button")
 					}
-					clickReplaySetting(t, tt, app.text().Indicators)
+					clickReplaySetting(t, tt, app.text().Indicators())
 					if !app.indicatorsOpen {
 						t.Fatal("header indicator button did not open its dialog")
 					}
@@ -113,17 +113,17 @@ func TestApplicationEnteringReplayWithContentBuiltBeforeTitle(t *testing.T) {
 					for range 3 {
 						tt.Frame()
 					}
-					if app.indicatorsOpen || !tt.Focused(app.text().Indicators) {
+					if app.indicatorsOpen || !tt.Focused(app.text().Indicators()) {
 						t.Fatal("dialog dismissal did not restore header button focus")
 					}
-					clickReplaySetting(t, tt, app.text().Overview)
+					clickReplaySetting(t, tt, app.text().Overview())
 					for range 3 {
 						tt.Frame()
 					}
 					if app.activePage != "overview" {
 						t.Fatal("navigation did not leave Replay")
 					}
-					if _, ok := tt.Find(app.text().ChartToolbar); ok {
+					if _, ok := tt.Find(app.text().ChartToolbar()); ok {
 						t.Fatal("chart toolbar remained on Overview")
 					}
 				}

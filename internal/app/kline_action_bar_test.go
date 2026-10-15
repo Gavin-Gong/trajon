@@ -16,11 +16,11 @@ func TestKlineActionBarGroupSpacing(t *testing.T) {
 		left, right string
 		gap         float32
 	}{
-		{app.text().Play, app.text().PlaybackSpeed, 4},
-		{app.text().PlaybackSpeed, app.text().OrderQuantity, 33},
-		{app.text().Buy, app.text().Sell, 4},
-		{app.text().Sell, app.text().Reset, 33},
-		{app.text().Reset, app.text().End, 4},
+		{app.text().Play(), app.text().PlaybackSpeed(), 4},
+		{app.text().PlaybackSpeed(), app.text().OrderQuantity(), 33},
+		{app.text().Buy(), app.text().Sell(), 4},
+		{app.text().Sell(), app.text().Reset(), 33},
+		{app.text().Reset(), app.text().End(), 4},
 	} {
 		left, leftOK := tt.Find(tc.left)
 		right, rightOK := tt.Find(tc.right)
@@ -84,7 +84,7 @@ func TestKlineActionBarFollowsSidebarChanges(t *testing.T) {
 				assertKlineActionBarAnchored(t, app, tt, offsetX, offsetY)
 			}
 			if !tc.replay {
-				if err := tt.Click(app.text().ReplayStart); err != nil {
+				if err := tt.Click(app.text().ReplayStart()); err != nil {
 					t.Fatal(err)
 				}
 				if !app.chart.replaySelecting || app.chart.replayHasStart {
@@ -150,8 +150,8 @@ func TestKlineActionBarRestoresAnchorAfterClamping(t *testing.T) {
 
 func assertKlineActionBarAnchored(t *testing.T, app *application, tt *ui.Tester, offsetX, offsetY float32) ui.Rect {
 	t.Helper()
-	chart, chartOK := tt.Find(fmt.Sprintf(app.text().CandleChart, app.displayInstrument().Symbol))
-	bar, barOK := tt.Find(app.text().ChartActions)
+	chart, chartOK := tt.Find(app.text().CandleChart(app.displayInstrument().Symbol))
+	bar, barOK := tt.Find(app.text().ChartActions())
 	if !chartOK || !barOK {
 		t.Fatalf("chart or action bar is missing: chart=%v, bar=%v", chartOK, barOK)
 	}

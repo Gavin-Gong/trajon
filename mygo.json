@@ -3,6 +3,10 @@
   "identifier": "dev.astralym.trajon",
   "version": "0.0.1",
   "out": "dist",
+  "i18n": {
+    "dir": "internal/locales",
+    "source": "en"
+  },
   "updates": {
     "publicKey": "SrbtulyCNoItuR8Nyi35GjRfCihgF4TqnglTEcwQkL4=",
     "github": "Gavin-Gong/trajon"

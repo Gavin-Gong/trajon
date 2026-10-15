@@ -40,31 +40,31 @@ func (a *application) discardReplay() {
 func (a *application) replaySummaryDialog(c *ui.Context) {
 	state := &a.chart
 	wasOpen := state.replaySummaryOpen
-	components.Dialog(c.Key("replay-summary-dialog"), &state.replaySummaryOpen, components.DialogOptions{Label: a.text().ReplaySummary}, func(panel ui.Element) {
+	components.Dialog(c.Key("replay-summary-dialog"), &state.replaySummaryOpen, components.DialogOptions{Label: a.text().ReplaySummary()}, func(panel ui.Element) {
 		// Focus the dialog, not its destructive action, on entry.
 		panel.Width(400).Padding(18).Gap(16).Focusable().AutoFocus()
-		components.Text(c, a.text().ReplaySummary).FontSize(18).Bold().SingleLine()
+		components.Text(c, a.text().ReplaySummary()).FontSize(18).Bold().SingleLine()
 
 		stats := state.replaySummary
 		ui.Column(c).FillWidth().Gap(8).Children(func() {
-			replaySummaryRow(c, a.text().InitialCapital, fmt.Sprintf("%.2f", stats.InitialCapital))
-			replaySummaryRow(c, a.text().Equity, fmt.Sprintf("%.2f", stats.Equity))
-			replaySummaryRow(c, a.text().RealizedPnL, fmt.Sprintf("%+.2f", stats.RealizedPnL))
-			replaySummaryRow(c, a.text().UnrealizedPnL, fmt.Sprintf("%+.2f", stats.UnrealizedPnL))
+			replaySummaryRow(c, a.text().InitialCapital(), fmt.Sprintf("%.2f", stats.InitialCapital))
+			replaySummaryRow(c, a.text().Equity(), fmt.Sprintf("%.2f", stats.Equity))
+			replaySummaryRow(c, a.text().RealizedPnL(), fmt.Sprintf("%+.2f", stats.RealizedPnL))
+			replaySummaryRow(c, a.text().UnrealizedPnL(), fmt.Sprintf("%+.2f", stats.UnrealizedPnL))
 			returnRate, hasReturn := stats.ReturnRate()
-			replaySummaryRow(c, a.text().ReturnRate, replaySummaryPercent(returnRate, hasReturn))
-			replaySummaryRow(c, a.text().ClosingTrades, fmt.Sprint(stats.ClosingTrades))
-			replaySummaryRow(c, a.text().WinLossBreakeven, fmt.Sprintf("%d / %d / %d", stats.Wins, stats.Losses, stats.Breakeven))
+			replaySummaryRow(c, a.text().ReturnRate(), replaySummaryPercent(returnRate, hasReturn))
+			replaySummaryRow(c, a.text().ClosingTrades(), fmt.Sprint(stats.ClosingTrades))
+			replaySummaryRow(c, a.text().WinLossBreakeven(), fmt.Sprintf("%d / %d / %d", stats.Wins, stats.Losses, stats.Breakeven))
 			winRate, hasWinRate := stats.WinRate()
-			replaySummaryRow(c, a.text().WinRate, replaySummaryPercent(winRate, hasWinRate))
+			replaySummaryRow(c, a.text().WinRate(), replaySummaryPercent(winRate, hasWinRate))
 			ratio, hasRatio := stats.PayoffRatio()
-			replaySummaryRow(c, a.text().PayoffRatio, replaySummaryRatio(ratio, hasRatio))
+			replaySummaryRow(c, a.text().PayoffRatio(), replaySummaryRatio(ratio, hasRatio))
 		})
 		ui.Row(c).FillWidth().Justify(ui.End).Gap(8).Children(func() {
-			components.Button(c.Key("replay-summary-discard"), a.text().Discard, components.ButtonSecondary).
+			components.Button(c.Key("replay-summary-discard"), a.text().Discard(), components.ButtonSecondary).
 				OnClick(a.discardReplay)
 			ui.Box(c.Key("replay-summary-save")).Disabled(true).Children(func() {
-				components.Button(c, a.text().Save, components.ButtonPrimary)
+				components.Button(c, a.text().Save(), components.ButtonPrimary)
 			})
 		})
 	})

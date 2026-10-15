@@ -28,10 +28,10 @@ type replayLineDrag struct {
 	Moved          bool
 }
 
-func replayPositionCaption(quantity float64, text *locales.Strings) string {
-	direction := text.Long
+func replayPositionCaption(quantity float64, text locales.Messages) string {
+	direction := text.Long()
 	if quantity < 0 {
-		direction = text.Short
+		direction = text.Short()
 	}
 	return direction + " " + strconv.FormatFloat(math.Abs(quantity), 'f', -1, 64)
 }
@@ -63,10 +63,10 @@ func replayFillMessage(label string, trade market.ReplayTrade) string {
 func (a *application) submitReplayClose(c *ui.Context) {
 	trade, err := a.closeReplayPosition()
 	if err != nil {
-		a.showReplayTradeMessage(c, a.text().CloseUnavailable)
+		a.showReplayTradeMessage(c, a.text().CloseUnavailable())
 		return
 	}
-	a.showReplayTradeMessage(c, replayFillMessage(a.text().ClosePosition, trade))
+	a.showReplayTradeMessage(c, replayFillMessage(a.text().ClosePosition(), trade))
 }
 
 func (a *application) pointerOverReplayLines(c *ui.Context, x, y float32) bool {
@@ -133,7 +133,7 @@ func (a *application) finishReplayLineDrag(c *ui.Context, y float32) {
 	}
 	stamp := a.candles[a.chart.replayEnd-1].Time
 	if err := a.chart.replayAccount.SetExit(replayExitKind(drag.Target), drag.Price, stamp); err != nil {
-		a.showReplayTradeMessage(c, a.text().InvalidExitPrice)
+		a.showReplayTradeMessage(c, a.text().InvalidExitPrice())
 	}
 }
 
@@ -195,15 +195,15 @@ func (a *application) replayPositionLines(c *ui.Context) {
 		if price <= 0 {
 			continue
 		}
-		label, caption, color := a.text().PositionLine, a.replayPositionCaption(state.replayAccount.Quantity), c.Theme().Accent
-		closeLabel := a.text().ClosePosition
+		label, caption, color := a.text().PositionLine(), a.replayPositionCaption(state.replayAccount.Quantity), c.Theme().Accent
+		closeLabel := a.text().ClosePosition()
 		if kind != replayPositionLine {
 			label = a.replayExitLabel(replayExitKind(kind))
 			pnl := (price - state.replayAccount.AveragePrice) * state.replayAccount.Quantity
 			caption = fmt.Sprintf("%s %+.2f", label, pnl)
-			closeLabel = a.text().CancelTakeProfit
+			closeLabel = a.text().CancelTakeProfit()
 			if kind == replayStopLossLine {
-				closeLabel = a.text().CancelStopLoss
+				closeLabel = a.text().CancelStopLoss()
 			}
 			color = ui.Hex("#20a36a")
 			if kind == replayStopLossLine {

@@ -75,7 +75,7 @@ func TestReplayShortcutsWorkAfterClickingActionButtons(t *testing.T) {
 	app.chart.selectReplayStart(120, len(app.candles))
 	app.candles[120].Close = 100
 	tt.Frame()
-	clickReplaySetting(t, tt, app.text().Buy)
+	clickReplaySetting(t, tt, app.text().Buy())
 	tt.Key(0, ui.KeySpace)
 	if !app.chart.actionPlaying || len(app.chart.replayAccount.Trades) != 1 {
 		t.Fatal("Space on the buy button should play, not buy again")
@@ -84,7 +84,7 @@ func TestReplayShortcutsWorkAfterClickingActionButtons(t *testing.T) {
 	if app.chart.replayAccount.Quantity != 0 || len(app.chart.replayAccount.Trades) != 2 {
 		t.Fatal("Down on the buy button did not sell exactly once")
 	}
-	clickReplaySetting(t, tt, app.text().Sell)
+	clickReplaySetting(t, tt, app.text().Sell())
 	tt.Key(0, ui.KeySpace)
 	if app.chart.actionPlaying || len(app.chart.replayAccount.Trades) != 3 {
 		t.Fatal("Space on the sell button should pause, not sell again")
@@ -137,7 +137,7 @@ func TestReplayShortcutsLeaveEditorsAndSpeedSelectionAlone(t *testing.T) {
 	app.chart.selectReplayStart(120, len(app.candles))
 	tt.Frame()
 	end := app.chart.replayEnd
-	clickReplaySetting(t, tt, app.text().OrderQuantity)
+	clickReplaySetting(t, tt, app.text().OrderQuantity())
 	replaceReplaySetting(tt, "0.25")
 	tt.Key(0, ui.KeyUp)
 	if app.chart.replayOrderQuantity != 1.25 {
@@ -167,7 +167,7 @@ func TestReplayShortcutsLeaveEditorsAndSpeedSelectionAlone(t *testing.T) {
 	finishAnnotationTextEdit(&app.chart, false)
 	tt.Frame()
 
-	clickReplaySetting(t, tt, app.text().Play)
+	clickReplaySetting(t, tt, app.text().Play())
 	tt.Key(0, ui.KeySpace)
 	// From play, Tab focuses the speed selector without opening it.
 	tt.Key(0, ui.KeyTab)
@@ -188,8 +188,8 @@ func TestReplayShortcutsDoNotActBehindSummary(t *testing.T) {
 	app.chart.selectReplayStart(120, len(app.candles))
 	app.candles[120].Close = 100
 	tt.Frame()
-	clickReplaySetting(t, tt, app.text().Buy)
-	clickReplaySetting(t, tt, app.text().End)
+	clickReplaySetting(t, tt, app.text().Buy())
+	clickReplaySetting(t, tt, app.text().End())
 	before := app.chart.replayAccount
 	end := app.chart.replayEnd
 	for _, key := range []ui.Key{ui.KeySpace, ui.KeyUp, ui.KeyDown, ui.KeyRight} {
@@ -217,12 +217,12 @@ func TestReplayShortcutTooltipsAreLocalized(t *testing.T) {
 			app.chart.selectReplayStart(120, len(app.candles))
 			tt.Frame()
 			for _, tc := range []struct{ label, key string }{
-				{app.text().Play, "Space"},
-				{app.text().Pause, "Space"},
-				{app.text().Buy, "↑"},
-				{app.text().Sell, "↓"},
+				{app.text().Play(), "Space"},
+				{app.text().Pause(), "Space"},
+				{app.text().Buy(), "↑"},
+				{app.text().Sell(), "↓"},
 			} {
-				if tc.label == app.text().Pause {
+				if tc.label == app.text().Pause() {
 					tt.Key(0, ui.KeySpace)
 				}
 				want := tc.label + " (" + tc.key + ")"

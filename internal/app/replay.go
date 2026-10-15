@@ -112,7 +112,7 @@ func (a *application) advanceReplayWithFeedback(c *ui.Context) bool {
 	beforeTrades := len(state.replayAccount.Trades)
 	completed := a.advanceReplayStep()
 	if state.replayExitError != nil {
-		a.showReplayTradeMessage(c, a.text().ExitFailed)
+		a.showReplayTradeMessage(c, a.text().ExitFailed())
 		return false
 	}
 	if len(state.replayAccount.Trades) > beforeTrades {
@@ -120,7 +120,7 @@ func (a *application) advanceReplayWithFeedback(c *ui.Context) bool {
 		a.showReplayTradeMessage(c, replayFillMessage(a.replayExitLabel(trade.ExitKind), trade))
 	}
 	if completed {
-		c.Toast(a.text().ReplayComplete)
+		c.Toast(a.text().ReplayComplete())
 	}
 	return completed
 }
@@ -169,7 +169,7 @@ func (a *application) completeReplay() {
 
 func (a *application) finishReplay(c *ui.Context) {
 	a.completeReplay()
-	c.Toast(a.text().ReplayComplete)
+	c.Toast(a.text().ReplayComplete())
 }
 
 func (a *application) followReplay() {

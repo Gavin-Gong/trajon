@@ -17,14 +17,14 @@ func (a *application) instrumentSearchField(c *ui.Context) {
 	}
 	ui.Box(c.Key("instrument-picker-search")).FillWidth().Children(func() {
 		input := components.TextBox(c.Key("input"), &a.instrumentPickerQuery, components.TextBoxOptions{LeadingIcon: lucide.Search()}).
-			FillWidth().Label(text.SearchInstrument).Placeholder(text.SearchSymbol).
+			FillWidth().Label(text.SearchInstrument()).Placeholder(text.SearchSymbol()).
 			Bind(&a.instrumentSearchHandle).AutoFocus().OnChange(a.searchInstruments)
 		if a.instrumentPickerQuery != "" {
 			input.Padding(t.Space(1.5), t.Space(7), t.Space(1.5), t.Space(8)).
 				OnShortcut(0, ui.KeyEscape, clear)
 			components.Button(c.Key("clear"), "", components.ButtonGhost).
 				Absolute().Right(t.Space(1.5)).Top(t.Space(1.5)).Size(t.Space(4), t.Space(4)).
-				Padding(0).Radius(t.Space(2)).Center().Label(text.ClearSearch).OnClick(clear).
+				Padding(0).Radius(t.Space(2)).Center().Label(text.ClearSearch()).OnClick(clear).
 				Children(func() {
 					components.Icon(c, lucide.X).Size(t.Space(3), t.Space(3)).TextColor(t.TextMuted)
 				})
