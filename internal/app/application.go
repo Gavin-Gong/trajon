@@ -18,22 +18,25 @@ import (
 )
 
 type application struct {
-	activePage         string
-	settingsOpen       bool
-	settingsButton     ui.Handle
-	settingsLanguage   ui.Handle
-	informationOpen    bool
-	informationButton  ui.Handle
-	updates            updateState
-	language           locales.Language
-	languagePreference locales.Preference
-	preferredLanguages []string // Standalone views only; native windows use MyGo.
-	changeLocale       func(string)
-	transientLocale    bool // MYGO_LOCALE must not overwrite saved preferences.
-	localeStore        *localePreferenceStore
-	languageSaveError  error
-	candles            []Candle
-	chart              klineState
+	activePage                    string
+	settingsOpen                  bool
+	settingsButton                ui.Handle
+	settingsLanguage              ui.Handle
+	settingsReturnToPicker        bool
+	retryMarketAfterAuthorization string
+	informationOpen               bool
+	informationButton             ui.Handle
+	updates                       updateState
+	longbridge                    longbridgeState
+	language                      locales.Language
+	languagePreference            locales.Preference
+	preferredLanguages            []string // Standalone views only; native windows use MyGo.
+	changeLocale                  func(string)
+	transientLocale               bool // MYGO_LOCALE must not overwrite saved preferences.
+	localeStore                   *localePreferenceStore
+	languageSaveError             error
+	candles                       []Candle
+	chart                         klineState
 
 	timeframePickerOpen bool
 	timeframeButton     ui.Handle
@@ -99,13 +102,15 @@ var navigationItems = []navigationItem{
 
 func Run() {
 	currentInstrument := defaultInstrument()
+	authorization := newLongbridgeClient()
 	app := &application{
 		activePage:        "overview",
 		currentInstrument: currentInstrument,
 		chart:             newKlineState(0),
 		replaySettings:    defaultReplaySettings(),
 		marketUpdates:     make(chan market.Snapshot, 16),
-		dataSources:       defaults.NewRegistry(nil),
+		dataSources:       defaults.NewRegistry(nil, authorization),
+		longbridge:        longbridgeState{client: authorization},
 		// Shell owns the toolbar's title host, even while another page is active.
 		marketToolbarInTitle: true,
 		updates: updateState{
@@ -189,8 +194,10 @@ func Run() {
 		shell.SetLabels(app.shellLabels())
 		app.window = shell.Window()
 		app.checkForUpdates()
+		app.restoreLongbridge()
 		app.window.OnClosed(func() {
 			stopLocaleChanges()
+			app.closeLongbridge()
 			app.closeUpdates()
 			app.closeIndicatorCalculations()
 			app.stopInstrumentSearch()
@@ -226,6 +233,7 @@ func (a *application) left(c *ui.Context) {
 func (a *application) leftToolbar(c *ui.Context) {
 	if sidebar.IconButton(c.Key("settings"), lucide.Settings(), a.text().Settings()).Bind(&a.settingsButton).Clicked() {
 		a.settingsOpen = true
+		a.restoreLongbridge()
 	}
 	a.informationToolbarButton(c)
 }
@@ -243,6 +251,7 @@ func (a *application) content(c *ui.Context) {
 }
 
 func (a *application) localizedContent(c *ui.Context) {
+	a.drainLongbridgeResults()
 	a.drainUpdateResults()
 	a.drainMarketUpdates()
 	if a.activePage != "market" {

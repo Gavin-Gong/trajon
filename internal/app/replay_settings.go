@@ -41,6 +41,13 @@ func (a *application) closeReplaySettings() {
 	}
 }
 
+func (a *application) initialCapitalLabel() string {
+	if currency := a.currentInstrument.Currency; currency != "" {
+		return a.text().InitialCapitalInCurrency(currency)
+	}
+	return a.text().InitialCapital()
+}
+
 func (a *application) replaySettingsDialog(c *ui.Context) {
 	if !a.chart.canEditReplaySettings() {
 		a.replaySettingsOpen = false
@@ -51,9 +58,9 @@ func (a *application) replaySettingsDialog(c *ui.Context) {
 		components.Text(c, a.text().ReplaySettings()).FontSize(18).Bold().SingleLine()
 
 		ui.Column(c).FillWidth().Gap(6).Children(func() {
-			components.Text(c, a.text().InitialCapital()).SingleLine()
+			components.Text(c, a.initialCapitalLabel()).SingleLine()
 			components.NumberInput(c.Key("replay-initial-capital"), &a.replaySettingsDraft.InitialCapital, .01, math.MaxFloat64, 1000).
-				Label(a.text().InitialCapital()).AutoFocus().FillWidth()
+				Label(a.initialCapitalLabel()).AutoFocus().FillWidth()
 		})
 		ui.Column(c).FillWidth().Gap(6).Children(func() {
 			components.Text(c, a.text().LeverageMultiple()).SingleLine()

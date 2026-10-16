@@ -2,6 +2,7 @@ package market
 
 import (
 	"context"
+	"strings"
 	"sync"
 )
 
@@ -118,6 +119,19 @@ func (l *Loader) Select(instrument Instrument, interval string, force bool) {
 		candles, err := source.LoadCandles(ctx, request)
 		l.finishLatest(generation, request, candles, err)
 	}()
+}
+
+// InvalidateSourceCache drops only reusable results for a changed account.
+// Already displayed candles and replay state are intentionally left intact.
+func (l *Loader) InvalidateSourceCache(source DataSourceID) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	prefix := string(source) + "|"
+	for key := range l.cache {
+		if strings.HasPrefix(key, prefix) {
+			delete(l.cache, key)
+		}
+	}
 }
 
 func (l *Loader) RetryLatest() {

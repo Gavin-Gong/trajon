@@ -21,6 +21,24 @@ func (e *NoCandlesError) Error() string {
 	return fmt.Sprintf("no candles available for %s", e.Symbol)
 }
 
+// SourceAuthorizationError distinguishes missing/expired grants from network
+// and quote-entitlement failures without depending on a provider SDK.
+type SourceAuthorizationError struct {
+	SourceID DataSourceID
+	Expired  bool
+	Err      error // Optional sanitized provider detail.
+}
+
+func (e *SourceAuthorizationError) Error() string {
+	message := fmt.Sprintf("%s requires authorization", (Instrument{SourceID: e.SourceID}).SourceLabel())
+	if e.Err != nil {
+		message += ": " + e.Err.Error()
+	}
+	return message
+}
+
+func (e *SourceAuthorizationError) Unwrap() error { return e.Err }
+
 type InstrumentSearchError struct {
 	SourceID   DataSourceID
 	MarketType MarketType

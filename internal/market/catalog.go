@@ -27,6 +27,7 @@ func FilterInstruments(items []Instrument, query string, marketType MarketType) 
 			continue
 		}
 		if query != "" && !strings.Contains(normalizeInstrumentQuery(item.Name), query) &&
+			!strings.Contains(normalizeInstrumentQuery(item.NameCN), query) &&
 			!strings.Contains(normalizeInstrumentQuery(item.Symbol), query) &&
 			!strings.Contains(normalizeInstrumentQuery(item.ProviderSymbol), query) {
 			continue

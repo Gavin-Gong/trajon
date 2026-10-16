@@ -13,11 +13,13 @@ type MarketType string
 type ContractType string
 
 const (
-	DataSourceBinance DataSourceID = "binance"
-	DataSourceOKX     DataSourceID = "okx"
+	DataSourceBinance    DataSourceID = "binance"
+	DataSourceOKX        DataSourceID = "okx"
+	DataSourceLongbridge DataSourceID = "longbridge"
 
 	MarketSpot    MarketType = "spot"
 	MarketFutures MarketType = "futures"
+	MarketStock   MarketType = "stock"
 
 	ContractNone    ContractType = ""
 	ContractUSDM    ContractType = "usd-m"
@@ -26,6 +28,9 @@ const (
 
 type Instrument struct {
 	Name           string
+	NameCN         string
+	Currency       string // Quote currency; replay capital is denominated in this unit.
+	SecurityMarket string // US, HK, SH, or SZ for securities; not part of identity.
 	Symbol         string
 	ProviderSymbol string
 	SourceID       DataSourceID
@@ -41,6 +46,8 @@ func (i Instrument) SourceLabel() string {
 		sourceLabel = "Binance"
 	case DataSourceOKX:
 		sourceLabel = "OKX"
+	case DataSourceLongbridge:
+		sourceLabel = "Longbridge"
 	}
 	return sourceLabel
 }

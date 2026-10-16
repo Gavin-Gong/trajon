@@ -17,9 +17,14 @@ const (
 	instrumentTabAll instrumentTab = iota
 	instrumentTabSpot
 	instrumentTabFutures
+	instrumentTabStocks
 )
 
 var builtinInstrumentCatalog = market.InstrumentCatalog()
+
+func (a *application) catalogInstruments() []instrument {
+	return a.dataSources.DefaultInstruments()
+}
 
 func defaultInstrument() instrument {
 	return market.DefaultInstrument()
@@ -33,7 +38,7 @@ func (a *application) openInstrumentPicker() {
 	a.instrumentPickerQuery = ""
 	a.instrumentPickerTab = instrumentTabAll
 	a.instrumentPickerCursor = 0
-	for i, item := range builtinInstrumentCatalog {
+	for i, item := range a.catalogInstruments() {
 		if item.Identity() == a.currentInstrument.Identity() {
 			a.instrumentPickerCursor = i
 			break
@@ -48,21 +53,27 @@ func (a *application) filteredInstruments() []instrument {
 		marketType = market.MarketSpot
 	} else if a.instrumentPickerTab == instrumentTabFutures {
 		marketType = market.MarketFutures
+	} else if a.instrumentPickerTab == instrumentTabStocks {
+		marketType = market.MarketStock
 	}
-	items := append([]instrument(nil), builtinInstrumentCatalog...)
+	items := market.FilterInstruments(a.catalogInstruments(), a.instrumentPickerQuery, marketType)
 	if strings.TrimSpace(a.instrumentPickerQuery) != "" {
-		seen := make(map[string]bool, len(items))
-		for _, item := range items {
-			seen[item.Identity()] = true
+		indexes := make(map[string]int, len(items))
+		for index, item := range items {
+			indexes[item.Identity()] = index
 		}
-		for _, item := range a.instrumentSearch.items {
-			if !seen[item.Identity()] {
+		// Search sources already own query matching (including normalized
+		// codes and aliases). Only apply the selected market tab here.
+		for _, item := range market.FilterInstruments(a.instrumentSearch.items, "", marketType) {
+			if index, exists := indexes[item.Identity()]; exists {
+				items[index] = item
+			} else {
+				indexes[item.Identity()] = len(items)
 				items = append(items, item)
-				seen[item.Identity()] = true
 			}
 		}
 	}
-	return market.FilterInstruments(items, a.instrumentPickerQuery, marketType)
+	return items
 }
 
 func (a *application) instrumentPickerDialog(c *ui.Context) {
@@ -71,7 +82,7 @@ func (a *application) instrumentPickerDialog(c *ui.Context) {
 		Label:              a.text().ChooseInstrument(),
 		DisableEscapeClose: a.instrumentPickerQuery != "" && a.instrumentSearchHandle.Focused(c),
 	}, func(panel ui.Element) {
-		panel.Width(460).Height(520).Padding(18).Gap(12)
+		panel.Width(600).Height(520).Padding(18).Gap(12)
 
 		t := c.Theme()
 		ui.Row(c).FillWidth().Height(28).AlignItems(ui.Center).Children(func() {
@@ -95,13 +106,25 @@ func (a *application) instrumentPickerDialog(c *ui.Context) {
 			a.instrumentTabButton(c, a.text().All(), instrumentTabAll)
 			a.instrumentTabButton(c, a.text().Spot(), instrumentTabSpot)
 			a.instrumentTabButton(c, a.text().Futures(), instrumentTabFutures)
+			a.instrumentTabButton(c, a.text().Stocks(), instrumentTabStocks)
 		})
+		if a.instrumentPickerTab == instrumentTabStocks {
+			components.Text(c, a.text().StockSymbolHint()).FontSize(11).TextColor(t.TextMuted).Wrap()
+			if a.longbridge.client != nil && !a.longbridge.status.Authorized {
+				ui.Row(c.Key("stocks-authorization")).FillWidth().AlignItems(ui.Center).Gap(8).Children(func() {
+					components.Text(c, a.text().Longbridge()+" · "+a.text().LongbridgeNotAuthorized()).FontSize(12).TextColor(t.TextMuted)
+					ui.Spacer(c)
+					components.Button(c.Key("stocks-connect"), a.text().ConnectDataSource(), components.ButtonSecondary).
+						OnClick(a.openDataSourceSettingsFromPicker)
+				})
+			}
+		}
 
 		ui.Row(c).FillWidth().Padding(8, 10, 4, 10).Gap(8).TextColor(t.TextMuted).Children(func() {
 			components.Text(c, a.text().Name()).FontSize(11).SingleLine()
 			ui.Spacer(c)
-			components.Text(c, a.text().Symbol()).FontSize(11).SingleLine()
-			components.Text(c, a.text().Market()).FontSize(11).Width(112).SingleLine()
+			components.Text(c, a.text().Symbol()).FontSize(11).SingleLine().Width(100)
+			components.Text(c, a.text().Market()).FontSize(11).Width(164).SingleLine()
 			ui.Box(c).Size(15, 1)
 		})
 
@@ -131,7 +154,7 @@ func (a *application) instrumentPickerDialog(c *ui.Context) {
 		a.instrumentPickerList.Selected = &a.instrumentPickerCursor
 		a.instrumentPickerList.Key = func(i int) any { return items[i].Identity() }
 		a.instrumentPickerList.Label = func(i int) string {
-			return items[i].Name + " " + items[i].Symbol + " " + a.instrumentTypeLabel(items[i])
+			return a.instrumentName(items[i]) + " " + items[i].Symbol + " " + a.instrumentTypeLabel(items[i])
 		}
 		a.instrumentPickerList.OnSubmit = func(i int) {
 			if i >= 0 && i < len(items) {
@@ -155,7 +178,7 @@ func (a *application) instrumentPickerDialog(c *ui.Context) {
 		components.List(c.Key("instrument-picker-list"), &a.instrumentPickerList, len(items), func(i int) {
 			item := items[i]
 			row := components.Button(c.Key("instrument-row-"+item.Identity()), "", components.ButtonGhost).
-				FillWidth().Height(42).MinWidth(0).Padding(8, 10).Radius(t.Radius).Label(item.Name + " " + item.Symbol + " " + a.instrumentTypeLabel(item))
+				FillWidth().Height(42).MinWidth(0).Padding(8, 10).Radius(t.Radius).Label(a.instrumentName(item) + " " + item.Symbol + " " + a.instrumentTypeLabel(item))
 			if i == a.instrumentPickerCursor {
 				row.Background(t.Text.Alpha(.06))
 			}
@@ -164,10 +187,10 @@ func (a *application) instrumentPickerDialog(c *ui.Context) {
 			}
 			row.Children(func() {
 				ui.Row(c).FillWidth().AlignItems(ui.Center).Gap(8).Children(func() {
-					components.Text(c, item.Name).SingleLine()
+					components.Text(c, a.instrumentName(item)).SingleLine().Grow(1).MinWidth(0)
 					ui.Spacer(c)
-					components.Text(c, item.Symbol).TextColor(t.TextMuted).SingleLine()
-					components.Text(c, a.instrumentTypeLabel(item)).TextColor(t.TextMuted).Width(112).SingleLine()
+					components.Text(c, item.Symbol).TextColor(t.TextMuted).SingleLine().Width(100)
+					components.Text(c, a.instrumentTypeLabel(item)).TextColor(t.TextMuted).Width(164).SingleLine()
 					if item.Identity() == a.currentInstrument.Identity() {
 						components.Icon(c, lucide.Check).Size(15, 15).TextColor(t.Accent)
 					} else {

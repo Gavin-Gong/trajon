@@ -50,7 +50,7 @@ func normalizeInstrumentHistory(items []instrument) []instrument {
 	seen := make(map[string]bool)
 	for _, item := range items {
 		if item.SourceID == "" || item.ProviderSymbol == "" || item.Symbol == "" ||
-			(item.MarketType != market.MarketSpot && item.MarketType != market.MarketFutures) || seen[item.Identity()] {
+			(item.MarketType != market.MarketSpot && item.MarketType != market.MarketFutures && item.MarketType != market.MarketStock) || seen[item.Identity()] {
 			continue
 		}
 		if item.Name == "" {

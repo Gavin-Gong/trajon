@@ -324,6 +324,286 @@ func (msgs Messages) LanguageSaveFailed() string {
 	return Catalog.Format(msgs.locale, "LanguageSaveFailed", nil)
 }
 
+// Stocks says "Stocks"
+// in the language the app shows.
+func Stocks() string { return In(i18n.Locale()).Stocks() }
+
+// Stocks says "Stocks"
+// in the language of msgs.
+func (msgs Messages) Stocks() string {
+	return Catalog.Format(msgs.locale, "Stocks", nil)
+}
+
+// USStocks says "US stocks"
+// in the language the app shows.
+func USStocks() string { return In(i18n.Locale()).USStocks() }
+
+// USStocks says "US stocks"
+// in the language of msgs.
+func (msgs Messages) USStocks() string {
+	return Catalog.Format(msgs.locale, "USStocks", nil)
+}
+
+// HKStocks says "HK stocks"
+// in the language the app shows.
+func HKStocks() string { return In(i18n.Locale()).HKStocks() }
+
+// HKStocks says "HK stocks"
+// in the language of msgs.
+func (msgs Messages) HKStocks() string {
+	return Catalog.Format(msgs.locale, "HKStocks", nil)
+}
+
+// ChinaStocks says "A-shares"
+// in the language the app shows.
+func ChinaStocks() string { return In(i18n.Locale()).ChinaStocks() }
+
+// ChinaStocks says "A-shares"
+// in the language of msgs.
+func (msgs Messages) ChinaStocks() string {
+	return Catalog.Format(msgs.locale, "ChinaStocks", nil)
+}
+
+// StockSymbolHint says "Codes: AAPL.US / 700.HK / 600519.SH / 000001.SZ"
+// in the language the app shows.
+func StockSymbolHint() string { return In(i18n.Locale()).StockSymbolHint() }
+
+// StockSymbolHint says "Codes: AAPL.US / 700.HK / 600519.SH / 000001.SZ"
+// in the language of msgs.
+func (msgs Messages) StockSymbolHint() string {
+	return Catalog.Format(msgs.locale, "StockSymbolHint", nil)
+}
+
+// ConnectDataSource says "Connect data source"
+// in the language the app shows.
+func ConnectDataSource() string { return In(i18n.Locale()).ConnectDataSource() }
+
+// ConnectDataSource says "Connect data source"
+// in the language of msgs.
+func (msgs Messages) ConnectDataSource() string {
+	return Catalog.Format(msgs.locale, "ConnectDataSource", nil)
+}
+
+// DataSourceAuthorizationRequired says "Connect {source} in Settings"
+// in the language the app shows.
+func DataSourceAuthorizationRequired(source string) string {
+	return In(i18n.Locale()).DataSourceAuthorizationRequired(source)
+}
+
+// DataSourceAuthorizationRequired says "Connect {source} in Settings"
+// in the language of msgs.
+func (msgs Messages) DataSourceAuthorizationRequired(source string) string {
+	return Catalog.Format(msgs.locale, "DataSourceAuthorizationRequired", map[string]any{"source": source})
+}
+
+// DataSourceAuthorizationExpired says "Reauthorize {source} in Settings"
+// in the language the app shows.
+func DataSourceAuthorizationExpired(source string) string {
+	return In(i18n.Locale()).DataSourceAuthorizationExpired(source)
+}
+
+// DataSourceAuthorizationExpired says "Reauthorize {source} in Settings"
+// in the language of msgs.
+func (msgs Messages) DataSourceAuthorizationExpired(source string) string {
+	return Catalog.Format(msgs.locale, "DataSourceAuthorizationExpired", map[string]any{"source": source})
+}
+
+// InitialCapitalInCurrency says "Initial capital ({currency})"
+// in the language the app shows.
+func InitialCapitalInCurrency(currency string) string {
+	return In(i18n.Locale()).InitialCapitalInCurrency(currency)
+}
+
+// InitialCapitalInCurrency says "Initial capital ({currency})"
+// in the language of msgs.
+func (msgs Messages) InitialCapitalInCurrency(currency string) string {
+	return Catalog.Format(msgs.locale, "InitialCapitalInCurrency", map[string]any{"currency": currency})
+}
+
+// DataSources says "Data sources"
+// in the language the app shows.
+func DataSources() string { return In(i18n.Locale()).DataSources() }
+
+// DataSources says "Data sources"
+// in the language of msgs.
+func (msgs Messages) DataSources() string {
+	return Catalog.Format(msgs.locale, "DataSources", nil)
+}
+
+// Longbridge says "Longbridge"
+// in the language the app shows.
+func Longbridge() string { return In(i18n.Locale()).Longbridge() }
+
+// Longbridge says "Longbridge"
+// in the language of msgs.
+func (msgs Messages) Longbridge() string {
+	return Catalog.Format(msgs.locale, "Longbridge", nil)
+}
+
+// LongbridgeNotAuthorized says "Not authorized"
+// in the language the app shows.
+func LongbridgeNotAuthorized() string { return In(i18n.Locale()).LongbridgeNotAuthorized() }
+
+// LongbridgeNotAuthorized says "Not authorized"
+// in the language of msgs.
+func (msgs Messages) LongbridgeNotAuthorized() string {
+	return Catalog.Format(msgs.locale, "LongbridgeNotAuthorized", nil)
+}
+
+// LongbridgeAuthorized says "Authorized"
+// in the language the app shows.
+func LongbridgeAuthorized() string { return In(i18n.Locale()).LongbridgeAuthorized() }
+
+// LongbridgeAuthorized says "Authorized"
+// in the language of msgs.
+func (msgs Messages) LongbridgeAuthorized() string {
+	return Catalog.Format(msgs.locale, "LongbridgeAuthorized", nil)
+}
+
+// LongbridgeAuthorizationExpired says "Authorization expired or invalid"
+// in the language the app shows.
+func LongbridgeAuthorizationExpired() string {
+	return In(i18n.Locale()).LongbridgeAuthorizationExpired()
+}
+
+// LongbridgeAuthorizationExpired says "Authorization expired or invalid"
+// in the language of msgs.
+func (msgs Messages) LongbridgeAuthorizationExpired() string {
+	return Catalog.Format(msgs.locale, "LongbridgeAuthorizationExpired", nil)
+}
+
+// LongbridgeConnect says "Connect via browser"
+// in the language the app shows.
+func LongbridgeConnect() string { return In(i18n.Locale()).LongbridgeConnect() }
+
+// LongbridgeConnect says "Connect via browser"
+// in the language of msgs.
+func (msgs Messages) LongbridgeConnect() string {
+	return Catalog.Format(msgs.locale, "LongbridgeConnect", nil)
+}
+
+// LongbridgeReauthorize says "Authorize again"
+// in the language the app shows.
+func LongbridgeReauthorize() string { return In(i18n.Locale()).LongbridgeReauthorize() }
+
+// LongbridgeReauthorize says "Authorize again"
+// in the language of msgs.
+func (msgs Messages) LongbridgeReauthorize() string {
+	return Catalog.Format(msgs.locale, "LongbridgeReauthorize", nil)
+}
+
+// LongbridgeDisconnect says "Disconnect"
+// in the language the app shows.
+func LongbridgeDisconnect() string { return In(i18n.Locale()).LongbridgeDisconnect() }
+
+// LongbridgeDisconnect says "Disconnect"
+// in the language of msgs.
+func (msgs Messages) LongbridgeDisconnect() string {
+	return Catalog.Format(msgs.locale, "LongbridgeDisconnect", nil)
+}
+
+// LongbridgeChecking says "Checking authorization…"
+// in the language the app shows.
+func LongbridgeChecking() string { return In(i18n.Locale()).LongbridgeChecking() }
+
+// LongbridgeChecking says "Checking authorization…"
+// in the language of msgs.
+func (msgs Messages) LongbridgeChecking() string {
+	return Catalog.Format(msgs.locale, "LongbridgeChecking", nil)
+}
+
+// LongbridgeWaiting says "Waiting for browser authorization…"
+// in the language the app shows.
+func LongbridgeWaiting() string { return In(i18n.Locale()).LongbridgeWaiting() }
+
+// LongbridgeWaiting says "Waiting for browser authorization…"
+// in the language of msgs.
+func (msgs Messages) LongbridgeWaiting() string {
+	return Catalog.Format(msgs.locale, "LongbridgeWaiting", nil)
+}
+
+// LongbridgeSaving says "Saving authorization…"
+// in the language the app shows.
+func LongbridgeSaving() string { return In(i18n.Locale()).LongbridgeSaving() }
+
+// LongbridgeSaving says "Saving authorization…"
+// in the language of msgs.
+func (msgs Messages) LongbridgeSaving() string {
+	return Catalog.Format(msgs.locale, "LongbridgeSaving", nil)
+}
+
+// LongbridgeDisconnecting says "Disconnecting…"
+// in the language the app shows.
+func LongbridgeDisconnecting() string { return In(i18n.Locale()).LongbridgeDisconnecting() }
+
+// LongbridgeDisconnecting says "Disconnecting…"
+// in the language of msgs.
+func (msgs Messages) LongbridgeDisconnecting() string {
+	return Catalog.Format(msgs.locale, "LongbridgeDisconnecting", nil)
+}
+
+// LongbridgeBrowserReturn says "Authorization response received. Return to Trajon."
+// in the language the app shows.
+func LongbridgeBrowserReturn() string { return In(i18n.Locale()).LongbridgeBrowserReturn() }
+
+// LongbridgeBrowserReturn says "Authorization response received. Return to Trajon."
+// in the language of msgs.
+func (msgs Messages) LongbridgeBrowserReturn() string {
+	return Catalog.Format(msgs.locale, "LongbridgeBrowserReturn", nil)
+}
+
+// LongbridgeStorageFailed says "Could not access the system credential store"
+// in the language the app shows.
+func LongbridgeStorageFailed() string { return In(i18n.Locale()).LongbridgeStorageFailed() }
+
+// LongbridgeStorageFailed says "Could not access the system credential store"
+// in the language of msgs.
+func (msgs Messages) LongbridgeStorageFailed() string {
+	return Catalog.Format(msgs.locale, "LongbridgeStorageFailed", nil)
+}
+
+// LongbridgeCallbackFailed says "Could not start the authorization callback"
+// in the language the app shows.
+func LongbridgeCallbackFailed() string { return In(i18n.Locale()).LongbridgeCallbackFailed() }
+
+// LongbridgeCallbackFailed says "Could not start the authorization callback"
+// in the language of msgs.
+func (msgs Messages) LongbridgeCallbackFailed() string {
+	return Catalog.Format(msgs.locale, "LongbridgeCallbackFailed", nil)
+}
+
+// LongbridgeAuthorizationDenied says "Authorization was declined"
+// in the language the app shows.
+func LongbridgeAuthorizationDenied() string { return In(i18n.Locale()).LongbridgeAuthorizationDenied() }
+
+// LongbridgeAuthorizationDenied says "Authorization was declined"
+// in the language of msgs.
+func (msgs Messages) LongbridgeAuthorizationDenied() string {
+	return Catalog.Format(msgs.locale, "LongbridgeAuthorizationDenied", nil)
+}
+
+// LongbridgeAuthorizationTimedOut says "Authorization timed out"
+// in the language the app shows.
+func LongbridgeAuthorizationTimedOut() string {
+	return In(i18n.Locale()).LongbridgeAuthorizationTimedOut()
+}
+
+// LongbridgeAuthorizationTimedOut says "Authorization timed out"
+// in the language of msgs.
+func (msgs Messages) LongbridgeAuthorizationTimedOut() string {
+	return Catalog.Format(msgs.locale, "LongbridgeAuthorizationTimedOut", nil)
+}
+
+// LongbridgeConnectionFailed says "Could not connect to Longbridge"
+// in the language the app shows.
+func LongbridgeConnectionFailed() string { return In(i18n.Locale()).LongbridgeConnectionFailed() }
+
+// LongbridgeConnectionFailed says "Could not connect to Longbridge"
+// in the language of msgs.
+func (msgs Messages) LongbridgeConnectionFailed() string {
+	return Catalog.Format(msgs.locale, "LongbridgeConnectionFailed", nil)
+}
+
 // ChooseInstrument says "Choose instrument"
 // in the language the app shows.
 func ChooseInstrument() string { return In(i18n.Locale()).ChooseInstrument() }

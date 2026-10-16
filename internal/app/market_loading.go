@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"github.com/egoist/mygo/ui"
 	"trajon/internal/market"
 	appui "trajon/internal/ui"
@@ -156,6 +157,17 @@ func cloneCandles(candles []Candle) []Candle {
 }
 
 func (a *application) retryMarketData() {
+	var authorization *market.SourceAuthorizationError
+	if errors.As(a.marketError, &authorization) {
+		a.longbridge.status.Authorized = false
+		a.longbridge.status.NeedsAuthorization = authorization.Expired
+		a.longbridge.err = nil
+		if a.pendingCandleLoad != nil {
+			a.retryMarketAfterAuthorization = a.pendingCandleLoad.CacheKey()
+		}
+		a.settingsOpen = true
+		return
+	}
 	if a.marketLoader != nil {
 		a.marketLoader.RetryLatest()
 	}

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.0.4
+
+### Added
+
+- Longbridge browser authorization with encrypted local credential storage.
+- US, Hong Kong, and Shanghai/Shenzhen stock and ETF search, candlestick data, and replay across all eleven timeframes.
+
+### Changed
+
+- Show the selected security's quote currency in replay settings and summaries.
+- Improve the replay summary layout with an outcome-distribution chart and scrollable metrics.
+
 ## 0.0.3
 
 ### Added

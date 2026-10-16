@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"errors"
 	myui "github.com/egoist/mygo/ui"
 	"github.com/oneo-me/onevra/source/components"
 	"trajon/internal/locales"
@@ -32,7 +33,12 @@ func RenderMarketStatus(c *myui.Context, state MarketStatusState, text locales.M
 			}
 			components.Text(c, message).TextColor(c.Theme().TextMuted).SingleLine()
 			components.Text(c, MarketError(text, state.Error)).TextColor(c.Theme().TextMuted).Wrap().MaxWidth(420)
-			retry := components.Button(c, text.Retry(), components.ButtonSecondary)
+			label := text.Retry()
+			var authorization *market.SourceAuthorizationError
+			if errors.As(state.Error, &authorization) {
+				label = text.ConnectDataSource()
+			}
+			retry := components.Button(c.Key("market-retry"), label, components.ButtonSecondary)
 			if retry.Clicked() && retryLatest != nil {
 				retryLatest()
 			}

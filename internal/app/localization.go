@@ -19,6 +19,13 @@ func (a *application) text() locales.Messages {
 	return locales.In(string(language))
 }
 
+func (a *application) instrumentName(item instrument) string {
+	if (a.language == locales.Chinese || a.language == "") && item.NameCN != "" {
+		return item.NameCN
+	}
+	return item.Name
+}
+
 func (a *application) instrumentTypeLabel(item instrument) string {
 	return appui.InstrumentTypeLabel(a.text(), item)
 }
@@ -107,7 +114,15 @@ func (a *application) shellLabels() sidebar.Labels {
 }
 
 func (a *application) closeSettings() {
+	a.cancelLongbridgeAuthorization()
 	a.settingsOpen = false
+	if a.settingsReturnToPicker {
+		a.settingsReturnToPicker = false
+		a.instrumentPickerOpen = true
+		a.searchInstruments()
+		a.instrumentSearchHandle.Focus()
+		return
+	}
 	a.settingsButton.Focus()
 }
 
@@ -166,6 +181,7 @@ func (a *application) settingsDialog(c *ui.Context) {
 					OnClick(func() { a.setLanguagePreference(a.languagePreference) })
 			})
 		}
+		a.longbridgeSettings(c)
 	})
 	if wasOpen && !a.settingsOpen {
 		a.closeSettings()

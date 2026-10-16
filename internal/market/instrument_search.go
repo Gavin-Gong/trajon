@@ -22,7 +22,8 @@ type cachedInstrumentCatalog struct {
 }
 
 // InstrumentSearcher caches each market independently, so a failed market can
-// be retried without downloading successful catalogs again.
+// be retried without downloading successful catalogs again. Query-based sources
+// resolve their own matches instead of pretending to publish a whole catalog.
 type InstrumentSearcher struct {
 	registry *Registry
 	mu       sync.Mutex
@@ -34,12 +35,16 @@ func NewInstrumentSearcher(registry *Registry) *InstrumentSearcher {
 }
 
 func (s *InstrumentSearcher) Search(ctx context.Context, query string) ([]Instrument, error) {
-	if strings.TrimSpace(query) == "" {
-		return InstrumentCatalog(), nil
+	if err := ctx.Err(); err != nil {
+		return nil, err
 	}
-	type result struct {
-		items []Instrument
-		err   error
+	if strings.TrimSpace(query) == "" {
+		return s.registry.DefaultInstruments(), nil
+	}
+	type job struct {
+		key     instrumentCatalogKey
+		catalog InstrumentSource
+		query   InstrumentQuerySource
 	}
 	sources := s.instrumentSources()
 	ids := make([]DataSourceID, 0, len(sources))
@@ -47,34 +52,53 @@ func (s *InstrumentSearcher) Search(ctx context.Context, query string) ([]Instru
 		ids = append(ids, id)
 	}
 	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
-	if len(ids) == 0 {
+	var work []job
+	for _, id := range ids {
+		source := sources[id]
+		if query, ok := source.(InstrumentQuerySource); ok {
+			work = append(work, job{key: instrumentCatalogKey{source: id}, query: query})
+			continue
+		}
+		if catalog, ok := source.(InstrumentSource); ok {
+			for _, kind := range []MarketType{MarketSpot, MarketFutures} {
+				work = append(work, job{key: instrumentCatalogKey{id, kind}, catalog: catalog})
+			}
+		}
+	}
+	if len(work) == 0 {
 		return nil, ErrNoInstrumentSource
 	}
-
-	results := make([]result, len(ids)*2)
+	type result struct {
+		items []Instrument
+		err   error
+	}
+	results := make([]result, len(work))
 	var jobs sync.WaitGroup
-	for i, id := range ids {
-		for j, marketType := range []MarketType{MarketSpot, MarketFutures} {
-			index := i*2 + j
-			jobs.Go(func() {
-				items, err := s.loadCatalog(ctx, instrumentCatalogKey{id, marketType}, sources[id])
-				if err != nil {
-					err = &InstrumentSearchError{SourceID: id, MarketType: marketType, Err: err}
-				}
-				results[index] = result{items, err}
-			})
-		}
+	for index, work := range work {
+		jobs.Go(func() {
+			var items []Instrument
+			var err error
+			if work.query != nil {
+				items, err = work.query.SearchInstruments(ctx, query)
+			} else {
+				items, err = s.loadCatalog(ctx, work.key, work.catalog)
+				items = FilterInstruments(items, query, "")
+			}
+			if err != nil {
+				err = &InstrumentSearchError{SourceID: work.key.source, MarketType: work.key.market, Err: err}
+			}
+			results[index] = result{items, err}
+		})
 	}
 	jobs.Wait()
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-
 	var items []Instrument
 	var errs []error
 	seen := make(map[string]bool)
 	for _, result := range results {
-		for _, item := range FilterInstruments(result.items, query, "") {
+		for _, item := range result.items {
 			if !seen[item.Identity()] {
 				seen[item.Identity()] = true
 				items = append(items, item)
@@ -96,17 +120,15 @@ func (s *InstrumentSearcher) Search(ctx context.Context, query string) ([]Instru
 	return items, errors.Join(errs...)
 }
 
-func (s *InstrumentSearcher) instrumentSources() map[DataSourceID]InstrumentSource {
-	sources := make(map[DataSourceID]InstrumentSource)
+func (s *InstrumentSearcher) instrumentSources() map[DataSourceID]CandleSource {
+	sources := make(map[DataSourceID]CandleSource)
 	if s.registry == nil {
 		return sources
 	}
 	s.registry.mu.RLock()
 	defer s.registry.mu.RUnlock()
 	for id, source := range s.registry.sources {
-		if source, ok := source.(InstrumentSource); ok {
-			sources[id] = source
-		}
+		sources[id] = source
 	}
 	return sources
 }
