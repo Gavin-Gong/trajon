@@ -26,6 +26,11 @@ type application struct {
 	retryMarketAfterAuthorization string
 	informationOpen               bool
 	informationButton             ui.Handle
+	recordsButton                 ui.Handle
+	recordsPanel                  *mygo.Window
+	records                       recordsState
+	recordsBrowser                recordsBrowserState
+	overview                      overviewState
 	updates                       updateState
 	longbridge                    longbridgeState
 	language                      locales.Language
@@ -70,7 +75,6 @@ type application struct {
 	instrumentHistoryStore *instrumentHistoryStore
 	pendingHistoryIdentity string
 
-	shell                    *sidebar.Shell
 	window                   *mygo.Window
 	marketUpdates            chan market.Snapshot
 	dataSources              *marketDataRegistry
@@ -97,6 +101,7 @@ type navigationItem struct {
 
 var navigationItems = []navigationItem{
 	{id: "overview", label: func(t locales.Messages) string { return t.Overview() }, icon: lucide.LayoutDashboard},
+	{id: "journal", label: func(t locales.Messages) string { return t.JournalTitle() }, icon: lucide.NotebookText},
 	{id: "market", label: func(t locales.Messages) string { return t.Replay() }, icon: lucide.MonitorPlay},
 }
 
@@ -118,6 +123,7 @@ func Run() {
 			relaunch: mygo.App.Relaunch,
 		},
 	}
+	defer app.closeRecordsStore()
 	app.marketLoader = market.NewLoader(app.dataSources, app.publishMarketSnapshot)
 	if path, err := instrumentHistoryPath(); err != nil {
 		log.Printf("instrument history path: %v", err)
@@ -190,16 +196,17 @@ func Run() {
 			LeftToolbar:  app.leftToolbar,
 			Theme:        theme.Onevra,
 		})
-		app.shell = shell
-		shell.SetLabels(app.shellLabels())
 		app.window = shell.Window()
+		app.loadRecords()
 		app.checkForUpdates()
 		app.restoreLongbridge()
 		app.window.OnClosed(func() {
+			app.destroyRecordsPanel()
 			stopLocaleChanges()
 			app.closeLongbridge()
 			app.closeUpdates()
 			app.closeIndicatorCalculations()
+			app.closeOverview()
 			app.stopInstrumentSearch()
 			if app.marketLoader != nil {
 				app.marketLoader.Close()
@@ -221,7 +228,13 @@ func (a *application) left(c *ui.Context) {
 					for _, item := range navigationItems {
 						if appui.NavigationItem(c.Key(item.id), item.label(a.text()), item.icon(), a.activePage == item.id).Clicked() {
 							a.timeframePickerOpen = false
+							if a.activePage != item.id && !a.records.detached {
+								a.cancelRecordWork()
+							}
 							a.activePage = item.id
+							if item.id == "journal" && a.records.ready && !a.records.detached {
+								a.loadRecordImages()
+							}
 						}
 					}
 				})
@@ -243,14 +256,15 @@ func (a *application) contentTitle(c *ui.Context) {
 		a.klineToolbarInTitle(c)
 		return
 	}
-	components.Text(c, a.pageTitle()).Bold().SingleLine()
+	ui.Row(c.Key("page-title")).Fill().AlignItems(ui.Center).Children(func() {
+		components.Text(c, a.pageTitle()).Bold().SingleLine()
+		ui.Spacer(c)
+		sidebar.IconButton(c.Key("records"), lucide.NotebookPen(), a.text().JournalQuickRecord()).
+			Bind(&a.recordsButton).OnClick(a.showRecordsPanel)
+	})
 }
 
 func (a *application) content(c *ui.Context) {
-	components.WithLocalization(c, a.componentLocalization(), func() { a.localizedContent(c) })
-}
-
-func (a *application) localizedContent(c *ui.Context) {
 	a.drainLongbridgeResults()
 	a.drainUpdateResults()
 	a.drainMarketUpdates()
@@ -265,12 +279,11 @@ func (a *application) localizedContent(c *ui.Context) {
 			a.marketPage(c)
 			return
 		}
-		components.ScrollView(c, components.ScrollViewOptions{}).Fill().Children(func() {
-			ui.Column(c).FillWidth().Padding(40).Gap(12).Children(func() {
-				components.Text(c, a.pageTitle()).FontSize(28).Bold()
-				components.Text(c, a.text().PagePlaceholder()).TextColor(c.Theme().TextMuted).Wrap()
-			})
-		})
+		if a.activePage == "journal" {
+			a.recordsPage(c)
+			return
+		}
+		a.overviewPage(c)
 	})
 
 	a.settingsDialog(c)

@@ -23,10 +23,8 @@ func TestHostLocaleSynchronizesAppAndNativeControls(t *testing.T) {
 		nativeLocale = c.Locale()
 		ui.Column(c).Fill().Gap(8).Children(func() {
 			components.Text(c, app.text().Overview())
-			components.WithLocalization(c, app.componentLocalization(), func() {
-				components.NumberInput(c.Key("quantity"), &quantity, 0, 100, 1).
-					Label(app.text().OrderQuantity())
-			})
+			components.NumberInput(c.Key("quantity"), &quantity, 0, 100, 1).
+				Label(app.text().OrderQuantity())
 			ui.ColorPicker(c.Key("native-color"), &color)
 		})
 	}, 760, 520)
@@ -52,14 +50,13 @@ func TestHostLocaleSynchronizesAppAndNativeControls(t *testing.T) {
 		t.Fatal("language choice must request the host, not guess its shown locale")
 	}
 	publish("zh-Hans")
-	for _, label := range []string{"概览", "饱和度与亮度", "十六进制", "增加 下单数量"} {
+	for _, label := range []string{"概览", "饱和度与亮度", "十六进制", "增加下单数量"} {
 		if _, ok := tt.Find(label); !ok {
 			t.Errorf("missing localized app/native/Onevra label %q", label)
 		}
 	}
 	if nativeLocale != "zh-Hans" || !tt.Focused("十六进制") || draft() != "A" || color != before ||
-		quantity != 1 || app.currentInstrument.Identity() != identity ||
-		app.shellLabels().LeftToggle != "切换侧栏" {
+		quantity != 1 || app.currentInstrument.Identity() != identity {
 		t.Fatal("host locale event lost language, focus, draft or domain state")
 	}
 

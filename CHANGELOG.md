@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.0.5
+
+### Added
+
+- A trading journal with searchable history, an embedded editor, and a reusable floating quick-record panel.
+- Manual plans, notes, signed fractional executions, trade reviews, tags, and validated local screenshots, with persistent drafts and atomic saves.
+- A journal-performance Overview with whole-trade P&L, win rate, win/loss ratio, maximum drawdown, daily heatmaps, and instrument/tag breakdowns.
+
+### Changed
+
+- Use USD consistently for journal and replay capital and P&L, without currency selection or conversion.
+- Refresh the application icon with the layered mountain mark.
+- Update to MyGo 0.7.3 and Onevra 0.2026.16, using their built-in Markdown and localization support.
+
+### Fixed
+
+- Accept Longbridge OAuth grants with optional refresh tokens, omitted expiry, quoted expiry values, and long lifetimes; require reauthorization when an access-only grant expires.
+
 ## 0.0.4
 
 ### Added

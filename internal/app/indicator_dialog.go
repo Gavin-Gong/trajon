@@ -107,7 +107,9 @@ func (a *application) emaOptions(c *ui.Context) {
 		line := &draft.EMALines[i]
 		id, name := line.ID, fmt.Sprintf("EMA %d", i+1)
 		ui.Row(c.Key(fmt.Sprintf("ema-line-%d", id))).FillWidth().Gap(8).AlignItems(ui.Center).Children(func() {
-			components.Checkbox(c.Key("enabled"), &line.Enabled, name).Width(76)
+			// Onevra v0.2026.11 captures a frame-local Element while painting
+			// checkboxes, which expires during the dialog's exit transition.
+			ui.Checkbox(c.Key("enabled"), &line.Enabled, name).Width(76)
 			components.NumberInput(c.Key("period"), &line.Period, 1, maxIndicatorPeriod, 1).
 				Label(text.EMAPeriod(i + 1)).Grow(1).MinWidth(0)
 			components.ColorPicker(c.Key("color"), &line.Color).Label(text.EMAColor(i+1)).Size(48, 28)

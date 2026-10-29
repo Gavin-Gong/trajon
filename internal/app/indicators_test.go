@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/egoist/mygo/ui"
 	"trajon/internal/locales"
@@ -65,6 +66,23 @@ func TestIndicatorDialogEditsMultipleEMAs(t *testing.T) {
 	clickReplaySetting(t, tt, "保存")
 	if len(app.chart.indicators.EMALines) != 2 || app.chart.indicators.EMALines[0].ID != lines[1].ID {
 		t.Fatal("removal lost remaining line identity")
+	}
+}
+
+func TestIndicatorDialogExitKeepsCheckboxPaintingValid(t *testing.T) {
+	app, tt := newReplaySettingsTester()
+	tt.SetPreferences(ui.Preferences{})
+	clickReplaySetting(t, tt, "指标")
+	tt.Advance(200 * time.Millisecond)
+	clickReplaySetting(t, tt, "EMA")
+	clickReplaySetting(t, tt, "保存")
+	// The exiting layer repaints after the checkbox's build pass has expired.
+	for range 3 {
+		tt.Frame()
+	}
+	tt.Advance(200 * time.Millisecond)
+	if app.indicatorsOpen || !tt.Focused("指标") {
+		t.Fatal("animated dismissal did not restore toolbar focus")
 	}
 }
 
@@ -339,6 +357,7 @@ func TestIndicatorVisualEvidence(t *testing.T) {
 	app, tt := newReplaySettingsTester()
 	save := func(name string) {
 		t.Helper()
+		tt.Advance(200 * time.Millisecond)
 		file, err := os.Create(filepath.Join(dir, name+".png"))
 		if err != nil {
 			t.Fatal(err)
@@ -367,7 +386,7 @@ func TestIndicatorVisualEvidence(t *testing.T) {
 	clickReplaySetting(t, tt, "EMA")
 	save("ema-small")
 	app.setLanguagePreference(locales.PreferEnglish)
-	tt.Frame()
+	tt.SetLocale(string(locales.English))
 	save("ema-english")
 	tt.SetScale(2)
 	save("ema-2x")

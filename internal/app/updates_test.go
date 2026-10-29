@@ -50,10 +50,7 @@ func TestUpdateCheckResults(t *testing.T) {
 			}
 			receiveUpdateResult(t, app, updateChecked)
 			if app.updates.checking || (app.updates.checkError != nil) != tc.wantError || app.updates.available != tc.available {
-				t.Fatalf("unexpected check result: %+v", app.updates)
-			}
-			if tc.available != nil && app.updates.notes == nil {
-				t.Fatal("release notes were not parsed by the worker")
+				t.Fatalf("unexpected check result: %+v", &app.updates)
 			}
 		})
 	}

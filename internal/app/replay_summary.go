@@ -49,9 +49,7 @@ func (a *application) replaySummaryDialog(c *ui.Context) {
 		ui.Row(c).FillWidth().AlignItems(ui.Center).Shrink(0).Children(func() {
 			components.Text(c, text.ReplaySummary()).FontSize(18).Bold().SingleLine()
 			ui.Spacer(c)
-			if currency := a.currentInstrument.Currency; currency != "" {
-				components.Text(c, currency).FontSize(13).TextColor(theme.TextMuted).SingleLine()
-			}
+			components.Text(c, "USD").FontSize(13).TextColor(theme.TextMuted).SingleLine()
 		})
 
 		stats := state.replaySummary
@@ -81,7 +79,7 @@ func (a *application) replaySummaryDialog(c *ui.Context) {
 						})
 					})
 					ui.Row(c).FillWidth().Gap(8).Children(func() {
-						components.Text(c, a.initialCapitalLabel()).FontSize(13).TextColor(theme.TextMuted).SingleLine()
+						components.Text(c, text.InitialCapital()).FontSize(13).TextColor(theme.TextMuted).SingleLine()
 						components.Text(c, fmt.Sprintf("%.2f", stats.InitialCapital)).FontSize(13).SingleLine()
 					})
 				})

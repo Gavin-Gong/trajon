@@ -14,7 +14,6 @@ import (
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
-	"github.com/oneo-me/onevra/source/components/markdown"
 	"github.com/oneo-me/onevra/source/icons/lucide"
 	"trajon/internal/locales"
 )
@@ -110,7 +109,6 @@ func assertInformationHeader(t *testing.T, tt *ui.Tester, app *application, widt
 
 func setTestAvailableUpdate(app *application, notes string) {
 	app.updates.available = &availableUpdate{version: "0.0.2", notes: notes}
-	app.updates.notes = markdown.ParseMarkdown(notes)
 }
 
 func TestInformationUpdateChangelogAndInstallPlacement(t *testing.T) {
@@ -277,6 +275,7 @@ func TestInformationVisualEvidence(t *testing.T) {
 	for _, state := range []string{"current", "available", "installing"} {
 		app, tt := newLocaleSettingsTester()
 		app.language = locales.Chinese
+		tt.SetLocale(string(locales.Chinese))
 		tt.SetSize(1120, 760)
 		if state != "current" {
 			notes := "### 修复\n\n- 修复图表缩放与拖动行为。\n- 改进回放控制与交易操作。"
@@ -290,6 +289,7 @@ func TestInformationVisualEvidence(t *testing.T) {
 		clickReplaySetting(t, tt, app.informationButtonLabel())
 		for _, dark := range []bool{false, true} {
 			tt.SetDark(dark)
+			tt.Advance(200 * time.Millisecond)
 			assertInformationHeader(t, tt, app, 1120)
 			file, err := os.Create(filepath.Join(dir, fmt.Sprintf("%s-dark-%v.png", state, dark)))
 			if err != nil {

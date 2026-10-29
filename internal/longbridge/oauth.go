@@ -53,7 +53,7 @@ type Tokens struct {
 }
 
 func (t Tokens) valid() bool {
-	return t.ClientID != "" && t.AccessToken != "" && t.RefreshToken != "" && !t.ExpiresAt.IsZero()
+	return t.ClientID != "" && t.AccessToken != "" && !t.ExpiresAt.IsZero()
 }
 
 type Status struct {
@@ -144,6 +144,14 @@ func (c *Client) freshTokensLocked(ctx context.Context) (Tokens, error) {
 	tokens := *c.cachedTokens
 	if !tokens.valid() {
 		return Tokens{}, ErrAuthorization
+	}
+	// OAuth refresh tokens are optional. An access-only grant remains usable
+	// until expiry, then needs browser authorization instead of an empty refresh.
+	if tokens.RefreshToken == "" {
+		if !time.Now().Before(tokens.ExpiresAt) {
+			return Tokens{}, ErrAuthorization
+		}
+		return tokens, nil
 	}
 	if time.Until(tokens.ExpiresAt) > time.Minute {
 		return tokens, nil
@@ -326,23 +334,33 @@ func (c *Client) ensureClient(ctx context.Context, redirect string) (registratio
 
 func (c *Client) exchange(ctx context.Context, clientID string, form url.Values) (Tokens, error) {
 	var response struct {
-		AccessToken  string `json:"access_token"`
-		RefreshToken string `json:"refresh_token"`
-		ExpiresIn    int64  `json:"expires_in"`
-		TokenType    string `json:"token_type"`
+		AccessToken  string      `json:"access_token"`
+		RefreshToken string      `json:"refresh_token"`
+		ExpiresIn    json.Number `json:"expires_in"`
+		TokenType    string      `json:"token_type"`
 	}
 	if err := c.request(ctx, "/oauth2/token", "application/x-www-form-urlencoded", strings.NewReader(form.Encode()), &response); err != nil {
 		return Tokens{}, err
 	}
-	if response.AccessToken == "" || response.ExpiresIn <= 0 || response.ExpiresIn > int64((365*24*time.Hour)/time.Second) ||
-		(response.TokenType != "" && !strings.EqualFold(response.TokenType, "Bearer")) {
-		return Tokens{}, ErrResponse
+	if response.AccessToken == "" {
+		return Tokens{}, fmt.Errorf("%w: token response missing access_token", ErrResponse)
 	}
-	if form.Get("grant_type") == "authorization_code" && response.RefreshToken == "" {
-		return Tokens{}, ErrResponse
+	if response.TokenType != "" && !strings.EqualFold(response.TokenType, "Bearer") {
+		return Tokens{}, fmt.Errorf("%w: unsupported token_type", ErrResponse)
+	}
+	// Match the official SDK's one-hour fallback when expiry is omitted.
+	// json.Number accepts both numeric and quoted-integer lifetimes. Limit
+	// explicit lifetimes only to prevent time.Duration overflow, not to one year.
+	expiresIn := int64(time.Hour / time.Second)
+	if response.ExpiresIn != "" {
+		var err error
+		expiresIn, err = response.ExpiresIn.Int64()
+		if err != nil || expiresIn <= 0 || expiresIn > int64((1<<63-1)/time.Second) {
+			return Tokens{}, fmt.Errorf("%w: invalid expires_in", ErrResponse)
+		}
 	}
 	return Tokens{ClientID: clientID, AccessToken: response.AccessToken, RefreshToken: response.RefreshToken,
-		ExpiresAt: time.Now().Add(time.Duration(response.ExpiresIn) * time.Second)}, nil
+		ExpiresAt: time.Now().Add(time.Duration(expiresIn) * time.Second)}, nil
 }
 
 func (c *Client) request(ctx context.Context, path, contentType string, body io.Reader, out any) error {
@@ -376,7 +394,7 @@ func (c *Client) request(ctx context.Context, path, contentType string, body io.
 		return fmt.Errorf("longbridge: %s returned HTTP %d", path, res.StatusCode)
 	}
 	if err := json.Unmarshal(data, out); err != nil {
-		return ErrResponse
+		return fmt.Errorf("%w: %s returned unexpected JSON", ErrResponse, path)
 	}
 	return nil
 }

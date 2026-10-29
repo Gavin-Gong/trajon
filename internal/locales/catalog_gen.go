@@ -64,66 +64,6 @@ func (msgs Messages) EnglishName() string {
 	return Catalog.Format(msgs.locale, "EnglishName", nil)
 }
 
-// ToggleSidebar says "Toggle sidebar"
-// in the language the app shows.
-func ToggleSidebar() string { return In(i18n.Locale()).ToggleSidebar() }
-
-// ToggleSidebar says "Toggle sidebar"
-// in the language of msgs.
-func (msgs Messages) ToggleSidebar() string {
-	return Catalog.Format(msgs.locale, "ToggleSidebar", nil)
-}
-
-// ResizeSidebar says "Resize sidebar"
-// in the language the app shows.
-func ResizeSidebar() string { return In(i18n.Locale()).ResizeSidebar() }
-
-// ResizeSidebar says "Resize sidebar"
-// in the language of msgs.
-func (msgs Messages) ResizeSidebar() string {
-	return Catalog.Format(msgs.locale, "ResizeSidebar", nil)
-}
-
-// MinimizeWindow says "Minimize"
-// in the language the app shows.
-func MinimizeWindow() string { return In(i18n.Locale()).MinimizeWindow() }
-
-// MinimizeWindow says "Minimize"
-// in the language of msgs.
-func (msgs Messages) MinimizeWindow() string {
-	return Catalog.Format(msgs.locale, "MinimizeWindow", nil)
-}
-
-// MaximizeWindow says "Maximize"
-// in the language the app shows.
-func MaximizeWindow() string { return In(i18n.Locale()).MaximizeWindow() }
-
-// MaximizeWindow says "Maximize"
-// in the language of msgs.
-func (msgs Messages) MaximizeWindow() string {
-	return Catalog.Format(msgs.locale, "MaximizeWindow", nil)
-}
-
-// RestoreWindow says "Restore"
-// in the language the app shows.
-func RestoreWindow() string { return In(i18n.Locale()).RestoreWindow() }
-
-// RestoreWindow says "Restore"
-// in the language of msgs.
-func (msgs Messages) RestoreWindow() string {
-	return Catalog.Format(msgs.locale, "RestoreWindow", nil)
-}
-
-// CloseWindow says "Close window"
-// in the language the app shows.
-func CloseWindow() string { return In(i18n.Locale()).CloseWindow() }
-
-// CloseWindow says "Close window"
-// in the language of msgs.
-func (msgs Messages) CloseWindow() string {
-	return Catalog.Format(msgs.locale, "CloseWindow", nil)
-}
-
 // Overview says "Overview"
 // in the language the app shows.
 func Overview() string { return In(i18n.Locale()).Overview() }
@@ -132,6 +72,1312 @@ func Overview() string { return In(i18n.Locale()).Overview() }
 // in the language of msgs.
 func (msgs Messages) Overview() string {
 	return Catalog.Format(msgs.locale, "Overview", nil)
+}
+
+// OverviewPeriod says "Period"
+// in the language the app shows.
+func OverviewPeriod() string { return In(i18n.Locale()).OverviewPeriod() }
+
+// OverviewPeriod says "Period"
+// in the language of msgs.
+func (msgs Messages) OverviewPeriod() string {
+	return Catalog.Format(msgs.locale, "OverviewPeriod", nil)
+}
+
+// OverviewCalculating says "Calculating…"
+// in the language the app shows.
+func OverviewCalculating() string { return In(i18n.Locale()).OverviewCalculating() }
+
+// OverviewCalculating says "Calculating…"
+// in the language of msgs.
+func (msgs Messages) OverviewCalculating() string {
+	return Catalog.Format(msgs.locale, "OverviewCalculating", nil)
+}
+
+// OverviewThisMonth says "This month"
+// in the language the app shows.
+func OverviewThisMonth() string { return In(i18n.Locale()).OverviewThisMonth() }
+
+// OverviewThisMonth says "This month"
+// in the language of msgs.
+func (msgs Messages) OverviewThisMonth() string {
+	return Catalog.Format(msgs.locale, "OverviewThisMonth", nil)
+}
+
+// OverviewLastMonth says "Last month"
+// in the language the app shows.
+func OverviewLastMonth() string { return In(i18n.Locale()).OverviewLastMonth() }
+
+// OverviewLastMonth says "Last month"
+// in the language of msgs.
+func (msgs Messages) OverviewLastMonth() string {
+	return Catalog.Format(msgs.locale, "OverviewLastMonth", nil)
+}
+
+// OverviewThisYear says "This year"
+// in the language the app shows.
+func OverviewThisYear() string { return In(i18n.Locale()).OverviewThisYear() }
+
+// OverviewThisYear says "This year"
+// in the language of msgs.
+func (msgs Messages) OverviewThisYear() string {
+	return Catalog.Format(msgs.locale, "OverviewThisYear", nil)
+}
+
+// OverviewAllTime says "All time"
+// in the language the app shows.
+func OverviewAllTime() string { return In(i18n.Locale()).OverviewAllTime() }
+
+// OverviewAllTime says "All time"
+// in the language of msgs.
+func (msgs Messages) OverviewAllTime() string {
+	return Catalog.Format(msgs.locale, "OverviewAllTime", nil)
+}
+
+// OverviewAllInstruments says "All instruments"
+// in the language the app shows.
+func OverviewAllInstruments() string { return In(i18n.Locale()).OverviewAllInstruments() }
+
+// OverviewAllInstruments says "All instruments"
+// in the language of msgs.
+func (msgs Messages) OverviewAllInstruments() string {
+	return Catalog.Format(msgs.locale, "OverviewAllInstruments", nil)
+}
+
+// OverviewTotalPnL says "Total P&L"
+// in the language the app shows.
+func OverviewTotalPnL() string { return In(i18n.Locale()).OverviewTotalPnL() }
+
+// OverviewTotalPnL says "Total P&L"
+// in the language of msgs.
+func (msgs Messages) OverviewTotalPnL() string {
+	return Catalog.Format(msgs.locale, "OverviewTotalPnL", nil)
+}
+
+// OverviewMaxDrawdown says "Max drawdown"
+// in the language the app shows.
+func OverviewMaxDrawdown() string { return In(i18n.Locale()).OverviewMaxDrawdown() }
+
+// OverviewMaxDrawdown says "Max drawdown"
+// in the language of msgs.
+func (msgs Messages) OverviewMaxDrawdown() string {
+	return Catalog.Format(msgs.locale, "OverviewMaxDrawdown", nil)
+}
+
+// OverviewCumulativePnL says "Cumulative P&L"
+// in the language the app shows.
+func OverviewCumulativePnL() string { return In(i18n.Locale()).OverviewCumulativePnL() }
+
+// OverviewCumulativePnL says "Cumulative P&L"
+// in the language of msgs.
+func (msgs Messages) OverviewCumulativePnL() string {
+	return Catalog.Format(msgs.locale, "OverviewCumulativePnL", nil)
+}
+
+// OverviewOutcomes says "Outcomes"
+// in the language the app shows.
+func OverviewOutcomes() string { return In(i18n.Locale()).OverviewOutcomes() }
+
+// OverviewOutcomes says "Outcomes"
+// in the language of msgs.
+func (msgs Messages) OverviewOutcomes() string {
+	return Catalog.Format(msgs.locale, "OverviewOutcomes", nil)
+}
+
+// OverviewDailyPnL says "Daily P&L"
+// in the language the app shows.
+func OverviewDailyPnL() string { return In(i18n.Locale()).OverviewDailyPnL() }
+
+// OverviewDailyPnL says "Daily P&L"
+// in the language of msgs.
+func (msgs Messages) OverviewDailyPnL() string {
+	return Catalog.Format(msgs.locale, "OverviewDailyPnL", nil)
+}
+
+// OverviewByInstrument says "By instrument"
+// in the language the app shows.
+func OverviewByInstrument() string { return In(i18n.Locale()).OverviewByInstrument() }
+
+// OverviewByInstrument says "By instrument"
+// in the language of msgs.
+func (msgs Messages) OverviewByInstrument() string {
+	return Catalog.Format(msgs.locale, "OverviewByInstrument", nil)
+}
+
+// OverviewByTag says "By tag"
+// in the language the app shows.
+func OverviewByTag() string { return In(i18n.Locale()).OverviewByTag() }
+
+// OverviewByTag says "By tag"
+// in the language of msgs.
+func (msgs Messages) OverviewByTag() string {
+	return Catalog.Format(msgs.locale, "OverviewByTag", nil)
+}
+
+// OverviewRecentTrades says "Recent trades"
+// in the language the app shows.
+func OverviewRecentTrades() string { return In(i18n.Locale()).OverviewRecentTrades() }
+
+// OverviewRecentTrades says "Recent trades"
+// in the language of msgs.
+func (msgs Messages) OverviewRecentTrades() string {
+	return Catalog.Format(msgs.locale, "OverviewRecentTrades", nil)
+}
+
+// OverviewViewAll says "View all"
+// in the language the app shows.
+func OverviewViewAll() string { return In(i18n.Locale()).OverviewViewAll() }
+
+// OverviewViewAll says "View all"
+// in the language of msgs.
+func (msgs Messages) OverviewViewAll() string {
+	return Catalog.Format(msgs.locale, "OverviewViewAll", nil)
+}
+
+// OverviewNoTrades says "No closed trades in this period"
+// in the language the app shows.
+func OverviewNoTrades() string { return In(i18n.Locale()).OverviewNoTrades() }
+
+// OverviewNoTrades says "No closed trades in this period"
+// in the language of msgs.
+func (msgs Messages) OverviewNoTrades() string {
+	return Catalog.Format(msgs.locale, "OverviewNoTrades", nil)
+}
+
+// OverviewBeforeFees says "Completed logs only, before unrecorded fees. Open positions and replay trades are excluded."
+// in the language the app shows.
+func OverviewBeforeFees() string { return In(i18n.Locale()).OverviewBeforeFees() }
+
+// OverviewBeforeFees says "Completed logs only, before unrecorded fees. Open positions and replay trades are excluded."
+// in the language of msgs.
+func (msgs Messages) OverviewBeforeFees() string {
+	return Catalog.Format(msgs.locale, "OverviewBeforeFees", nil)
+}
+
+// OverviewPayoffHelp says "Average winning trade ÷ absolute average losing trade. Breakeven trades are included in the win-rate denominator."
+// in the language the app shows.
+func OverviewPayoffHelp() string { return In(i18n.Locale()).OverviewPayoffHelp() }
+
+// OverviewPayoffHelp says "Average winning trade ÷ absolute average losing trade. Breakeven trades are included in the win-rate denominator."
+// in the language of msgs.
+func (msgs Messages) OverviewPayoffHelp() string {
+	return Catalog.Format(msgs.locale, "OverviewPayoffHelp", nil)
+}
+
+// OverviewDrawdownHelp says "Largest decline in cumulative P&L, starting from zero; an amount, not a percentage."
+// in the language the app shows.
+func OverviewDrawdownHelp() string { return In(i18n.Locale()).OverviewDrawdownHelp() }
+
+// OverviewDrawdownHelp says "Largest decline in cumulative P&L, starting from zero; an amount, not a percentage."
+// in the language of msgs.
+func (msgs Messages) OverviewDrawdownHelp() string {
+	return Catalog.Format(msgs.locale, "OverviewDrawdownHelp", nil)
+}
+
+// OverviewMissingExecution says "Complete execution details"
+// in the language the app shows.
+func OverviewMissingExecution() string { return In(i18n.Locale()).OverviewMissingExecution() }
+
+// OverviewMissingExecution says "Complete execution details"
+// in the language of msgs.
+func (msgs Messages) OverviewMissingExecution() string {
+	return Catalog.Format(msgs.locale, "OverviewMissingExecution", nil)
+}
+
+// OverviewRepair says "Complete records"
+// in the language the app shows.
+func OverviewRepair() string { return In(i18n.Locale()).OverviewRepair() }
+
+// OverviewRepair says "Complete records"
+// in the language of msgs.
+func (msgs Messages) OverviewRepair() string {
+	return Catalog.Format(msgs.locale, "OverviewRepair", nil)
+}
+
+// OverviewNoTrading says "No trades"
+// in the language the app shows.
+func OverviewNoTrading() string { return In(i18n.Locale()).OverviewNoTrading() }
+
+// OverviewNoTrading says "No trades"
+// in the language of msgs.
+func (msgs Messages) OverviewNoTrading() string {
+	return Catalog.Format(msgs.locale, "OverviewNoTrading", nil)
+}
+
+// OverviewBreakeven says "Breakeven"
+// in the language the app shows.
+func OverviewBreakeven() string { return In(i18n.Locale()).OverviewBreakeven() }
+
+// OverviewBreakeven says "Breakeven"
+// in the language of msgs.
+func (msgs Messages) OverviewBreakeven() string {
+	return Catalog.Format(msgs.locale, "OverviewBreakeven", nil)
+}
+
+// OverviewLoss says "Loss"
+// in the language the app shows.
+func OverviewLoss() string { return In(i18n.Locale()).OverviewLoss() }
+
+// OverviewLoss says "Loss"
+// in the language of msgs.
+func (msgs Messages) OverviewLoss() string {
+	return Catalog.Format(msgs.locale, "OverviewLoss", nil)
+}
+
+// OverviewProfit says "Profit"
+// in the language the app shows.
+func OverviewProfit() string { return In(i18n.Locale()).OverviewProfit() }
+
+// OverviewProfit says "Profit"
+// in the language of msgs.
+func (msgs Messages) OverviewProfit() string {
+	return Catalog.Format(msgs.locale, "OverviewProfit", nil)
+}
+
+// OverviewHoldTime says "Holding time"
+// in the language the app shows.
+func OverviewHoldTime() string { return In(i18n.Locale()).OverviewHoldTime() }
+
+// OverviewHoldTime says "Holding time"
+// in the language of msgs.
+func (msgs Messages) OverviewHoldTime() string {
+	return Catalog.Format(msgs.locale, "OverviewHoldTime", nil)
+}
+
+// OverviewClosedAt says "Closed"
+// in the language the app shows.
+func OverviewClosedAt() string { return In(i18n.Locale()).OverviewClosedAt() }
+
+// OverviewClosedAt says "Closed"
+// in the language of msgs.
+func (msgs Messages) OverviewClosedAt() string {
+	return Catalog.Format(msgs.locale, "OverviewClosedAt", nil)
+}
+
+// OverviewTradeCount says "{count} trades"
+// in the language the app shows.
+func OverviewTradeCount(count int) string { return In(i18n.Locale()).OverviewTradeCount(count) }
+
+// OverviewTradeCount says "{count} trades"
+// in the language of msgs.
+func (msgs Messages) OverviewTradeCount(count int) string {
+	return Catalog.Format(msgs.locale, "OverviewTradeCount", map[string]any{"count": count})
+}
+
+// OverviewIncomplete says "{count} records need execution details"
+// in the language the app shows.
+func OverviewIncomplete(count int) string { return In(i18n.Locale()).OverviewIncomplete(count) }
+
+// OverviewIncomplete says "{count} records need execution details"
+// in the language of msgs.
+func (msgs Messages) OverviewIncomplete(count int) string {
+	return Catalog.Format(msgs.locale, "OverviewIncomplete", map[string]any{"count": count})
+}
+
+// OverviewDayDetail says "{date}\n{pnl} USD\n{count} trades · {wins} wins / {losses} losses / {flat} breakeven"
+// in the language the app shows.
+func OverviewDayDetail(date string, pnl string, count int, wins int, losses int, flat int) string {
+	return In(i18n.Locale()).OverviewDayDetail(date, pnl, count, wins, losses, flat)
+}
+
+// OverviewDayDetail says "{date}\n{pnl} USD\n{count} trades · {wins} wins / {losses} losses / {flat} breakeven"
+// in the language of msgs.
+func (msgs Messages) OverviewDayDetail(date string, pnl string, count int, wins int, losses int, flat int) string {
+	return Catalog.Format(msgs.locale, "OverviewDayDetail", map[string]any{"date": date, "pnl": pnl, "count": count, "wins": wins, "losses": losses, "flat": flat})
+}
+
+// OverviewMoney says "{amount} USD"
+// in the language the app shows.
+func OverviewMoney(amount string) string { return In(i18n.Locale()).OverviewMoney(amount) }
+
+// OverviewMoney says "{amount} USD"
+// in the language of msgs.
+func (msgs Messages) OverviewMoney(amount string) string {
+	return Catalog.Format(msgs.locale, "OverviewMoney", map[string]any{"amount": amount})
+}
+
+// OverviewMonday says "Mon"
+// in the language the app shows.
+func OverviewMonday() string { return In(i18n.Locale()).OverviewMonday() }
+
+// OverviewMonday says "Mon"
+// in the language of msgs.
+func (msgs Messages) OverviewMonday() string {
+	return Catalog.Format(msgs.locale, "OverviewMonday", nil)
+}
+
+// OverviewTuesday says "Tue"
+// in the language the app shows.
+func OverviewTuesday() string { return In(i18n.Locale()).OverviewTuesday() }
+
+// OverviewTuesday says "Tue"
+// in the language of msgs.
+func (msgs Messages) OverviewTuesday() string {
+	return Catalog.Format(msgs.locale, "OverviewTuesday", nil)
+}
+
+// OverviewWednesday says "Wed"
+// in the language the app shows.
+func OverviewWednesday() string { return In(i18n.Locale()).OverviewWednesday() }
+
+// OverviewWednesday says "Wed"
+// in the language of msgs.
+func (msgs Messages) OverviewWednesday() string {
+	return Catalog.Format(msgs.locale, "OverviewWednesday", nil)
+}
+
+// OverviewThursday says "Thu"
+// in the language the app shows.
+func OverviewThursday() string { return In(i18n.Locale()).OverviewThursday() }
+
+// OverviewThursday says "Thu"
+// in the language of msgs.
+func (msgs Messages) OverviewThursday() string {
+	return Catalog.Format(msgs.locale, "OverviewThursday", nil)
+}
+
+// OverviewFriday says "Fri"
+// in the language the app shows.
+func OverviewFriday() string { return In(i18n.Locale()).OverviewFriday() }
+
+// OverviewFriday says "Fri"
+// in the language of msgs.
+func (msgs Messages) OverviewFriday() string {
+	return Catalog.Format(msgs.locale, "OverviewFriday", nil)
+}
+
+// OverviewSaturday says "Sat"
+// in the language the app shows.
+func OverviewSaturday() string { return In(i18n.Locale()).OverviewSaturday() }
+
+// OverviewSaturday says "Sat"
+// in the language of msgs.
+func (msgs Messages) OverviewSaturday() string {
+	return Catalog.Format(msgs.locale, "OverviewSaturday", nil)
+}
+
+// OverviewSunday says "Sun"
+// in the language the app shows.
+func OverviewSunday() string { return In(i18n.Locale()).OverviewSunday() }
+
+// OverviewSunday says "Sun"
+// in the language of msgs.
+func (msgs Messages) OverviewSunday() string {
+	return Catalog.Format(msgs.locale, "OverviewSunday", nil)
+}
+
+// OverviewPreviousYear says "Previous year"
+// in the language the app shows.
+func OverviewPreviousYear() string { return In(i18n.Locale()).OverviewPreviousYear() }
+
+// OverviewPreviousYear says "Previous year"
+// in the language of msgs.
+func (msgs Messages) OverviewPreviousYear() string {
+	return Catalog.Format(msgs.locale, "OverviewPreviousYear", nil)
+}
+
+// OverviewNextYear says "Next year"
+// in the language the app shows.
+func OverviewNextYear() string { return In(i18n.Locale()).OverviewNextYear() }
+
+// OverviewNextYear says "Next year"
+// in the language of msgs.
+func (msgs Messages) OverviewNextYear() string {
+	return Catalog.Format(msgs.locale, "OverviewNextYear", nil)
+}
+
+// OverviewMonth says "{month}/{year}"
+// in the language the app shows.
+func OverviewMonth(month int, year string) string {
+	return In(i18n.Locale()).OverviewMonth(month, year)
+}
+
+// OverviewMonth says "{month}/{year}"
+// in the language of msgs.
+func (msgs Messages) OverviewMonth(month int, year string) string {
+	return Catalog.Format(msgs.locale, "OverviewMonth", map[string]any{"month": month, "year": year})
+}
+
+// Records says "Records"
+// in the language the app shows.
+func Records() string { return In(i18n.Locale()).Records() }
+
+// Records says "Records"
+// in the language of msgs.
+func (msgs Messages) Records() string {
+	return Catalog.Format(msgs.locale, "Records", nil)
+}
+
+// CloseRecords says "Close records"
+// in the language the app shows.
+func CloseRecords() string { return In(i18n.Locale()).CloseRecords() }
+
+// CloseRecords says "Close records"
+// in the language of msgs.
+func (msgs Messages) CloseRecords() string {
+	return Catalog.Format(msgs.locale, "CloseRecords", nil)
+}
+
+// JournalTitle says "Trading journal"
+// in the language the app shows.
+func JournalTitle() string { return In(i18n.Locale()).JournalTitle() }
+
+// JournalTitle says "Trading journal"
+// in the language of msgs.
+func (msgs Messages) JournalTitle() string {
+	return Catalog.Format(msgs.locale, "JournalTitle", nil)
+}
+
+// JournalQuickRecord says "Quick record"
+// in the language the app shows.
+func JournalQuickRecord() string { return In(i18n.Locale()).JournalQuickRecord() }
+
+// JournalQuickRecord says "Quick record"
+// in the language of msgs.
+func (msgs Messages) JournalQuickRecord() string {
+	return Catalog.Format(msgs.locale, "JournalQuickRecord", nil)
+}
+
+// JournalSearchRecords says "Search records"
+// in the language the app shows.
+func JournalSearchRecords() string { return In(i18n.Locale()).JournalSearchRecords() }
+
+// JournalSearchRecords says "Search records"
+// in the language of msgs.
+func (msgs Messages) JournalSearchRecords() string {
+	return Catalog.Format(msgs.locale, "JournalSearchRecords", nil)
+}
+
+// JournalSearchHint says "Instrument, text or tag"
+// in the language the app shows.
+func JournalSearchHint() string { return In(i18n.Locale()).JournalSearchHint() }
+
+// JournalSearchHint says "Instrument, text or tag"
+// in the language of msgs.
+func (msgs Messages) JournalSearchHint() string {
+	return Catalog.Format(msgs.locale, "JournalSearchHint", nil)
+}
+
+// JournalEmpty says "No trading journals yet"
+// in the language the app shows.
+func JournalEmpty() string { return In(i18n.Locale()).JournalEmpty() }
+
+// JournalEmpty says "No trading journals yet"
+// in the language of msgs.
+func (msgs Messages) JournalEmpty() string {
+	return Catalog.Format(msgs.locale, "JournalEmpty", nil)
+}
+
+// JournalFilter says "Filter journals"
+// in the language the app shows.
+func JournalFilter() string { return In(i18n.Locale()).JournalFilter() }
+
+// JournalFilter says "Filter journals"
+// in the language of msgs.
+func (msgs Messages) JournalFilter() string {
+	return Catalog.Format(msgs.locale, "JournalFilter", nil)
+}
+
+// JournalInProgress says "In progress"
+// in the language the app shows.
+func JournalInProgress() string { return In(i18n.Locale()).JournalInProgress() }
+
+// JournalInProgress says "In progress"
+// in the language of msgs.
+func (msgs Messages) JournalInProgress() string {
+	return Catalog.Format(msgs.locale, "JournalInProgress", nil)
+}
+
+// JournalClosed says "Closed"
+// in the language the app shows.
+func JournalClosed() string { return In(i18n.Locale()).JournalClosed() }
+
+// JournalClosed says "Closed"
+// in the language of msgs.
+func (msgs Messages) JournalClosed() string {
+	return Catalog.Format(msgs.locale, "JournalClosed", nil)
+}
+
+// JournalDraft says "Draft"
+// in the language the app shows.
+func JournalDraft() string { return In(i18n.Locale()).JournalDraft() }
+
+// JournalDraft says "Draft"
+// in the language of msgs.
+func (msgs Messages) JournalDraft() string {
+	return Catalog.Format(msgs.locale, "JournalDraft", nil)
+}
+
+// JournalReady says "Planned"
+// in the language the app shows.
+func JournalReady() string { return In(i18n.Locale()).JournalReady() }
+
+// JournalReady says "Planned"
+// in the language of msgs.
+func (msgs Messages) JournalReady() string {
+	return Catalog.Format(msgs.locale, "JournalReady", nil)
+}
+
+// JournalHolding says "Holding"
+// in the language the app shows.
+func JournalHolding() string { return In(i18n.Locale()).JournalHolding() }
+
+// JournalHolding says "Holding"
+// in the language of msgs.
+func (msgs Messages) JournalHolding() string {
+	return Catalog.Format(msgs.locale, "JournalHolding", nil)
+}
+
+// JournalAwaitingReview says "To review"
+// in the language the app shows.
+func JournalAwaitingReview() string { return In(i18n.Locale()).JournalAwaitingReview() }
+
+// JournalAwaitingReview says "To review"
+// in the language of msgs.
+func (msgs Messages) JournalAwaitingReview() string {
+	return Catalog.Format(msgs.locale, "JournalAwaitingReview", nil)
+}
+
+// JournalReviewed says "Reviewed"
+// in the language the app shows.
+func JournalReviewed() string { return In(i18n.Locale()).JournalReviewed() }
+
+// JournalReviewed says "Reviewed"
+// in the language of msgs.
+func (msgs Messages) JournalReviewed() string {
+	return Catalog.Format(msgs.locale, "JournalReviewed", nil)
+}
+
+// JournalToday says "Today"
+// in the language the app shows.
+func JournalToday() string { return In(i18n.Locale()).JournalToday() }
+
+// JournalToday says "Today"
+// in the language of msgs.
+func (msgs Messages) JournalToday() string {
+	return Catalog.Format(msgs.locale, "JournalToday", nil)
+}
+
+// JournalYesterday says "Yesterday"
+// in the language the app shows.
+func JournalYesterday() string { return In(i18n.Locale()).JournalYesterday() }
+
+// JournalYesterday says "Yesterday"
+// in the language of msgs.
+func (msgs Messages) JournalYesterday() string {
+	return Catalog.Format(msgs.locale, "JournalYesterday", nil)
+}
+
+// JournalResizeList says "Resize journal list"
+// in the language the app shows.
+func JournalResizeList() string { return In(i18n.Locale()).JournalResizeList() }
+
+// JournalResizeList says "Resize journal list"
+// in the language of msgs.
+func (msgs Messages) JournalResizeList() string {
+	return Catalog.Format(msgs.locale, "JournalResizeList", nil)
+}
+
+// JournalBackToList says "Back to journals"
+// in the language the app shows.
+func JournalBackToList() string { return In(i18n.Locale()).JournalBackToList() }
+
+// JournalBackToList says "Back to journals"
+// in the language of msgs.
+func (msgs Messages) JournalBackToList() string {
+	return Catalog.Format(msgs.locale, "JournalBackToList", nil)
+}
+
+// JournalPopout says "Open in floating window"
+// in the language the app shows.
+func JournalPopout() string { return In(i18n.Locale()).JournalPopout() }
+
+// JournalPopout says "Open in floating window"
+// in the language of msgs.
+func (msgs Messages) JournalPopout() string {
+	return Catalog.Format(msgs.locale, "JournalPopout", nil)
+}
+
+// JournalDetached says "Editing in the floating window"
+// in the language the app shows.
+func JournalDetached() string { return In(i18n.Locale()).JournalDetached() }
+
+// JournalDetached says "Editing in the floating window"
+// in the language of msgs.
+func (msgs Messages) JournalDetached() string {
+	return Catalog.Format(msgs.locale, "JournalDetached", nil)
+}
+
+// JournalDock says "Bring editor here"
+// in the language the app shows.
+func JournalDock() string { return In(i18n.Locale()).JournalDock() }
+
+// JournalDock says "Bring editor here"
+// in the language of msgs.
+func (msgs Messages) JournalDock() string {
+	return Catalog.Format(msgs.locale, "JournalDock", nil)
+}
+
+// JournalOpenRecord says "Open journal: {instrument}"
+// in the language the app shows.
+func JournalOpenRecord(instrument string) string {
+	return In(i18n.Locale()).JournalOpenRecord(instrument)
+}
+
+// JournalOpenRecord says "Open journal: {instrument}"
+// in the language of msgs.
+func (msgs Messages) JournalOpenRecord(instrument string) string {
+	return Catalog.Format(msgs.locale, "JournalOpenRecord", map[string]any{"instrument": instrument})
+}
+
+// JournalMoreTags says "+{count}"
+// in the language the app shows.
+func JournalMoreTags(count int) string { return In(i18n.Locale()).JournalMoreTags(count) }
+
+// JournalMoreTags says "+{count}"
+// in the language of msgs.
+func (msgs Messages) JournalMoreTags(count int) string {
+	return Catalog.Format(msgs.locale, "JournalMoreTags", map[string]any{"count": count})
+}
+
+// JournalNoRecords says "No matching records"
+// in the language the app shows.
+func JournalNoRecords() string { return In(i18n.Locale()).JournalNoRecords() }
+
+// JournalNoRecords says "No matching records"
+// in the language of msgs.
+func (msgs Messages) JournalNoRecords() string {
+	return Catalog.Format(msgs.locale, "JournalNoRecords", nil)
+}
+
+// JournalPlanHint says "Write a plan…"
+// in the language the app shows.
+func JournalPlanHint() string { return In(i18n.Locale()).JournalPlanHint() }
+
+// JournalPlanHint says "Write a plan…"
+// in the language of msgs.
+func (msgs Messages) JournalPlanHint() string {
+	return Catalog.Format(msgs.locale, "JournalPlanHint", nil)
+}
+
+// JournalSummaryHint says "Trade summary (Markdown)"
+// in the language the app shows.
+func JournalSummaryHint() string { return In(i18n.Locale()).JournalSummaryHint() }
+
+// JournalSummaryHint says "Trade summary (Markdown)"
+// in the language of msgs.
+func (msgs Messages) JournalSummaryHint() string {
+	return Catalog.Format(msgs.locale, "JournalSummaryHint", nil)
+}
+
+// JournalEntryActions says "Actions for {kind} at {time}"
+// in the language the app shows.
+func JournalEntryActions(kind string, time_ string) string {
+	return In(i18n.Locale()).JournalEntryActions(kind, time_)
+}
+
+// JournalEntryActions says "Actions for {kind} at {time}"
+// in the language of msgs.
+func (msgs Messages) JournalEntryActions(kind string, time_ string) string {
+	return Catalog.Format(msgs.locale, "JournalEntryActions", map[string]any{"kind": kind, "time": time_})
+}
+
+// JournalDelete says "Delete"
+// in the language the app shows.
+func JournalDelete() string { return In(i18n.Locale()).JournalDelete() }
+
+// JournalDelete says "Delete"
+// in the language of msgs.
+func (msgs Messages) JournalDelete() string {
+	return Catalog.Format(msgs.locale, "JournalDelete", nil)
+}
+
+// JournalNow says "Now"
+// in the language the app shows.
+func JournalNow() string { return In(i18n.Locale()).JournalNow() }
+
+// JournalNow says "Now"
+// in the language of msgs.
+func (msgs Messages) JournalNow() string {
+	return Catalog.Format(msgs.locale, "JournalNow", nil)
+}
+
+// JournalUseCurrentTime says "Use current time"
+// in the language the app shows.
+func JournalUseCurrentTime() string { return In(i18n.Locale()).JournalUseCurrentTime() }
+
+// JournalUseCurrentTime says "Use current time"
+// in the language of msgs.
+func (msgs Messages) JournalUseCurrentTime() string {
+	return Catalog.Format(msgs.locale, "JournalUseCurrentTime", nil)
+}
+
+// JournalInstrument says "Instrument"
+// in the language the app shows.
+func JournalInstrument() string { return In(i18n.Locale()).JournalInstrument() }
+
+// JournalInstrument says "Instrument"
+// in the language of msgs.
+func (msgs Messages) JournalInstrument() string {
+	return Catalog.Format(msgs.locale, "JournalInstrument", nil)
+}
+
+// JournalInstrumentHint says "Code or name"
+// in the language the app shows.
+func JournalInstrumentHint() string { return In(i18n.Locale()).JournalInstrumentHint() }
+
+// JournalInstrumentHint says "Code or name"
+// in the language of msgs.
+func (msgs Messages) JournalInstrumentHint() string {
+	return Catalog.Format(msgs.locale, "JournalInstrumentHint", nil)
+}
+
+// JournalDirection says "Direction"
+// in the language the app shows.
+func JournalDirection() string { return In(i18n.Locale()).JournalDirection() }
+
+// JournalDirection says "Direction"
+// in the language of msgs.
+func (msgs Messages) JournalDirection() string {
+	return Catalog.Format(msgs.locale, "JournalDirection", nil)
+}
+
+// JournalUnsetDirection says "Not set"
+// in the language the app shows.
+func JournalUnsetDirection() string { return In(i18n.Locale()).JournalUnsetDirection() }
+
+// JournalUnsetDirection says "Not set"
+// in the language of msgs.
+func (msgs Messages) JournalUnsetDirection() string {
+	return Catalog.Format(msgs.locale, "JournalUnsetDirection", nil)
+}
+
+// JournalReview says "Review"
+// in the language the app shows.
+func JournalReview() string { return In(i18n.Locale()).JournalReview() }
+
+// JournalReview says "Review"
+// in the language of msgs.
+func (msgs Messages) JournalReview() string {
+	return Catalog.Format(msgs.locale, "JournalReview", nil)
+}
+
+// JournalPlan says "Plan"
+// in the language the app shows.
+func JournalPlan() string { return In(i18n.Locale()).JournalPlan() }
+
+// JournalPlan says "Plan"
+// in the language of msgs.
+func (msgs Messages) JournalPlan() string {
+	return Catalog.Format(msgs.locale, "JournalPlan", nil)
+}
+
+// JournalProcess says "Trade activity"
+// in the language the app shows.
+func JournalProcess() string { return In(i18n.Locale()).JournalProcess() }
+
+// JournalProcess says "Trade activity"
+// in the language of msgs.
+func (msgs Messages) JournalProcess() string {
+	return Catalog.Format(msgs.locale, "JournalProcess", nil)
+}
+
+// JournalSummary says "Trade summary"
+// in the language the app shows.
+func JournalSummary() string { return In(i18n.Locale()).JournalSummary() }
+
+// JournalSummary says "Trade summary"
+// in the language of msgs.
+func (msgs Messages) JournalSummary() string {
+	return Catalog.Format(msgs.locale, "JournalSummary", nil)
+}
+
+// JournalTags says "Tags"
+// in the language the app shows.
+func JournalTags() string { return In(i18n.Locale()).JournalTags() }
+
+// JournalTags says "Tags"
+// in the language of msgs.
+func (msgs Messages) JournalTags() string {
+	return Catalog.Format(msgs.locale, "JournalTags", nil)
+}
+
+// JournalScreenshots says "Screenshots"
+// in the language the app shows.
+func JournalScreenshots() string { return In(i18n.Locale()).JournalScreenshots() }
+
+// JournalScreenshots says "Screenshots"
+// in the language of msgs.
+func (msgs Messages) JournalScreenshots() string {
+	return Catalog.Format(msgs.locale, "JournalScreenshots", nil)
+}
+
+// JournalNote says "Note"
+// in the language the app shows.
+func JournalNote() string { return In(i18n.Locale()).JournalNote() }
+
+// JournalNote says "Note"
+// in the language of msgs.
+func (msgs Messages) JournalNote() string {
+	return Catalog.Format(msgs.locale, "JournalNote", nil)
+}
+
+// JournalOpen says "Open"
+// in the language the app shows.
+func JournalOpen() string { return In(i18n.Locale()).JournalOpen() }
+
+// JournalOpen says "Open"
+// in the language of msgs.
+func (msgs Messages) JournalOpen() string {
+	return Catalog.Format(msgs.locale, "JournalOpen", nil)
+}
+
+// JournalAdd says "Add"
+// in the language the app shows.
+func JournalAdd() string { return In(i18n.Locale()).JournalAdd() }
+
+// JournalAdd says "Add"
+// in the language of msgs.
+func (msgs Messages) JournalAdd() string {
+	return Catalog.Format(msgs.locale, "JournalAdd", nil)
+}
+
+// JournalReduce says "Reduce"
+// in the language the app shows.
+func JournalReduce() string { return In(i18n.Locale()).JournalReduce() }
+
+// JournalReduce says "Reduce"
+// in the language of msgs.
+func (msgs Messages) JournalReduce() string {
+	return Catalog.Format(msgs.locale, "JournalReduce", nil)
+}
+
+// JournalClose says "Close"
+// in the language the app shows.
+func JournalClose() string { return In(i18n.Locale()).JournalClose() }
+
+// JournalClose says "Close"
+// in the language of msgs.
+func (msgs Messages) JournalClose() string {
+	return Catalog.Format(msgs.locale, "JournalClose", nil)
+}
+
+// JournalEntryType says "Entry type"
+// in the language the app shows.
+func JournalEntryType() string { return In(i18n.Locale()).JournalEntryType() }
+
+// JournalEntryType says "Entry type"
+// in the language of msgs.
+func (msgs Messages) JournalEntryType() string {
+	return Catalog.Format(msgs.locale, "JournalEntryType", nil)
+}
+
+// JournalFlat says "Flat"
+// in the language the app shows.
+func JournalFlat() string { return In(i18n.Locale()).JournalFlat() }
+
+// JournalFlat says "Flat"
+// in the language of msgs.
+func (msgs Messages) JournalFlat() string {
+	return Catalog.Format(msgs.locale, "JournalFlat", nil)
+}
+
+// JournalQuantityHint says "Buy positive, sell negative"
+// in the language the app shows.
+func JournalQuantityHint() string { return In(i18n.Locale()).JournalQuantityHint() }
+
+// JournalQuantityHint says "Buy positive, sell negative"
+// in the language of msgs.
+func (msgs Messages) JournalQuantityHint() string {
+	return Catalog.Format(msgs.locale, "JournalQuantityHint", nil)
+}
+
+// JournalNetQuantity says "Net quantity {quantity}"
+// in the language the app shows.
+func JournalNetQuantity(quantity string) string {
+	return In(i18n.Locale()).JournalNetQuantity(quantity)
+}
+
+// JournalNetQuantity says "Net quantity {quantity}"
+// in the language of msgs.
+func (msgs Messages) JournalNetQuantity(quantity string) string {
+	return Catalog.Format(msgs.locale, "JournalNetQuantity", map[string]any{"quantity": quantity})
+}
+
+// JournalQuantity says "Quantity"
+// in the language the app shows.
+func JournalQuantity() string { return In(i18n.Locale()).JournalQuantity() }
+
+// JournalQuantity says "Quantity"
+// in the language of msgs.
+func (msgs Messages) JournalQuantity() string {
+	return Catalog.Format(msgs.locale, "JournalQuantity", nil)
+}
+
+// JournalPrice says "Price"
+// in the language the app shows.
+func JournalPrice() string { return In(i18n.Locale()).JournalPrice() }
+
+// JournalPrice says "Price"
+// in the language of msgs.
+func (msgs Messages) JournalPrice() string {
+	return Catalog.Format(msgs.locale, "JournalPrice", nil)
+}
+
+// JournalTime says "Time"
+// in the language the app shows.
+func JournalTime() string { return In(i18n.Locale()).JournalTime() }
+
+// JournalTime says "Time"
+// in the language of msgs.
+func (msgs Messages) JournalTime() string {
+	return Catalog.Format(msgs.locale, "JournalTime", nil)
+}
+
+// JournalNoteHint says "Write a note…"
+// in the language the app shows.
+func JournalNoteHint() string { return In(i18n.Locale()).JournalNoteHint() }
+
+// JournalNoteHint says "Write a note…"
+// in the language of msgs.
+func (msgs Messages) JournalNoteHint() string {
+	return Catalog.Format(msgs.locale, "JournalNoteHint", nil)
+}
+
+// JournalNewRecord says "New record"
+// in the language the app shows.
+func JournalNewRecord() string { return In(i18n.Locale()).JournalNewRecord() }
+
+// JournalNewRecord says "New record"
+// in the language of msgs.
+func (msgs Messages) JournalNewRecord() string {
+	return Catalog.Format(msgs.locale, "JournalNewRecord", nil)
+}
+
+// JournalUntitled says "Untitled record"
+// in the language the app shows.
+func JournalUntitled() string { return In(i18n.Locale()).JournalUntitled() }
+
+// JournalUntitled says "Untitled record"
+// in the language of msgs.
+func (msgs Messages) JournalUntitled() string {
+	return Catalog.Format(msgs.locale, "JournalUntitled", nil)
+}
+
+// JournalSwitchRecord says "Switch record"
+// in the language the app shows.
+func JournalSwitchRecord() string { return In(i18n.Locale()).JournalSwitchRecord() }
+
+// JournalSwitchRecord says "Switch record"
+// in the language of msgs.
+func (msgs Messages) JournalSwitchRecord() string {
+	return Catalog.Format(msgs.locale, "JournalSwitchRecord", nil)
+}
+
+// JournalAddEntry says "Add entry"
+// in the language the app shows.
+func JournalAddEntry() string { return In(i18n.Locale()).JournalAddEntry() }
+
+// JournalAddEntry says "Add entry"
+// in the language of msgs.
+func (msgs Messages) JournalAddEntry() string {
+	return Catalog.Format(msgs.locale, "JournalAddEntry", nil)
+}
+
+// JournalEdit says "Edit"
+// in the language the app shows.
+func JournalEdit() string { return In(i18n.Locale()).JournalEdit() }
+
+// JournalEdit says "Edit"
+// in the language of msgs.
+func (msgs Messages) JournalEdit() string {
+	return Catalog.Format(msgs.locale, "JournalEdit", nil)
+}
+
+// JournalPreview says "Preview"
+// in the language the app shows.
+func JournalPreview() string { return In(i18n.Locale()).JournalPreview() }
+
+// JournalPreview says "Preview"
+// in the language of msgs.
+func (msgs Messages) JournalPreview() string {
+	return Catalog.Format(msgs.locale, "JournalPreview", nil)
+}
+
+// JournalEditEntry says "Edit {kind} entry at {time}"
+// in the language the app shows.
+func JournalEditEntry(kind string, time_ string) string {
+	return In(i18n.Locale()).JournalEditEntry(kind, time_)
+}
+
+// JournalEditEntry says "Edit {kind} entry at {time}"
+// in the language of msgs.
+func (msgs Messages) JournalEditEntry(kind string, time_ string) string {
+	return Catalog.Format(msgs.locale, "JournalEditEntry", map[string]any{"kind": kind, "time": time_})
+}
+
+// JournalDeleteEntry says "Delete {kind} entry at {time}"
+// in the language the app shows.
+func JournalDeleteEntry(kind string, time_ string) string {
+	return In(i18n.Locale()).JournalDeleteEntry(kind, time_)
+}
+
+// JournalDeleteEntry says "Delete {kind} entry at {time}"
+// in the language of msgs.
+func (msgs Messages) JournalDeleteEntry(kind string, time_ string) string {
+	return Catalog.Format(msgs.locale, "JournalDeleteEntry", map[string]any{"kind": kind, "time": time_})
+}
+
+// JournalAddTag says "Add tag"
+// in the language the app shows.
+func JournalAddTag() string { return In(i18n.Locale()).JournalAddTag() }
+
+// JournalAddTag says "Add tag"
+// in the language of msgs.
+func (msgs Messages) JournalAddTag() string {
+	return Catalog.Format(msgs.locale, "JournalAddTag", nil)
+}
+
+// JournalRemoveTag says "Remove tag {tag}"
+// in the language the app shows.
+func JournalRemoveTag(tag string) string { return In(i18n.Locale()).JournalRemoveTag(tag) }
+
+// JournalRemoveTag says "Remove tag {tag}"
+// in the language of msgs.
+func (msgs Messages) JournalRemoveTag(tag string) string {
+	return Catalog.Format(msgs.locale, "JournalRemoveTag", map[string]any{"tag": tag})
+}
+
+// JournalAddScreenshot says "Add screenshots"
+// in the language the app shows.
+func JournalAddScreenshot() string { return In(i18n.Locale()).JournalAddScreenshot() }
+
+// JournalAddScreenshot says "Add screenshots"
+// in the language of msgs.
+func (msgs Messages) JournalAddScreenshot() string {
+	return Catalog.Format(msgs.locale, "JournalAddScreenshot", nil)
+}
+
+// JournalPasteScreenshot says "Paste screenshot"
+// in the language the app shows.
+func JournalPasteScreenshot() string { return In(i18n.Locale()).JournalPasteScreenshot() }
+
+// JournalPasteScreenshot says "Paste screenshot"
+// in the language of msgs.
+func (msgs Messages) JournalPasteScreenshot() string {
+	return Catalog.Format(msgs.locale, "JournalPasteScreenshot", nil)
+}
+
+// JournalRemoveScreenshot says "Remove screenshot {name}"
+// in the language the app shows.
+func JournalRemoveScreenshot(name string) string {
+	return In(i18n.Locale()).JournalRemoveScreenshot(name)
+}
+
+// JournalRemoveScreenshot says "Remove screenshot {name}"
+// in the language of msgs.
+func (msgs Messages) JournalRemoveScreenshot(name string) string {
+	return Catalog.Format(msgs.locale, "JournalRemoveScreenshot", map[string]any{"name": name})
+}
+
+// JournalClosePreview says "Close image preview"
+// in the language the app shows.
+func JournalClosePreview() string { return In(i18n.Locale()).JournalClosePreview() }
+
+// JournalClosePreview says "Close image preview"
+// in the language of msgs.
+func (msgs Messages) JournalClosePreview() string {
+	return Catalog.Format(msgs.locale, "JournalClosePreview", nil)
+}
+
+// JournalImageLoading says "Processing screenshots…"
+// in the language the app shows.
+func JournalImageLoading() string { return In(i18n.Locale()).JournalImageLoading() }
+
+// JournalImageLoading says "Processing screenshots…"
+// in the language of msgs.
+func (msgs Messages) JournalImageLoading() string {
+	return Catalog.Format(msgs.locale, "JournalImageLoading", nil)
+}
+
+// JournalImageFailed says "Could not load screenshot"
+// in the language the app shows.
+func JournalImageFailed() string { return In(i18n.Locale()).JournalImageFailed() }
+
+// JournalImageFailed says "Could not load screenshot"
+// in the language of msgs.
+func (msgs Messages) JournalImageFailed() string {
+	return Catalog.Format(msgs.locale, "JournalImageFailed", nil)
+}
+
+// JournalImageInvalid says "Use PNG, JPEG, GIF, WebP or BMP, up to 20 MB and 24 megapixels."
+// in the language the app shows.
+func JournalImageInvalid() string { return In(i18n.Locale()).JournalImageInvalid() }
+
+// JournalImageInvalid says "Use PNG, JPEG, GIF, WebP or BMP, up to 20 MB and 24 megapixels."
+// in the language of msgs.
+func (msgs Messages) JournalImageInvalid() string {
+	return Catalog.Format(msgs.locale, "JournalImageInvalid", nil)
+}
+
+// JournalImageLimit says "Up to 20 screenshots per record"
+// in the language the app shows.
+func JournalImageLimit() string { return In(i18n.Locale()).JournalImageLimit() }
+
+// JournalImageLimit says "Up to 20 screenshots per record"
+// in the language of msgs.
+func (msgs Messages) JournalImageLimit() string {
+	return Catalog.Format(msgs.locale, "JournalImageLimit", nil)
+}
+
+// JournalLoading says "Loading records…"
+// in the language the app shows.
+func JournalLoading() string { return In(i18n.Locale()).JournalLoading() }
+
+// JournalLoading says "Loading records…"
+// in the language of msgs.
+func (msgs Messages) JournalLoading() string {
+	return Catalog.Format(msgs.locale, "JournalLoading", nil)
+}
+
+// JournalLoadFailed says "Could not read records"
+// in the language the app shows.
+func JournalLoadFailed() string { return In(i18n.Locale()).JournalLoadFailed() }
+
+// JournalLoadFailed says "Could not read records"
+// in the language of msgs.
+func (msgs Messages) JournalLoadFailed() string {
+	return Catalog.Format(msgs.locale, "JournalLoadFailed", nil)
+}
+
+// JournalDraftSaved says "Draft saved"
+// in the language the app shows.
+func JournalDraftSaved() string { return In(i18n.Locale()).JournalDraftSaved() }
+
+// JournalDraftSaved says "Draft saved"
+// in the language of msgs.
+func (msgs Messages) JournalDraftSaved() string {
+	return Catalog.Format(msgs.locale, "JournalDraftSaved", nil)
+}
+
+// JournalSaving says "Saving…"
+// in the language the app shows.
+func JournalSaving() string { return In(i18n.Locale()).JournalSaving() }
+
+// JournalSaving says "Saving…"
+// in the language of msgs.
+func (msgs Messages) JournalSaving() string {
+	return Catalog.Format(msgs.locale, "JournalSaving", nil)
+}
+
+// JournalSaved says "Saved"
+// in the language the app shows.
+func JournalSaved() string { return In(i18n.Locale()).JournalSaved() }
+
+// JournalSaved says "Saved"
+// in the language of msgs.
+func (msgs Messages) JournalSaved() string {
+	return Catalog.Format(msgs.locale, "JournalSaved", nil)
+}
+
+// JournalSaveFailed says "Could not save records"
+// in the language the app shows.
+func JournalSaveFailed() string { return In(i18n.Locale()).JournalSaveFailed() }
+
+// JournalSaveFailed says "Could not save records"
+// in the language of msgs.
+func (msgs Messages) JournalSaveFailed() string {
+	return Catalog.Format(msgs.locale, "JournalSaveFailed", nil)
+}
+
+// JournalExecutionRequired says "Quantity and price are required"
+// in the language the app shows.
+func JournalExecutionRequired() string { return In(i18n.Locale()).JournalExecutionRequired() }
+
+// JournalExecutionRequired says "Quantity and price are required"
+// in the language of msgs.
+func (msgs Messages) JournalExecutionRequired() string {
+	return Catalog.Format(msgs.locale, "JournalExecutionRequired", nil)
+}
+
+// JournalPhaseUnavailable says "This action is unavailable at this stage"
+// in the language the app shows.
+func JournalPhaseUnavailable() string { return In(i18n.Locale()).JournalPhaseUnavailable() }
+
+// JournalPhaseUnavailable says "This action is unavailable at this stage"
+// in the language of msgs.
+func (msgs Messages) JournalPhaseUnavailable() string {
+	return Catalog.Format(msgs.locale, "JournalPhaseUnavailable", nil)
+}
+
+// JournalAddDirectionInvalid says "Add in the same direction as the position"
+// in the language the app shows.
+func JournalAddDirectionInvalid() string { return In(i18n.Locale()).JournalAddDirectionInvalid() }
+
+// JournalAddDirectionInvalid says "Add in the same direction as the position"
+// in the language of msgs.
+func (msgs Messages) JournalAddDirectionInvalid() string {
+	return Catalog.Format(msgs.locale, "JournalAddDirectionInvalid", nil)
+}
+
+// JournalReduceInvalid says "Reduce in the opposite direction by less than the position"
+// in the language the app shows.
+func JournalReduceInvalid() string { return In(i18n.Locale()).JournalReduceInvalid() }
+
+// JournalReduceInvalid says "Reduce in the opposite direction by less than the position"
+// in the language of msgs.
+func (msgs Messages) JournalReduceInvalid() string {
+	return Catalog.Format(msgs.locale, "JournalReduceInvalid", nil)
+}
+
+// JournalCloseInvalid says "Close quantity must offset the entire position"
+// in the language the app shows.
+func JournalCloseInvalid() string { return In(i18n.Locale()).JournalCloseInvalid() }
+
+// JournalCloseInvalid says "Close quantity must offset the entire position"
+// in the language of msgs.
+func (msgs Messages) JournalCloseInvalid() string {
+	return Catalog.Format(msgs.locale, "JournalCloseInvalid", nil)
+}
+
+// JournalFollowingInvalid says "This change would invalidate a later trade entry"
+// in the language the app shows.
+func JournalFollowingInvalid() string { return In(i18n.Locale()).JournalFollowingInvalid() }
+
+// JournalFollowingInvalid says "This change would invalidate a later trade entry"
+// in the language of msgs.
+func (msgs Messages) JournalFollowingInvalid() string {
+	return Catalog.Format(msgs.locale, "JournalFollowingInvalid", nil)
+}
+
+// JournalEntryEmpty says "Enter a note, quantity or price"
+// in the language the app shows.
+func JournalEntryEmpty() string { return In(i18n.Locale()).JournalEntryEmpty() }
+
+// JournalEntryEmpty says "Enter a note, quantity or price"
+// in the language of msgs.
+func (msgs Messages) JournalEntryEmpty() string {
+	return Catalog.Format(msgs.locale, "JournalEntryEmpty", nil)
+}
+
+// JournalNumberInvalid says "Quantity must be nonzero; price must be positive"
+// in the language the app shows.
+func JournalNumberInvalid() string { return In(i18n.Locale()).JournalNumberInvalid() }
+
+// JournalNumberInvalid says "Quantity must be nonzero; price must be positive"
+// in the language of msgs.
+func (msgs Messages) JournalNumberInvalid() string {
+	return Catalog.Format(msgs.locale, "JournalNumberInvalid", nil)
+}
+
+// JournalTimeInvalid says "Use YYYY-MM-DD HH:mm for time"
+// in the language the app shows.
+func JournalTimeInvalid() string { return In(i18n.Locale()).JournalTimeInvalid() }
+
+// JournalTimeInvalid says "Use YYYY-MM-DD HH:mm for time"
+// in the language of msgs.
+func (msgs Messages) JournalTimeInvalid() string {
+	return Catalog.Format(msgs.locale, "JournalTimeInvalid", nil)
 }
 
 // Replay says "Replay"
@@ -406,18 +1652,6 @@ func DataSourceAuthorizationExpired(source string) string {
 // in the language of msgs.
 func (msgs Messages) DataSourceAuthorizationExpired(source string) string {
 	return Catalog.Format(msgs.locale, "DataSourceAuthorizationExpired", map[string]any{"source": source})
-}
-
-// InitialCapitalInCurrency says "Initial capital ({currency})"
-// in the language the app shows.
-func InitialCapitalInCurrency(currency string) string {
-	return In(i18n.Locale()).InitialCapitalInCurrency(currency)
-}
-
-// InitialCapitalInCurrency says "Initial capital ({currency})"
-// in the language of msgs.
-func (msgs Messages) InitialCapitalInCurrency(currency string) string {
-	return Catalog.Format(msgs.locale, "InitialCapitalInCurrency", map[string]any{"currency": currency})
 }
 
 // DataSources says "Data sources"
@@ -1314,146 +2548,6 @@ func (msgs Messages) MACDPeriodsInvalid() string {
 	return Catalog.Format(msgs.locale, "MACDPeriodsInvalid", nil)
 }
 
-// SaturationBrightness says "Saturation and brightness"
-// in the language the app shows.
-func SaturationBrightness() string { return In(i18n.Locale()).SaturationBrightness() }
-
-// SaturationBrightness says "Saturation and brightness"
-// in the language of msgs.
-func (msgs Messages) SaturationBrightness() string {
-	return Catalog.Format(msgs.locale, "SaturationBrightness", nil)
-}
-
-// Hue says "Hue"
-// in the language the app shows.
-func Hue() string { return In(i18n.Locale()).Hue() }
-
-// Hue says "Hue"
-// in the language of msgs.
-func (msgs Messages) Hue() string {
-	return Catalog.Format(msgs.locale, "Hue", nil)
-}
-
-// Opacity says "Opacity"
-// in the language the app shows.
-func Opacity() string { return In(i18n.Locale()).Opacity() }
-
-// Opacity says "Opacity"
-// in the language of msgs.
-func (msgs Messages) Opacity() string {
-	return Catalog.Format(msgs.locale, "Opacity", nil)
-}
-
-// ColorFormat says "Color format"
-// in the language the app shows.
-func ColorFormat() string { return In(i18n.Locale()).ColorFormat() }
-
-// ColorFormat says "Color format"
-// in the language of msgs.
-func (msgs Messages) ColorFormat() string {
-	return Catalog.Format(msgs.locale, "ColorFormat", nil)
-}
-
-// CopyColor says "Copy color"
-// in the language the app shows.
-func CopyColor() string { return In(i18n.Locale()).CopyColor() }
-
-// CopyColor says "Copy color"
-// in the language of msgs.
-func (msgs Messages) CopyColor() string {
-	return Catalog.Format(msgs.locale, "CopyColor", nil)
-}
-
-// Red says "Red"
-// in the language the app shows.
-func Red() string { return In(i18n.Locale()).Red() }
-
-// Red says "Red"
-// in the language of msgs.
-func (msgs Messages) Red() string {
-	return Catalog.Format(msgs.locale, "Red", nil)
-}
-
-// Green says "Green"
-// in the language the app shows.
-func Green() string { return In(i18n.Locale()).Green() }
-
-// Green says "Green"
-// in the language of msgs.
-func (msgs Messages) Green() string {
-	return Catalog.Format(msgs.locale, "Green", nil)
-}
-
-// Blue says "Blue"
-// in the language the app shows.
-func Blue() string { return In(i18n.Locale()).Blue() }
-
-// Blue says "Blue"
-// in the language of msgs.
-func (msgs Messages) Blue() string {
-	return Catalog.Format(msgs.locale, "Blue", nil)
-}
-
-// HexColor says "Hex color"
-// in the language the app shows.
-func HexColor() string { return In(i18n.Locale()).HexColor() }
-
-// HexColor says "Hex color"
-// in the language of msgs.
-func (msgs Messages) HexColor() string {
-	return Catalog.Format(msgs.locale, "HexColor", nil)
-}
-
-// OpacityPercent says "Opacity percent"
-// in the language the app shows.
-func OpacityPercent() string { return In(i18n.Locale()).OpacityPercent() }
-
-// OpacityPercent says "Opacity percent"
-// in the language of msgs.
-func (msgs Messages) OpacityPercent() string {
-	return Catalog.Format(msgs.locale, "OpacityPercent", nil)
-}
-
-// HueDegrees says "Hue degrees"
-// in the language the app shows.
-func HueDegrees() string { return In(i18n.Locale()).HueDegrees() }
-
-// HueDegrees says "Hue degrees"
-// in the language of msgs.
-func (msgs Messages) HueDegrees() string {
-	return Catalog.Format(msgs.locale, "HueDegrees", nil)
-}
-
-// SaturationPercent says "Saturation percent"
-// in the language the app shows.
-func SaturationPercent() string { return In(i18n.Locale()).SaturationPercent() }
-
-// SaturationPercent says "Saturation percent"
-// in the language of msgs.
-func (msgs Messages) SaturationPercent() string {
-	return Catalog.Format(msgs.locale, "SaturationPercent", nil)
-}
-
-// BrightnessPercent says "Brightness percent"
-// in the language the app shows.
-func BrightnessPercent() string { return In(i18n.Locale()).BrightnessPercent() }
-
-// BrightnessPercent says "Brightness percent"
-// in the language of msgs.
-func (msgs Messages) BrightnessPercent() string {
-	return Catalog.Format(msgs.locale, "BrightnessPercent", nil)
-}
-
-// LightnessPercent says "Lightness percent"
-// in the language the app shows.
-func LightnessPercent() string { return In(i18n.Locale()).LightnessPercent() }
-
-// LightnessPercent says "Lightness percent"
-// in the language of msgs.
-func (msgs Messages) LightnessPercent() string {
-	return Catalog.Format(msgs.locale, "LightnessPercent", nil)
-}
-
 // EnterText says "Enter text"
 // in the language the app shows.
 func EnterText() string { return In(i18n.Locale()).EnterText() }
@@ -1684,11 +2778,11 @@ func (msgs Messages) ReplaySummary() string {
 	return Catalog.Format(msgs.locale, "ReplaySummary", nil)
 }
 
-// InitialCapital says "Initial capital"
+// InitialCapital says "Initial capital (USD)"
 // in the language the app shows.
 func InitialCapital() string { return In(i18n.Locale()).InitialCapital() }
 
-// InitialCapital says "Initial capital"
+// InitialCapital says "Initial capital (USD)"
 // in the language of msgs.
 func (msgs Messages) InitialCapital() string {
 	return Catalog.Format(msgs.locale, "InitialCapital", nil)
@@ -1852,44 +2946,4 @@ func Cancel() string { return In(i18n.Locale()).Cancel() }
 // in the language of msgs.
 func (msgs Messages) Cancel() string {
 	return Catalog.Format(msgs.locale, "Cancel", nil)
-}
-
-// IncreaseNumber says "{label} Increase"
-// in the language the app shows.
-func IncreaseNumber(label string) string { return In(i18n.Locale()).IncreaseNumber(label) }
-
-// IncreaseNumber says "{label} Increase"
-// in the language of msgs.
-func (msgs Messages) IncreaseNumber(label string) string {
-	return Catalog.Format(msgs.locale, "IncreaseNumber", map[string]any{"label": label})
-}
-
-// DecreaseNumber says "{label} Decrease"
-// in the language the app shows.
-func DecreaseNumber(label string) string { return In(i18n.Locale()).DecreaseNumber(label) }
-
-// DecreaseNumber says "{label} Decrease"
-// in the language of msgs.
-func (msgs Messages) DecreaseNumber(label string) string {
-	return Catalog.Format(msgs.locale, "DecreaseNumber", map[string]any{"label": label})
-}
-
-// AdjustNumber says "Adjust {label}"
-// in the language the app shows.
-func AdjustNumber(label string) string { return In(i18n.Locale()).AdjustNumber(label) }
-
-// AdjustNumber says "Adjust {label}"
-// in the language of msgs.
-func (msgs Messages) AdjustNumber(label string) string {
-	return Catalog.Format(msgs.locale, "AdjustNumber", map[string]any{"label": label})
-}
-
-// CloseToast says "Close notification"
-// in the language the app shows.
-func CloseToast() string { return In(i18n.Locale()).CloseToast() }
-
-// CloseToast says "Close notification"
-// in the language of msgs.
-func (msgs Messages) CloseToast() string {
-	return Catalog.Format(msgs.locale, "CloseToast", nil)
 }

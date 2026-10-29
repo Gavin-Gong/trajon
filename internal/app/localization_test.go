@@ -30,6 +30,7 @@ func newLocaleSettingsTester() (*application, *ui.Tester) {
 			ui.Box(c.Key("content")).Fill().Children(func() { app.content(c) })
 		})
 	}, 760, 520)
+	tt.SetPreferences(ui.Preferences{ReduceMotion: true})
 	return app, tt
 }
 
@@ -163,13 +164,13 @@ func TestEnglishReplayControlsAndLanguageChangeRetainSession(t *testing.T) {
 	app.setLanguagePreference(locales.PreferEnglish)
 	tt.Frame()
 	clickReplaySetting(t, tt, "Replay settings")
-	if !tt.Focused("Initial capital") || !tt.HasText("Leverage (×)") {
+	if !tt.Focused(app.text().InitialCapital()) || !tt.HasText("Leverage (×)") {
 		t.Fatal("replay settings not translated")
 	}
 	replaceReplaySetting(tt, "25000")
 	app.setLanguagePreference(locales.PreferChinese)
 	tt.Frame()
-	if !tt.Focused("初始资金") || app.replaySettingsDraft.InitialCapital != 25000 {
+	if !tt.Focused(app.text().InitialCapital()) || app.replaySettingsDraft.InitialCapital != 25000 {
 		t.Fatal("language switch discarded a focused numeric draft")
 	}
 	clickReplaySetting(t, tt, "保存")

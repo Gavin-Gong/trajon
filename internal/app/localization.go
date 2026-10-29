@@ -4,7 +4,6 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/oneo-me/onevra/source/components"
 	"github.com/oneo-me/onevra/source/icons/lucide"
-	"github.com/oneo-me/onevra/source/shells/sidebar"
 	"trajon/internal/locales"
 	"trajon/internal/market"
 	appui "trajon/internal/ui"
@@ -30,38 +29,6 @@ func (a *application) instrumentTypeLabel(item instrument) string {
 	return appui.InstrumentTypeLabel(a.text(), item)
 }
 
-func (a *application) componentLocalization() components.Localization {
-	text := a.text()
-	return components.Localization{
-		SaturationBrightness: text.SaturationBrightness(),
-		Hue:                  text.Hue(),
-		Opacity:              text.Opacity(),
-		ColorFormat:          text.ColorFormat(),
-		CopyColor:            text.CopyColor(),
-		Red:                  text.Red(),
-		Green:                text.Green(),
-		Blue:                 text.Blue(),
-		HexColor:             text.HexColor(),
-		OpacityPercent:       text.OpacityPercent(),
-		HueDegrees:           text.HueDegrees(),
-		SaturationPercent:    text.SaturationPercent(),
-		BrightnessPercent:    text.BrightnessPercent(),
-		LightnessPercent:     text.LightnessPercent(),
-		Settings:             text.Settings(),
-		CloseToast:           text.CloseToast(),
-		NumberAction: func(action, label string) string {
-			format := text.AdjustNumber
-			switch action {
-			case "increase":
-				format = text.IncreaseNumber
-			case "decrease":
-				format = text.DecreaseNumber
-			}
-			return format(label)
-		},
-	}
-}
-
 func (a *application) setLanguagePreference(preference locales.Preference) {
 	if !preference.Valid() {
 		return
@@ -83,8 +50,9 @@ func (a *application) setLanguagePreference(preference locales.Preference) {
 // It updates presentation only: drafts, focus and market/replay state survive.
 func (a *application) applyLocale(locale string) {
 	a.language = locales.Language(locale)
-	if a.shell != nil {
-		a.shell.SetLabels(a.shellLabels())
+	if a.recordsPanel != nil {
+		a.recordsPanel.SetTitle(a.text().Records())
+		a.recordsPanel.Invalidate()
 	}
 }
 
@@ -97,19 +65,6 @@ func (a *application) publishLocaleSaveResult(preference locales.Preference, err
 func (a *application) applyLocaleSaveResult(preference locales.Preference, err error) {
 	if a.languagePreference == preference {
 		a.languageSaveError = err
-	}
-}
-
-func (a *application) shellLabels() sidebar.Labels {
-	text := a.text()
-	return sidebar.Labels{
-		LeftToggle: text.ToggleSidebar(),
-		LeftResize: text.ResizeSidebar(),
-		Minimize:   text.MinimizeWindow(),
-		Maximize:   text.MaximizeWindow(),
-		Restore:    text.RestoreWindow(),
-		Close:      text.CloseWindow(),
-		CloseToast: text.CloseToast(),
 	}
 }
 

@@ -6,8 +6,8 @@ import (
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
+	"github.com/egoist/mygo/ui/markdown"
 	"github.com/oneo-me/onevra/source/components"
-	"github.com/oneo-me/onevra/source/components/markdown"
 	"github.com/oneo-me/onevra/source/icons/lucide"
 	"github.com/oneo-me/onevra/source/shells/sidebar"
 )
@@ -81,12 +81,13 @@ func (a *application) informationDialog(c *ui.Context) {
 				if strings.TrimSpace(s.available.notes) == "" {
 					components.Text(c, text.NoReleaseNotes()).TextColor(c.Theme().TextMuted).Wrap()
 				} else {
-					s.notes.Render(c, markdown.MarkdownOptions{OnLink: func(destination string) {
+					s.notesOptions.OnLink = func(destination string) {
 						// Release notes are remote content; only open web URLs.
 						if link, err := url.Parse(destination); err == nil && (link.Scheme == "https" || link.Scheme == "http") {
 							services.OpenURL(link.String())
 						}
-					}}).FillWidth()
+					}
+					markdown.View(c.Key("update-notes-content"), s.available.notes, &s.notesOptions).FillWidth()
 				}
 			})
 		}

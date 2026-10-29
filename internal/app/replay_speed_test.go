@@ -190,14 +190,12 @@ func TestReplaySpeedChangesDuringPlaybackWithoutResettingSession(t *testing.T) {
 	tt.Frame()
 	clickReplaySetting(t, tt, "买入")
 	clickReplaySetting(t, tt, "播放")
-	app.chart.replayNextStep = time.Now().Add(time.Hour)
+	app.chart.replayNextStep = tt.Now().Add(time.Hour)
 	viewport := app.chart.Viewport
 	clickReplaySetting(t, tt, "播放速度")
-	before := time.Now()
 	clickReplaySetting(t, tt, "5×")
-	after := time.Now()
 	deadline := app.chart.replayNextStep
-	if deadline.Before(before.Add(200*time.Millisecond)) || deadline.After(after.Add(200*time.Millisecond)) {
+	if !deadline.Equal(tt.Now().Add(200 * time.Millisecond)) {
 		t.Fatalf("speed change did not reschedule the next candle at 5×: %v", deadline)
 	}
 	if !app.chart.actionPlaying || app.chart.replayEnd != 121 || app.chart.Viewport != viewport || app.chart.replayAccount.Quantity != 1 || len(app.chart.replayAccount.Trades) != 1 || app.chart.dragging {
@@ -207,11 +205,9 @@ func TestReplaySpeedChangesDuringPlaybackWithoutResettingSession(t *testing.T) {
 	clickReplaySetting(t, tt, "暂停")
 	clickReplaySetting(t, tt, "播放速度")
 	clickReplaySetting(t, tt, "0.5×")
-	before = time.Now()
 	clickReplaySetting(t, tt, "播放")
-	after = time.Now()
 	deadline = app.chart.replayNextStep
-	if deadline.Before(before.Add(2*time.Second)) || deadline.After(after.Add(2*time.Second)) {
+	if !deadline.Equal(tt.Now().Add(2 * time.Second)) {
 		t.Fatalf("resume did not use the speed selected while paused: %v", deadline)
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
+	"trajon/internal/locales"
 )
 
 func TestKlineChartWheelZoomAndDragPan(t *testing.T) {
@@ -380,6 +381,8 @@ func newKlineToolbarTester() (*application, *ui.Tester) {
 		app.klineChart(c)
 		app.replaySummaryDialog(c)
 	}, 900, 560)
+	tt.SetPreferences(ui.Preferences{ReduceMotion: true})
+	tt.SetLocale(string(locales.Chinese))
 	tt.Frame() // settle chart dimensions so the toolbar can fill the chart width
 	return app, tt
 }

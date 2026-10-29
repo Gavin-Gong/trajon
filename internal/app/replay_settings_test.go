@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
+	"trajon/internal/locales"
 	"trajon/internal/market"
 )
 
@@ -18,6 +19,10 @@ func newReplaySettingsTester() (*application, *ui.Tester) {
 		marketLoadStarted: true,
 	}
 	tt := ui.NewTester(app.content, 900, 600)
+	// Keep lifecycle tests independent of dialog motion and give Onevra the
+	// same window language as the application.
+	tt.SetPreferences(ui.Preferences{ReduceMotion: true})
+	tt.SetLocale(string(locales.Chinese))
 	tt.Frame()
 	return app, tt
 }
@@ -50,7 +55,7 @@ func TestReplaySettingsDialogSavesAndReopens(t *testing.T) {
 	}
 
 	clickReplaySetting(t, tt, "回放设置")
-	if !app.replaySettingsOpen || !tt.Focused("初始资金") {
+	if !app.replaySettingsOpen || !tt.Focused(app.text().InitialCapital()) {
 		t.Fatal("opening settings did not focus the initial capital input")
 	}
 	tt.Key(ui.Cmd, ui.KeyA)
@@ -82,7 +87,7 @@ func TestReplaySettingsDialogSavesAndReopens(t *testing.T) {
 		t.Fatal("closing the dialog did not restore focus to its action bar button")
 	}
 	tt.Key(0, ui.KeySpace) // The restored opener must also work from the keyboard.
-	if !app.replaySettingsOpen || app.replaySettingsDraft != want || !tt.Focused("初始资金") {
+	if !app.replaySettingsOpen || app.replaySettingsDraft != want || !tt.Focused(app.text().InitialCapital()) {
 		t.Fatal("reopening did not display saved values and focus the initial capital input")
 	}
 }
@@ -114,7 +119,7 @@ func TestReplaySettingsDismissalDiscardsDraft(t *testing.T) {
 					tt.Frame()
 				}
 				clickReplaySetting(t, tt, "回放设置")
-				if app.replaySettingsDraft != defaultReplaySettings() || !tt.Focused("初始资金") {
+				if app.replaySettingsDraft != defaultReplaySettings() || !tt.Focused(app.text().InitialCapital()) {
 					t.Fatal("reopening retained dismissed edits or did not focus the input")
 				}
 				clickReplaySetting(t, tt, "取消")

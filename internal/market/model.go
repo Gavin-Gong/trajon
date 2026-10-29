@@ -29,7 +29,7 @@ const (
 type Instrument struct {
 	Name           string
 	NameCN         string
-	Currency       string // Quote currency; replay capital is denominated in this unit.
+	Currency       string // Provider quote metadata only; journal/replay amounts use USD.
 	SecurityMarket string // US, HK, SH, or SZ for securities; not part of identity.
 	Symbol         string
 	ProviderSymbol string

@@ -3,9 +3,11 @@ package app
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/egoist/mygo/ui"
 	"github.com/oneo-me/onevra/source/shells/sidebar"
+	"trajon/internal/journal"
 	"trajon/internal/locales"
 )
 
@@ -23,12 +25,62 @@ func TestApplicationSidebarNavigation(t *testing.T) {
 				id, label string
 			}{
 				{"market", app.text().Replay()},
+				{"journal", app.text().JournalTitle()},
 				{"overview", app.text().Overview()},
 			} {
 				clickReplaySetting(t, tt, page.label)
 				if app.activePage != page.id || app.pageTitle() != page.label {
 					t.Fatalf("navigation to %q left page=%q, title=%q", page.id, app.activePage, app.pageTitle())
 				}
+			}
+		})
+	}
+}
+
+func TestJournalPageNavigationKeepsDraftAndDoesNotReplaceOverview(t *testing.T) {
+	for _, titleFirst := range []bool{false, true} {
+		t.Run(fmt.Sprintf("title-first=%v", titleFirst), func(t *testing.T) {
+			app, tt := newApplicationShellOrderTester(locales.Chinese, titleFirst)
+			app.records = recordsState{book: journal.New(time.Now()), ready: true}
+			r := app.records.book.Active()
+			r.Instrument, r.Draft.Text = "手动标的", "未提交的计划"
+			app.syncRecordKind()
+			tt.Frame()
+			if _, ok := tt.Find(app.text().JournalSearchRecords()); ok {
+				t.Fatal("journal list was embedded in Overview")
+			}
+			if !tt.HasText(app.text().OverviewTotalPnL()) {
+				t.Fatal("Overview performance dashboard was replaced by the journal")
+			}
+
+			clickReplaySetting(t, tt, app.text().JournalTitle())
+			app.records.composer.Focus()
+			tt.Frame()
+			tt.Type("!")
+			clickReplaySetting(t, tt, app.text().JournalSearchRecords())
+			tt.Type("手动")
+			width := float32(280)
+			app.recordsBrowser.width = width
+
+			clickReplaySetting(t, tt, app.text().Overview())
+			for range 3 {
+				tt.Frame()
+			}
+			if _, ok := tt.Find(app.text().JournalSearchRecords()); ok {
+				t.Fatal("journal controls remained mounted after leaving its page")
+			}
+			clickReplaySetting(t, tt, app.text().Replay())
+			tt.Frame()
+			clickReplaySetting(t, tt, app.text().JournalTitle())
+			for range 3 {
+				tt.Frame()
+			}
+			if app.activePage != "journal" || app.records.book.Active() != r ||
+				r.Draft.Text != "未提交的计划!" || app.recordsBrowser.query != "手动" || app.recordsBrowser.width != width {
+				t.Fatal("page transitions lost journal selection, draft or list state")
+			}
+			if _, ok := tt.Find(app.text().JournalSearchRecords()); !ok {
+				t.Fatal("returning to the journal page did not restore the list")
 			}
 		})
 	}

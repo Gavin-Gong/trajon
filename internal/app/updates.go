@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo"
-	"github.com/oneo-me/onevra/source/components/markdown"
+	"github.com/egoist/mygo/ui/markdown"
 )
 
 const projectGitHubURL = "https://github.com/Gavin-Gong/trajon"
@@ -18,10 +18,10 @@ type availableUpdate struct {
 }
 
 type updateState struct {
-	check     func(context.Context) (*availableUpdate, error)
-	relaunch  func()
-	available *availableUpdate
-	notes     *markdown.MarkdownDocument
+	check        func(context.Context) (*availableUpdate, error)
+	relaunch     func()
+	available    *availableUpdate
+	notesOptions markdown.Options
 
 	checking, installing, installed bool
 	checkError, installError        error
@@ -44,7 +44,6 @@ type updateResult struct {
 	kind              updateResultKind
 	generation        uint64
 	available         *availableUpdate
-	notes             *markdown.MarkdownDocument
 	err               error
 	downloaded, total int64
 }
@@ -67,9 +66,6 @@ func (a *application) checkForUpdates() {
 	a.runUpdateJob(30*time.Second, func(ctx context.Context, publish func(updateResult)) {
 		available, err := check(ctx)
 		result := updateResult{kind: updateChecked, available: available, err: err}
-		if err == nil && available != nil {
-			result.notes = markdown.ParseMarkdown(available.notes)
-		}
 		publish(result)
 	})
 }
@@ -150,7 +146,7 @@ func (a *application) applyUpdateResult(result updateResult) {
 			s.checkError = nil
 		}
 		if result.err == nil {
-			s.available, s.notes = result.available, result.notes
+			s.available = result.available
 		}
 	case updateProgress:
 		if s.installing {

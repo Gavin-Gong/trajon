@@ -73,10 +73,6 @@ func (a *application) marketPage(c *ui.Context) {
 }
 
 func (a *application) klineChart(c *ui.Context) {
-	components.WithLocalization(c, a.componentLocalization(), func() { a.localizedKlineChart(c) })
-}
-
-func (a *application) localizedKlineChart(c *ui.Context) {
 	a.ensureIndicators()
 	a.advanceReplayFrame(c)
 	t := c.Theme()
